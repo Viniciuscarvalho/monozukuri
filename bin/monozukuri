@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+WRAPPER_PATH="$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")"
+BIN_DIR="$(cd "$(dirname "$WRAPPER_PATH")" && pwd)"
+LIBEXEC_DIR="$(cd "$BIN_DIR/../libexec/monozukuri" 2>/dev/null && pwd || true)"
+if [ -z "${LIBEXEC_DIR:-}" ] || [ ! -f "${LIBEXEC_DIR}/orchestrate.sh" ]; then
+  REPO_DIR="$(cd "$BIN_DIR/.." && pwd)"
+  if [ -f "$REPO_DIR/scripts/orchestrate.sh" ]; then
+    LIBEXEC_DIR="$REPO_DIR/scripts"
+  else
+    echo "Cannot find Monozukuri scripts." >&2
+    exit 1
+  fi
+fi
+export MONOZUKURI_HOME="$LIBEXEC_DIR"
+exec bash "$LIBEXEC_DIR/orchestrate.sh" "$@"

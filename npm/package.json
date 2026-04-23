@@ -1,0 +1,40 @@
+{
+  "name": "@viniciuscarvalho/monozukuri",
+  "version": "1.0.0",
+  "description": "Monozukuri (ものづくり) — autonomous feature delivery, the art of making things",
+  "keywords": [
+    "claude-code",
+    "orchestrator",
+    "automation",
+    "feature-delivery",
+    "ai",
+    "monozukuri",
+    "backlog",
+    "worktree"
+  ],
+  "homepage": "https://github.com/Viniciuscarvalho/monozukuri#readme",
+  "bugs": {
+    "url": "https://github.com/Viniciuscarvalho/monozukuri/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Viniciuscarvalho/monozukuri.git"
+  },
+  "license": "MIT",
+  "author": "Vinicius Carvalho",
+  "bin": {
+    "monozukuri": "bin/monozukuri.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "adapters/",
+    "templates/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

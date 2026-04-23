@@ -1,0 +1,9 @@
+.env
+orchestration-backlog.json
+.monozukuri/backlog.json
+.monozukuri/state/
+.monozukuri/results/
+.monozukuri/context/
+.monozukuri/logs/
+.monozukuri/learning/
+.worktrees/
