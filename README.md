@@ -53,7 +53,7 @@ monozukuri run              # execute
 ```mermaid
 flowchart LR
   B[Backlog] -->|size gate| W[Git Worktree]
-  W -->|invoke skill| S[/feature-marker\nPRD → Tests]
+  W -->|invoke skill| S["Claude Code Skill<br/>PRD → Tests → PR"]
   S -->|cycle gate| PR[Pull Request]
   PR -->|learning store| B
 ```
