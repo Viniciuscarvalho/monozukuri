@@ -58,16 +58,18 @@ _scan_log() {
   done
 
   echo "$hits"
-  for line in "${hit_lines[@]}"; do
-    echo "$line"
-  done
+  if [ "${#hit_lines[@]}" -gt 0 ]; then
+    for line in "${hit_lines[@]}"; do
+      echo "$line"
+    done
+  fi
 }
 
 _find_latest_log() {
   local wt_path="$1"
   # Look in state dir for the most recent run log for this worktree
   local feat_id
-  feat_id=$(basename "$wt_path" | sed 's/^feat-//')
+  feat_id=$(basename "$wt_path")
   local log_dir="${STATE_DIR:-$wt_path/../.monozukuri/state}/$feat_id/logs"
 
   if [ -d "$log_dir" ]; then

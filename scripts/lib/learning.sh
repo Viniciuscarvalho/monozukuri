@@ -410,10 +410,7 @@ learning_list() {
 
     if (filtered.length === 0) {
       console.log('  No entries' + (candidatesOnly ? ' (no promotion candidates)' : '') + '.');
-      return;
-    }
-
-    filtered.forEach(e => {
+    } else { filtered.forEach(e => {
       const conf = (e.confidence * 100).toFixed(0) + '%';
       const cand = e.promotion_candidate ? ' [candidate]' : '';
       console.log('  ' + e.id + cand);
@@ -423,7 +420,7 @@ learning_list() {
       console.log('    confidence: ' + conf + '  tier: ' + e.tier);
       console.log('    last_seen : ' + e.last_seen);
       console.log('');
-    });
+    }); }
   " 2>/dev/null || true
 }
 

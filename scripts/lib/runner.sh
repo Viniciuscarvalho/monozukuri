@@ -1032,9 +1032,8 @@ run_pr_creation() {
       cd "$wt_path"
       git add -A 2>/dev/null || true
       git commit -m "feat: $title" --allow-empty 2>/dev/null || true
-      git push origin "$branch"
-    ) 2>"$push_tmpfile"
-    push_exit=$?
+      git push --force-with-lease origin "$branch" || git push --force origin "$branch"
+    ) 2>"$push_tmpfile" || push_exit=$?
     push_err=$(cat "$push_tmpfile")
     rm -f "$push_tmpfile"
   else
@@ -1054,18 +1053,21 @@ run_pr_creation() {
     }
   fi
 
-  local pr_url="" pr_err="" pr_exit pr_tmpfile
+  local pr_url="" pr_err="" pr_exit=0 pr_tmpfile
   pr_tmpfile=$(mktemp)
-  pr_url=$(gh pr create --base "$BASE_BRANCH" --head "$branch" \
+  if pr_url=$(gh pr create --base "$BASE_BRANCH" --head "$branch" \
     --title "feat: $title" \
     --body "Automated by feature-marker orchestrator." \
-    $pr_flag 2>"$pr_tmpfile")
-  pr_exit=$?
+    $pr_flag 2>"$pr_tmpfile"); then
+    pr_exit=0
+  else
+    pr_exit=$?
+  fi
   pr_err=$(cat "$pr_tmpfile")
   rm -f "$pr_tmpfile"
 
   # gh pr create may also surface the URL when an existing PR already matches
-  [ -z "$pr_url" ] && pr_url=$(echo "$pr_err" | grep -Eo 'https://github\.com/[^ ]+' | head -1)
+  [ -z "$pr_url" ] && pr_url=$(echo "$pr_err" | grep -Eo 'https://github\.com/[^ ]+' | head -1) || true
 
   if [ $pr_exit -eq 0 ] && [ -n "$pr_url" ]; then
     wt_update_status "$feat_id" "pr-created" "complete"

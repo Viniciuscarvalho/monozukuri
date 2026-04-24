@@ -56,6 +56,7 @@ source "$LIB_DIR/ui.sh"
 
 log()    { printf "${C_CYAN}▶${C_NC} [orchestrate] %s\n" "$*"; }
 info()   { printf "${C_DIM}  [orchestrate] %s${C_NC}\n" "$*"; }
+warn()   { printf "${C_YELLOW}⚠${C_NC}  [orchestrate] %s\n" "$*" >&2; }
 err()    { printf "${C_RED}✗${C_NC} [orchestrate] %s\n" "$*" >&2; }
 banner() {
   printf "\n${C_BOLD}${C_CYAN}%s${C_NC}\n" "═══════════════════════════════════════════════════"
@@ -517,6 +518,8 @@ sub_learning() {
 
   local project_path="$ROOT_DIR/.claude/feature-state/learned.json"
   local global_path="$HOME/.claude/monozukuri/learned/learned.json"
+
+  _learning_ensure_file "$global_path"
 
   case "${OPT_LEARNING_ACTION:-list}" in
     list)
