@@ -7,11 +7,17 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Viniciuscarvalho/monozukuri/actions/workflows/ci.yml">
+    <img src="https://github.com/Viniciuscarvalho/monozukuri/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
   <a href="https://www.npmjs.com/package/@viniciuscarvalho/monozukuri">
     <img src="https://img.shields.io/npm/v/@viniciuscarvalho/monozukuri.svg" alt="npm version">
   </a>
   <a href="https://github.com/Viniciuscarvalho/homebrew-tap">
     <img src="https://img.shields.io/badge/homebrew-tap-orange.svg" alt="Homebrew Tap">
+  </a>
+  <a href="https://github.com/Viniciuscarvalho/monozukuri/releases">
+    <img src="https://img.shields.io/github/v/release/Viniciuscarvalho/monozukuri?include_prereleases" alt="Release">
   </a>
   <a href="https://github.com/Viniciuscarvalho/monozukuri/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
@@ -37,10 +43,27 @@ brew tap viniciuscarvalho/tap
 brew install monozukuri
 
 cd your-project
+monozukuri doctor       # verify all dependencies are present and authenticated
 monozukuri init
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 ```
+
+> **Requires:** `node >= 18`, `jq`, `gh` (for PR creation), and the Claude Code CLI (`claude`).  
+> Run `monozukuri doctor` after install — it checks every dependency and surfaces missing auth in one pass.
+
+---
+
+## Highlights
+
+- **One command, whole backlog.** `monozukuri run` walks every feature in your source — Linear, GitHub Issues, or a plain `features.md` — without further input.
+- **Skill-agnostic.** Defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker), but works with any Claude Code skill. Swap via a single config line.
+- **Isolated git worktrees per feature.** No branch juggling, no dirty working directory, no cross-contamination between runs.
+- **Three autonomy levels.** From `supervised` (pause after each phase) to `full_auto` (fully unattended overnight runs).
+- **Cost-aware size & cycle gates.** Skips features that are too large, verifies every phase completed, enforces token budgets.
+- **3-tier learning store.** Every completed feature writes learnings at feature / project / global scope — the next run starts smarter.
+- **Multiple backlog adapters.** `markdown`, `github`, `linear` — pick where your backlog already lives.
+- **Local-first, zero vendor lock-in.** Runs on your machine, writes plain files, uses your own `claude` CLI credentials.
 
 ---
 
@@ -68,34 +91,8 @@ For each feature in the backlog, Monozukuri:
      └─ PRD → Tech Spec → Tasks → Code → Tests → PR
 5. Runs the cycle gate — verifies all phases completed and PR exists
 6. Writes learnings to the 3-tier store (feature / project / global)
-7. Moves to the next feature
+7. Moves to the next feature → repeat until backlog is clean
 ```
-
----
-
-## The name
-
-**Monozukuri** (ものづくり) is a Japanese concept meaning "the art and science of making things."
-It embodies continuous improvement, craftsmanship, and the relentless pursuit of quality in creation — the same principles that should govern autonomous software delivery.
-
----
-
-## Works with any Claude Code skill
-
-Monozukuri is skill-agnostic. It defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) but works with any Claude Code skill that handles feature implementation.
-
-Configure which skill to invoke in `.monozukuri/config.yaml`:
-
-```yaml
-skill:
-  command: feature-marker # any Claude Code slash-command
-```
-
-Popular options:
-
-- [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) — PRD → TechSpec → Tasks → Code → Tests → PR
-- Your own custom skill
-- No skill — just a well-written `CLAUDE.md` in your project
 
 ---
 
@@ -108,7 +105,13 @@ brew tap viniciuscarvalho/tap
 brew install monozukuri
 ```
 
-### NPX
+### NPM (global)
+
+```bash
+npm install -g @viniciuscarvalho/monozukuri
+```
+
+### NPX (no install)
 
 ```bash
 npx @viniciuscarvalho/monozukuri run --dry-run
@@ -122,7 +125,7 @@ cd monozukuri
 ./scripts/orchestrate.sh --help
 ```
 
-Requires: `node >=18`, `jq`, `gh` (for PR creation), and the Claude Code CLI (`claude`).
+After any install method, run `monozukuri doctor` to confirm every dependency is available and authenticated.
 
 ---
 
@@ -139,7 +142,45 @@ monozukuri status                         # show current loop state
 monozukuri cleanup                        # remove worktrees and reset state
 monozukuri learning list                  # show captured learnings
 monozukuri calibrate                      # calibrate token cost estimates
+monozukuri doctor                         # verify dependencies, auth, and environment
 ```
+
+### `monozukuri init`
+
+| Flag       | Default    | Description                                     |
+| ---------- | ---------- | ----------------------------------------------- |
+| `--force`  | `false`    | Overwrite existing config                       |
+| `--source` | `markdown` | Backlog adapter: `markdown`, `github`, `linear` |
+
+### `monozukuri run`
+
+| Flag         | Default         | Description                                           |
+| ------------ | --------------- | ----------------------------------------------------- |
+| `--dry-run`  | `false`         | Preview the plan without executing                    |
+| `--autonomy` | _(from config)_ | `supervised`, `checkpoint`, `full_auto`               |
+| `--feature`  |                 | Run a single feature by ID                            |
+| `--resume`   | `false`         | Skip already-completed features                       |
+| `--model`    | _(from config)_ | Override model: `opus`, `sonnet`, `haiku`, `opusplan` |
+| `--skill`    | _(from config)_ | Override skill command                                |
+
+### `monozukuri status`
+
+| Flag     | Default | Description                        |
+| -------- | ------- | ---------------------------------- |
+| `--json` | `false` | Machine-readable output for piping |
+
+### `monozukuri learning list`
+
+| Flag      | Default | Description                              |
+| --------- | ------- | ---------------------------------------- |
+| `--tier`  | `all`   | `feature`, `project`, `global`, or `all` |
+| `--limit` | `20`    | Maximum entries to show                  |
+
+### `monozukuri cleanup`
+
+| Flag    | Default | Description              |
+| ------- | ------- | ------------------------ |
+| `--yes` | `false` | Skip confirmation prompt |
 
 ---
 
@@ -150,6 +191,31 @@ monozukuri calibrate                      # calibrate token cost estimates
 | `supervised` | Pauses after each phase for your approval                      |
 | `checkpoint` | Full pipeline, creates PR, waits for merge before next feature |
 | `full_auto`  | Full pipeline + `bypassPermissions` + proceeds immediately     |
+
+Set once in `.monozukuri/config.yaml` or override per-run with `--autonomy`.
+
+---
+
+## Supported models
+
+Set a default in config or override with `--model`.
+
+| Alias      | Use case                                                          |
+| ---------- | ----------------------------------------------------------------- |
+| `opus`     | Highest reasoning, highest cost — complex features                |
+| `sonnet`   | Balanced default for most features                                |
+| `haiku`    | Fast, cheap — small features and calibration runs                 |
+| `opusplan` | Opus for planning phases, Sonnet for implementation — recommended |
+
+---
+
+## Backlog adapters
+
+| Adapter    | Source                             | Auth                       |
+| ---------- | ---------------------------------- | -------------------------- |
+| `markdown` | `features.md` in your project root | None                       |
+| `github`   | GitHub Issues filtered by label    | `gh auth login`            |
+| `linear`   | Linear issues filtered by team     | `LINEAR_API_KEY` in `.env` |
 
 ---
 
@@ -173,28 +239,26 @@ model:
   default: opusplan # opus | sonnet | haiku | opusplan
 ```
 
-See `templates/config.yaml` in this repo for the full reference with all options documented.
+See [`templates/config.yaml`](./templates/config.yaml) for the full reference with every option documented.
 
 ---
 
-## Architecture decisions
+## Works with any Claude Code skill
 
-| ADR                                                | Decision                                                              |
-| -------------------------------------------------- | --------------------------------------------------------------------- |
-| [ADR-008](docs/adr/008-orchestrator-economy.md)    | Token economy: cost gates, routing, 3-tier learning, size/cycle gates |
-| [ADR-009](docs/adr/009-local-models.md)            | Local model integration (Ollama embedding / classifier / summarizer)  |
-| [ADR-010](docs/adr/010-stuck-state-elimination.md) | Stuck-state elimination: subshell fix, timeouts, PID tracking         |
-| [ADR-011](docs/adr/011-security-hardening.md)      | Security: prompt sanitization, permission guardrails, stack detection |
+Monozukuri is skill-agnostic. It defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) but works with any Claude Code skill that handles feature implementation.
 
----
+Configure which skill to invoke in `.monozukuri/config.yaml`:
 
-## Backlog adapters
+```yaml
+skill:
+  command: feature-marker # any Claude Code slash-command
+```
 
-| Adapter    | Source                          | Auth                       |
-| ---------- | ------------------------------- | -------------------------- |
-| `markdown` | `features.md` in your project   | None                       |
-| `github`   | GitHub Issues filtered by label | `gh auth login`            |
-| `linear`   | Linear issues filtered by team  | `LINEAR_API_KEY` in `.env` |
+Popular options:
+
+- [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) — PRD → TechSpec → Tasks → Code → Tests → PR
+- Your own custom skill
+- No skill — just a well-written `CLAUDE.md` in your project
 
 ---
 
@@ -210,6 +274,61 @@ Monozukuri and Feature-marker are **separate, independently installable tools** 
 | **State dir** | `.claude/feature-state/`               | `.monozukuri/`                    |
 
 The only connection is the `skill.command` config value in `.monozukuri/config.yaml`.
+
+---
+
+## Project layout
+
+```
+bin/                       CLI entry points (Node shim + shell dispatcher)
+scripts/                   Orchestrator shell implementation
+  orchestrate.sh           Main loop
+templates/                 Config templates copied by `monozukuri init`
+homebrew/                  Homebrew formula source
+npm/                       npm package metadata and shim
+assets/                    Banner, architecture diagram
+docs/adr/                  Architecture Decision Records
+```
+
+---
+
+## Architecture decisions
+
+| ADR                                                | Decision                                                              |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| [ADR-008](docs/adr/008-orchestrator-economy.md)    | Token economy: cost gates, routing, 3-tier learning, size/cycle gates |
+| [ADR-009](docs/adr/009-local-models.md)            | Local model integration (Ollama embedding / classifier / summarizer)  |
+| [ADR-010](docs/adr/010-stuck-state-elimination.md) | Stuck-state elimination: subshell fix, timeouts, PID tracking         |
+| [ADR-011](docs/adr/011-security-hardening.md)      | Security: prompt sanitization, permission guardrails, stack detection |
+
+---
+
+## Development
+
+```bash
+make verify    # full pipeline: lint → format-check → test
+make lint      # shellcheck on every script
+make fmt       # shfmt -w on every script
+make test      # bats integration tests
+make release   # tag + publish to npm + bump Homebrew formula
+```
+
+---
+
+## Contributing
+
+1. Fork and clone the repo
+2. Run `./scripts/orchestrate.sh --help` to confirm your environment
+3. Open a draft PR early — we review small, focused changes fastest
+4. Follow [Conventional Commits](https://www.conventionalcommits.org/) so release notes stay clean
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and the `good first issue` label for a friendly on-ramp.
+
+---
+
+## The name
+
+**Monozukuri** (ものづくり) is a Japanese concept meaning "the art and science of making things." It embodies continuous improvement, craftsmanship, and the relentless pursuit of quality in creation — the same principles that should govern autonomous software delivery.
 
 ---
 
