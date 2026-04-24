@@ -83,7 +83,7 @@ OPT_INGEST_FEAT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor)
       SUBCOMMAND="$1"
       ;;
     --resume-paused)
@@ -126,7 +126,8 @@ while [ $# -gt 0 ]; do
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
       echo "Commands:"
-      echo "  init                         Scaffold config, .env, features.md, .gitignore"
+      echo "  doctor                       Check all dependencies and report status"
+  echo "  init                         Scaffold config, .env, features.md, .gitignore"
       echo "  run                          Execute the orchestration loop"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
@@ -175,8 +176,8 @@ export OPT_SKIP_CYCLE_CHECK
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: ./scripts/orchestrate.sh --help"; exit 1; }
 
-# Verify we're in a git repo (--help exits inside arg parsing before reaching here)
-if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+# Verify we're in a git repo (doctor is exempt — it's a pre-flight check)
+if [ "$SUBCOMMAND" != "doctor" ] && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
   exit 1
@@ -624,6 +625,7 @@ sub_ingest_status() {
 # ══════════════════════════════════════════════════════════════════
 
 case "$SUBCOMMAND" in
+  doctor)          source "$SCRIPT_DIR/doctor.sh"; sub_doctor ;;
   init)            sub_init ;;
   run)             sub_run ;;
   status)          sub_status ;;

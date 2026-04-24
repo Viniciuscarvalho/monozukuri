@@ -22,6 +22,7 @@ class Monozukuri < Formula
 
     # Loose helpers
     %w[
+      doctor.sh
       agent-discovery.sh route-tasks.sh worktree-manager.sh environment-discovery.sh
       feedback-collector.sh guardrails.sh audit_commands.sh project_inventory.sh
       validate_diff_scope.sh validate_spec_references.sh verify_build.sh
@@ -47,6 +48,7 @@ class Monozukuri < Formula
       Monozukuri (ものづくり) — the art of making things.
 
       Get started in any git project:
+        monozukuri doctor       # verify all dependencies
         monozukuri init
         monozukuri run --dry-run
         monozukuri run
