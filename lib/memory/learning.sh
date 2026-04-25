@@ -19,6 +19,35 @@
 #     backend=embedding and a local model is reachable
 #
 # JSON manipulation uses node -e (Node.js is a declared runtime dependency).
+#
+# Concurrent write safety: learning_write, learning_verify, and learning_promote
+# use a mkdir-based spinlock so background ingest jobs (ADR-009 PR-G) and Phase 3
+# fix-retry loops cannot interleave their read-modify-write cycles.
+
+# ── _learning_acquire_lock / _learning_release_lock ──────────────────────────
+# Portable lock using mkdir(1) which is atomic on POSIX filesystems.
+# Waits up to 10 s (100 × 0.1 s) then force-acquires to prevent deadlocks from
+# crashed processes that left a stale lock directory behind.
+
+_learning_acquire_lock() {
+  local store_path="$1"
+  local lock_dir="${store_path%.json}.lock"
+  local attempts=0
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 100 ]; then
+      rmdir "$lock_dir" 2>/dev/null || true
+      mkdir "$lock_dir" 2>/dev/null || true
+      break
+    fi
+    sleep 0.1
+  done
+}
+
+_learning_release_lock() {
+  local store_path="$1"
+  rmdir "${store_path%.json}.lock" 2>/dev/null || true
+}
 
 # ── Tier path helpers ────────────────────────────────────────────────
 
@@ -227,7 +256,7 @@ learning_read() {
 # ── learning_write ────────────────────────────────────────────────────
 # Usage: learning_write <feat_id> <error_sig> <fix>
 # Writes a new entry to the project tier (or updates existing if pattern matches).
-# Generates id: learn-<random hex>.
+# Generates id: learn-<random hex>. Atomic via per-file mkdir lock.
 
 learning_write() {
   local feat_id="$1"
@@ -239,6 +268,8 @@ learning_write() {
   _learning_ensure_file "$project_path"
 
   local ttl_days="${CFG_LEARNING_TTL_DAYS:-90}"
+
+  _learning_acquire_lock "$project_path"
 
   node -e "
     const fs = require('fs');
@@ -278,6 +309,8 @@ learning_write() {
     fs.writeFileSync(path, JSON.stringify(entries, null, 2));
   " 2>/dev/null || true
 
+  _learning_release_lock "$project_path"
+
   # ADR-009 PR-F: append embedding vector to sidecar when local model enabled
   if [ "${LOCAL_MODEL_ENABLED:-false}" = "true" ] && \
      [ "${CFG_LEARNING_SIMILARITY_BACKEND:-exact}" = "embedding" ]; then
@@ -300,7 +333,7 @@ learning_write() {
 
 # ── learning_verify ───────────────────────────────────────────────────
 # Usage: learning_verify <learn_id> <success:true|false> <tier_path>
-# Updates success_count/failure_count/confidence.
+# Updates success_count/failure_count/confidence. Atomic via per-file mkdir lock.
 # Auto-archives if confidence < 0.5 AND hits >= 3.
 # Marks promotion_candidate = true if confidence >= 0.8 AND hits >= 3.
 
@@ -310,6 +343,8 @@ learning_verify() {
   local tier_path="$3"
 
   [ -f "$tier_path" ] || return 0
+
+  _learning_acquire_lock "$tier_path"
 
   node -e "
     const fs = require('fs');
@@ -340,6 +375,44 @@ learning_verify() {
 
     fs.writeFileSync(path, JSON.stringify(entries, null, 2));
   " 2>/dev/null || true
+
+  _learning_release_lock "$tier_path"
+}
+
+# ── learning_verify_entry ─────────────────────────────────────────────
+# Usage: learning_verify_entry <learn_id> <success:true|false> [feat_id]
+# Locates the entry by ID across all tiers and verifies it. Callers do not
+# need to know which tier file the entry lives in.
+
+learning_verify_entry() {
+  local learn_id="$1"
+  local success="$2"
+  local feat_id="${3:-}"
+
+  [ -z "$learn_id" ] && return 0
+
+  local feat_path=""
+  [ -n "$feat_id" ] && feat_path=$(_learning_feature_path "$feat_id")
+  local project_path
+  project_path=$(_learning_project_path)
+  local global_path
+  global_path=$(_learning_global_path)
+
+  for tier_path in ${feat_path:+"$feat_path"} "$project_path" "$global_path"; do
+    [ -f "$tier_path" ] || continue
+    local found
+    found=$(node -p "
+      try {
+        const e = JSON.parse(require('fs').readFileSync('$tier_path','utf-8'))
+                    .find(e => e.id === '$learn_id');
+        e ? 'yes' : 'no';
+      } catch(_) { 'no'; }
+    " 2>/dev/null || echo "no")
+    if [ "$found" = "yes" ]; then
+      learning_verify "$learn_id" "$success" "$tier_path"
+      return 0
+    fi
+  done
 }
 
 # ── learning_prune_sweep ──────────────────────────────────────────────
@@ -476,6 +549,10 @@ learning_promote() {
 
   _learning_ensure_file "$global_path"
 
+  # Lock both tiers: acquire in deterministic order to avoid deadlock
+  _learning_acquire_lock "$from_tier_path"
+  _learning_acquire_lock "$global_path"
+
   node -e "
     const fs = require('fs');
     let src;
@@ -505,6 +582,9 @@ learning_promote() {
     fs.writeFileSync('$global_path', JSON.stringify(global, null, 2));
     console.log('  Promoted to global: $learn_id');
   " 2>/dev/null || true
+
+  _learning_release_lock "$global_path"
+  _learning_release_lock "$from_tier_path"
 }
 
 # ── gc_append_feature_summary ─────────────────────────────────────────
