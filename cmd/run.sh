@@ -47,6 +47,24 @@ sub_run() {
     fi
   fi
 
+  # Interactive: prompt when no project-specific config exists (TTY only)
+  if [ ! -f ".monozukuri/config.yaml" ] && [ ! -f ".monozukuri/config.yml" ] \
+      && [ -t 0 ] && [ "${OPT_NON_INTERACTIVE:-false}" != "true" ]; then
+    if command -v gum >/dev/null 2>&1; then
+      gum confirm "No project config found. Run 'monozukuri init' first?" \
+        && { source "$CMD_DIR/init.sh"; sub_init; } || exit 0
+    else
+      printf "No project config found. Run 'monozukuri init' first? [Y/n]: "
+      read -r _ans
+      case "${_ans:-Y}" in
+        [nN]*) exit 0 ;;
+        *) source "$CMD_DIR/init.sh"; sub_init ;;
+      esac
+    fi
+    # Re-resolve config after init
+    [ -f ".monozukuri/config.yaml" ] && config_file=".monozukuri/config.yaml"
+  fi
+
   # Load config + secrets + validate
   load_config "$config_file"
 
@@ -85,11 +103,12 @@ sub_run() {
 
   # Run adapter
   info "Loading backlog via $ADAPTER adapter..."
-  local count
-  count=$(run_adapter)
+  local adapter_out count
+  adapter_out=$(run_adapter)
+  # run_adapter prints a status line + the integer count; extract just the number
+  count=$(echo "$adapter_out" | grep -Eo '^[0-9]+$' | tail -1 || echo "$adapter_out" | tail -1 | grep -Eo '[0-9]+' | tail -1)
   info "Loaded $count features"
 
-  # Emit backlog.loaded (feature count as feature_count field)
   monozukuri_emit backlog.loaded feature_count "$count"
 
   # ADR-011 PR-B: sanitize backlog items before any feature processing

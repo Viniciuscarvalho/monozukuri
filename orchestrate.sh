@@ -86,10 +86,13 @@ OPT_LEARNING_ACTION=""
 OPT_LEARNING_ID=""
 OPT_LEARNING_CANDIDATES=false
 OPT_INGEST_FEAT=""
+OPT_JSON=false
+OPT_NON_INTERACTIVE=false
+OPT_CONFIG_ACTION=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config)
       SUBCOMMAND="$1"
       ;;
     --resume-paused)
@@ -125,8 +128,17 @@ while [ $# -gt 0 ]; do
     --candidates)
       OPT_LEARNING_CANDIDATES=true
       ;;
+    --json)
+      OPT_JSON=true
+      ;;
+    --non-interactive)
+      OPT_NON_INTERACTIVE=true
+      ;;
     list|archive|promote)
       [ "$SUBCOMMAND" = "learning" ] && OPT_LEARNING_ACTION="$1"
+      ;;
+    validate|show)
+      [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
       ;;
     --help|-h)
       echo "Usage: orchestrate.sh <command> [flags]"
@@ -134,6 +146,8 @@ while [ $# -gt 0 ]; do
       echo "Commands:"
       echo "  doctor                       Check all dependencies and report status"
       echo "  init                         Scaffold config, .env, features.md, .gitignore"
+      echo "  config validate              Validate .monozukuri/config.yaml against schema"
+      echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
@@ -156,6 +170,8 @@ while [ $# -gt 0 ]; do
       echo "  --ack                        Acknowledge human-class pauses for --resume-paused"
       echo "  --skip-cycle-check           Skip the cycle-completion gate"
       echo "  --sample <n>                 Sample size for calibrate (default: 10)"
+      echo "  --json                       Emit machine-readable JSON (status, learning list)"
+      echo "  --non-interactive            Skip all prompts; use defaults"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -178,7 +194,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-export OPT_SKIP_CYCLE_CHECK
+export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -198,6 +214,7 @@ case "$SUBCOMMAND" in
   status)          source "$CMD_DIR/status.sh"; sub_status ;;
   clean)           source "$CMD_DIR/cleanup.sh"; sub_clean ;;
   calibrate)       source "$CMD_DIR/calibrate.sh"; sub_calibrate ;;
+  config)          source "$CMD_DIR/config.sh"; sub_config ;;
   learning)        source "$CMD_DIR/learning.sh"; sub_learning ;;
   promote-learning) source "$CMD_DIR/learning.sh"; sub_promote_learning ;;
   resume-paused)   source "$CMD_DIR/resume.sh"; sub_resume_paused ;;

@@ -23,8 +23,12 @@ sub_learning() {
 
   case "${OPT_LEARNING_ACTION:-list}" in
     list)
-      banner "Learning Entries (project tier)"
-      learning_list "$project_path" "$OPT_LEARNING_CANDIDATES"
+      if [ "${OPT_JSON:-false}" = "true" ]; then
+        [ -f "$project_path" ] && cat "$project_path" || echo '{"entries":[]}'
+      else
+        banner "Learning Entries (project tier)"
+        learning_list "$project_path" "$OPT_LEARNING_CANDIDATES"
+      fi
       ;;
     archive)
       if [ -z "$OPT_LEARNING_ID" ]; then

@@ -5,6 +5,23 @@
 # STATE_DIR, RESULTS_DIR, and all OPT_* variables.
 
 sub_init() {
+  # Interactive 3-question setup (TTY only; skipped when piped or --non-interactive)
+  local _adapter="markdown" _autonomy="checkpoint" _model="opusplan"
+  if [ -t 0 ] && [ "${OPT_NON_INTERACTIVE:-false}" != "true" ]; then
+    if command -v gum >/dev/null 2>&1; then
+      _adapter=$(gum choose --header "Which backlog adapter?" "markdown" "github" "linear")
+      _autonomy=$(gum choose --header "Default autonomy level?" "checkpoint" "supervised" "full_auto")
+      _model=$(gum choose --header "Default model?" "opusplan" "opus" "sonnet" "haiku")
+    else
+      printf "Adapter [markdown/github/linear] (default: markdown): "
+      read -r _adapter; _adapter=${_adapter:-markdown}
+      printf "Autonomy [supervised/checkpoint/full_auto] (default: checkpoint): "
+      read -r _autonomy; _autonomy=${_autonomy:-checkpoint}
+      printf "Model [opusplan/opus/sonnet/haiku] (default: opusplan): "
+      read -r _model; _model=${_model:-opusplan}
+    fi
+  fi
+
   banner "Initializing orchestrator in $(basename "$PROJECT_ROOT")"
 
   mkdir -p .monozukuri/{results,context,logs}
@@ -13,15 +30,23 @@ sub_init() {
   if [ ! -f .monozukuri/config.yaml ]; then
     if [ -f "$TEMPLATES_DIR/config.yaml" ]; then
       cp "$TEMPLATES_DIR/config.yaml" .monozukuri/config.yaml
+      # Patch adapter/autonomy/model into the copied template
+      if command -v sed >/dev/null 2>&1; then
+        sed -i.bak \
+          -e "s/^  adapter: .*/  adapter: $_adapter/" \
+          -e "s/^autonomy: .*/autonomy: $_autonomy/" \
+          -e "s/^  default: .*/  default: $_model/" \
+          .monozukuri/config.yaml && rm -f .monozukuri/config.yaml.bak
+      fi
     else
-      cat > .monozukuri/config.yaml <<'EOCFG'
+      cat > .monozukuri/config.yaml <<EOCFG
 source:
-  adapter: markdown
+  adapter: $_adapter
   output: orchestration-backlog.json
   markdown:
     file: features.md
 
-autonomy: checkpoint
+autonomy: $_autonomy
 
 execution:
   base_branch: main
@@ -49,6 +74,9 @@ pr_creation:
 
 discovery:
   enabled: true
+
+model:
+  default: $_model
 
 skill:
   command: feature-marker
@@ -114,9 +142,8 @@ STARTER
 
   echo ""
   echo "Next steps:"
-  echo "  1. cp .env.example .env && vim .env"
-  echo "  2. vim .monozukuri/config.yaml"
-  echo "  3. vim features.md"
-  echo "  4. monozukuri --dry-run"
-  echo "  5. monozukuri"
+  echo "  1. Fill in secrets: vim .env"
+  echo "  2. Add features:    vim features.md"
+  echo "  3. Preview plan:    monozukuri run --dry-run"
+  echo "  4. Run:             monozukuri run"
 }

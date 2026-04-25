@@ -1,0 +1,254 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Monozukuri config.yaml",
+  "description": "Schema for .monozukuri/config.yaml",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": [
+        "adapter"
+      ],
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": [
+            "markdown",
+            "github",
+            "linear"
+          ],
+          "description": "Which backlog adapter to use"
+        },
+        "output": {
+          "type": "string",
+          "default": "orchestration-backlog.json"
+        },
+        "markdown": {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string",
+              "default": "features.md"
+            }
+          }
+        },
+        "github": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "default": "feature-marker"
+            },
+            "repo": {
+              "type": "string"
+            }
+          }
+        },
+        "linear": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string",
+              "default": "ENG"
+            },
+            "state": {
+              "type": "string",
+              "default": "Todo"
+            }
+          }
+        }
+      }
+    },
+    "autonomy": {
+      "type": "string",
+      "enum": [
+        "supervised",
+        "checkpoint",
+        "full_auto"
+      ],
+      "description": "Default autonomy level for the orchestration loop"
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": [
+            "opusplan",
+            "opus",
+            "sonnet",
+            "haiku"
+          ],
+          "description": "Default model for all phases"
+        },
+        "plan": {
+          "type": "string",
+          "description": "Override model for planning phase"
+        },
+        "execute": {
+          "type": "string",
+          "description": "Override model for execution phase"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "base_branch": {
+          "type": "string",
+          "default": "main"
+        },
+        "skip_done": {
+          "type": "boolean",
+          "default": true
+        },
+        "skip_blocked": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "worktrees": {
+      "type": "object",
+      "properties": {
+        "base_path": {
+          "type": "string",
+          "default": ".worktrees"
+        },
+        "branch_prefix": {
+          "type": "string",
+          "default": "feat"
+        },
+        "auto_cleanup": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "carry_forward_from": {
+          "type": "string",
+          "default": "global-context.md"
+        },
+        "error_pattern_window": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5
+        },
+        "env_refresh": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "properties": {
+        "breaking_change_pause": {
+          "type": "boolean",
+          "default": true
+        },
+        "schema_migration_review": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_file_changes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50
+        }
+      }
+    },
+    "pr_creation": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "ready"
+          ],
+          "default": "draft"
+        },
+        "auto_assign": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "default": "feature-marker"
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "prefer_agents": {
+          "type": "boolean",
+          "default": true
+        },
+        "fallback": {
+          "type": "string"
+        }
+      }
+    },
+    "local_model": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "ollama"
+          ],
+          "default": "ollama"
+        },
+        "endpoint": {
+          "type": "string",
+          "default": "http://localhost:11434"
+        },
+        "embedding_model": {
+          "type": "string",
+          "default": "nomic-embed-text"
+        },
+        "classifier_model": {
+          "type": "string",
+          "default": "llama3.2:3b"
+        },
+        "summarizer_model": {
+          "type": "string",
+          "default": "llama3.2:3b"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10
+        },
+        "fail_open": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}
