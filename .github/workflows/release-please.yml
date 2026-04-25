@@ -1,0 +1,81 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+
+  publish-npm:
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install and build UI
+        run: npm install --prefix ui && npm run build --prefix ui
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  update-homebrew-tap:
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute tarball SHA256
+        id: sha
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          URL="https://github.com/Viniciuscarvalho/monozukuri/archive/refs/tags/${TAG}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+      - name: Open Homebrew tap PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          script: |
+            const { sha256, url, version } = ${{ toJSON(steps.sha.outputs) }};
+            const { Octokit } = require('@octokit/rest');
+            const octokit = new Octokit({ auth: process.env.HOMEBREW_TAP_TOKEN });
+            // Get current formula
+            const { data: file } = await octokit.repos.getContent({
+              owner: 'Viniciuscarvalho', repo: 'homebrew-tap',
+              path: 'Formula/monozukuri.rb'
+            });
+            const content = Buffer.from(file.content, 'base64').toString();
+            const updated = content
+              .replace(/url ".*"/, `url "${url}"`)
+              .replace(/sha256 ".*"/, `sha256 "${sha256}"`)
+              .replace(/version ".*"/, `version "${version}"`);
+            await octokit.repos.createOrUpdateFileContents({
+              owner: 'Viniciuscarvalho', repo: 'homebrew-tap',
+              path: 'Formula/monozukuri.rb',
+              message: `chore: bump monozukuri to ${version}`,
+              content: Buffer.from(updated).toString('base64'),
+              sha: file.sha,
+              branch: `bump/monozukuri-${version}`
+            });

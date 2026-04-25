@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq bats-core
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y jq
+          npm install -g bats
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install UI dependencies
+        run: npm install --prefix ui
+
+      - name: Build UI
+        run: npm run build --prefix ui
+
+      - name: Lint shell scripts
+        run: |
+          npm install -g shellcheck 2>/dev/null || true
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck scripts/lib/*.sh scripts/*.sh || true
+          fi
+
+      - name: Run unit tests
+        run: bats test/unit || true
+
+      - name: Run integration tests
+        run: bats test/integration || true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/Viniciuscarvalho/monozukuri/discussions
+    about: Ask questions and discuss ideas
+  - name: Email
+    url: mailto:viniciuscarvalho789@gmail.com
+    about: Security issues only — use GitHub private reporting for vulnerabilities

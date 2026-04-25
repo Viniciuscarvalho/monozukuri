@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3497da7216fd79e2fef661b8ca60434e0b2b3b68
+    hooks:
+      - id: shellcheck
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0
+    hooks:
+      - id: prettier
+        types_or: [markdown, yaml, json]

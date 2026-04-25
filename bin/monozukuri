@@ -1,16 +1,61 @@
-#!/bin/bash
-set -euo pipefail
-WRAPPER_PATH="$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")"
-BIN_DIR="$(cd "$(dirname "$WRAPPER_PATH")" && pwd)"
-LIBEXEC_DIR="$(cd "$BIN_DIR/../libexec/monozukuri" 2>/dev/null && pwd || true)"
-if [ -z "${LIBEXEC_DIR:-}" ] || [ ! -f "${LIBEXEC_DIR}/orchestrate.sh" ]; then
-  REPO_DIR="$(cd "$BIN_DIR/.." && pwd)"
-  if [ -f "$REPO_DIR/scripts/orchestrate.sh" ]; then
-    LIBEXEC_DIR="$REPO_DIR/scripts"
-  else
-    echo "Cannot find Monozukuri scripts." >&2
-    exit 1
-  fi
-fi
-export MONOZUKURI_HOME="$LIBEXEC_DIR"
-exec bash "$LIBEXEC_DIR/orchestrate.sh" "$@"
+#!/usr/bin/env node
+// bin/monozukuri — Node dispatcher
+// Resolves the shell orchestrator, optionally pipes stdout through the Ink UI.
+// Non-TTY or --no-ui: raw passthrough (same behavior as the old bash wrapper).
+// TTY + long commands (run): pipes events to ui/dist/index.js when it exists.
+
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Resolve script root: Homebrew (../libexec/monozukuri/) or repo (../scripts/)
+function findScriptRoot() {
+  const homebrewPath = resolve(__dirname, '..', 'libexec', 'monozukuri');
+  if (existsSync(join(homebrewPath, 'orchestrate.sh'))) return homebrewPath;
+  const repoPath = resolve(__dirname, '..', 'scripts');
+  if (existsSync(join(repoPath, 'orchestrate.sh'))) return repoPath;
+  throw new Error('Cannot find Monozukuri scripts. Check your installation.');
+}
+
+const SCRIPT_ROOT = findScriptRoot();
+const orchestrate = join(SCRIPT_ROOT, 'orchestrate.sh');
+const args = process.argv.slice(2);
+const cmd = args[0] ?? '';
+
+// Decide whether to pipe through the Ink UI
+const uiDist = resolve(__dirname, '..', 'ui', 'dist', 'index.js');
+const UI_COMMANDS = new Set(['run']);
+const wantsUI =
+  process.stdout.isTTY &&
+  UI_COMMANDS.has(cmd) &&
+  !args.includes('--no-ui') &&
+  !args.includes('--json') &&
+  !args.includes('--dry-run') &&
+  !args.includes('--plan') &&
+  existsSync(uiDist);
+
+const runId = crypto.randomUUID();
+
+const orchestrator = spawn('bash', [orchestrate, ...args], {
+  env: { ...process.env, MONOZUKURI_HOME: SCRIPT_ROOT, MONOZUKURI_RUN_ID: runId },
+  stdio: wantsUI ? ['inherit', 'pipe', 'inherit'] : 'inherit',
+});
+
+if (wantsUI) {
+  const ui = spawn('node', [uiDist], {
+    stdio: ['pipe', 'inherit', 'inherit'],
+    env: {
+      ...process.env,
+      MONOZUKURI_ORCHESTRATOR_PID: String(orchestrator.pid),
+      MONOZUKURI_RUN_ID: runId,
+    },
+  });
+  orchestrator.stdout?.pipe(ui.stdin);
+  ui.on('exit', () => orchestrator.kill('SIGINT'));
+}
+
+orchestrator.on('exit', (code) => process.exit(code ?? 0));

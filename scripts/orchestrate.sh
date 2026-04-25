@@ -310,6 +310,13 @@ STARTER
 # ══════════════════════════════════════════════════════════════════
 
 sub_run() {
+  # Load event emitter (no-ops gracefully when absent or jq missing)
+  if [ -f "$LIB_DIR/emit.sh" ]; then
+    source "$LIB_DIR/emit.sh"
+  else
+    monozukuri_emit() { :; }
+  fi
+
   # Load modules
   source "$LIB_DIR/util.sh"
   source "$LIB_DIR/config.sh"
@@ -374,11 +381,20 @@ sub_run() {
   # Environment discovery
   mem_refresh_env
 
+  # Emit run.started
+  monozukuri_emit run.started \
+    autonomy "$AUTONOMY" \
+    model "$MODEL_DEFAULT" \
+    source "$ADAPTER"
+
   # Run adapter
   info "Loading backlog via $ADAPTER adapter..."
   local count
   count=$(run_adapter)
   info "Loaded $count features"
+
+  # Emit backlog.loaded (feature count as feature_count field)
+  monozukuri_emit backlog.loaded feature_count "$count"
 
   # ADR-011 PR-B: sanitize backlog items before any feature processing
   if [ "${SANITIZE_MODE:-strict}" != "off" ] && command -v node &>/dev/null; then

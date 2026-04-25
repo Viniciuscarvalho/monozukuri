@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# test/fixtures/mock-claude — canned claude CLI for integration tests.
+# Prints skill-style output and exits 0 so the orchestrator treats it as success.
+echo "mock-claude: invoked with args: $*"
+echo "Implementing feature..."
+echo "Done."
+exit 0

@@ -282,6 +282,8 @@ run_feature() {
   fi
   [ "$current" != "none" ] && info "Resuming $feat_id (status: $current)"
 
+  monozukuri_emit feature.started feature_id "$feat_id" title "$title" priority "$priority"
+
   # Mark as in progress
   wt_update_status "$feat_id" "in-progress" "analysis" 2>/dev/null || true
 
@@ -611,6 +613,7 @@ PYEOF
     else
       # supervised — the interactive session handled Phase 4; mark complete
       wt_update_status "$feat_id" "done" "complete"
+      monozukuri_emit feature.completed feature_id "$feat_id"
       info "Done: $feat_id (supervised)"
     fi
   elif [ "$exit_code" -eq 2 ]; then
@@ -632,6 +635,7 @@ PYEOF
       mem_record_error "$feat_id" "implementation" "exit code $exit_code"
     else
       wt_update_status "$feat_id" "failed" "pipeline-error"
+      monozukuri_emit feature.failed feature_id "$feat_id" error "max-retries-exceeded (exit $exit_code)"
       _runner_record_pause "$feat_id" "transient" "max-retries-exceeded"
       mem_record_error "$feat_id" "implementation" "FINAL FAILURE exit code $exit_code"
       err "$feat_id failed after $MAX_RETRIES attempts"
@@ -1071,6 +1075,7 @@ run_pr_creation() {
 
   if [ $pr_exit -eq 0 ] && [ -n "$pr_url" ]; then
     wt_update_status "$feat_id" "pr-created" "complete"
+    monozukuri_emit feature.completed feature_id "$feat_id" pr_url "$pr_url"
     node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('$results_file','utf-8'));r.pr_url='$pr_url';r.pipeline.review={status:'completed',pr_url:'$pr_url'};fs.writeFileSync('$results_file',JSON.stringify(r,null,2));" 2>/dev/null || true
     info "PR: $pr_url"
     # ADR-009 PR-G / ADR-010: trigger background review-ingest when available
