@@ -12,12 +12,14 @@ import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Resolve script root: Homebrew (../libexec/monozukuri/) or repo (../scripts/)
+// Resolve script root: Homebrew (../libexec/monozukuri/), repo root (../), or repo scripts (../scripts/)
 function findScriptRoot() {
   const homebrewPath = resolve(__dirname, '..', 'libexec', 'monozukuri');
   if (existsSync(join(homebrewPath, 'orchestrate.sh'))) return homebrewPath;
-  const repoPath = resolve(__dirname, '..', 'scripts');
-  if (existsSync(join(repoPath, 'orchestrate.sh'))) return repoPath;
+  const repoRoot = resolve(__dirname, '..');
+  if (existsSync(join(repoRoot, 'orchestrate.sh'))) return repoRoot;
+  const repoScripts = resolve(__dirname, '..', 'scripts');
+  if (existsSync(join(repoScripts, 'orchestrate.sh'))) return repoScripts;
   throw new Error('Cannot find Monozukuri scripts. Check your installation.');
 }
 
