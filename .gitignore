@@ -1,3 +1,25 @@
 ui/node_modules/
 ui/dist/
 .monozukuri-test/
+
+# AI agent skill dirs (agent-specific; canonical source is .agents/skills/)
+.codebuddy/
+.commandcode/
+.continue/
+.crush/
+.factory/
+.goose/
+.kilocode/
+.kiro/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.zencoder/
+skills/
