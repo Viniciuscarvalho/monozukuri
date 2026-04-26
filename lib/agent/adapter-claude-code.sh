@@ -83,35 +83,81 @@ _cc_inject_schemas() {
   done
 }
 
-agent_run_phase() {
-  local feat_id="${MONOZUKURI_FEATURE_ID:?agent_run_phase: MONOZUKURI_FEATURE_ID not set}"
-  local wt_path="${MONOZUKURI_WORKTREE:?agent_run_phase: MONOZUKURI_WORKTREE not set}"
-  local log_file="${MONOZUKURI_LOG_FILE:-/tmp/monozukuri-${feat_id}-$(date +%s).log}"
-
-  local skill_arg="${SKILL_COMMAND:-feature-marker}"
+# _cc_run_phase_render PHASE FEAT_ID WT_PATH LOG_FILE
+# Phase-aware render path: renders template → pipes to claude --print.
+# Used when MONOZUKURI_PHASE=prd|techspec and CONTEXT_JSON is set.
+_cc_run_phase_render() {
+  local phase="$1" feat_id="$2" wt_path="$3" log_file="$4"
   local effective_model="${MONOZUKURI_MODEL:-}"
-  [ "$effective_model" = "opusplan" ] && effective_model="opus"
+  [ "$effective_model" = "opusplan" ] && effective_model="sonnet"
 
   local perm_flag=""
-  [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--permission-mode bypassPermissions"
+  [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--dangerously-skip-permissions"
 
-  local interactive_flag=""
-  [ "${MONOZUKURI_AUTONOMY:-}" = "supervised" ] && interactive_flag="--interactive"
+  # Source render.sh if not already loaded
+  if ! declare -f render_phase_prompt &>/dev/null; then
+    local _render_sh
+    _render_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/prompt/render.sh"
+    [[ -f "$_render_sh" ]] && source "$_render_sh"
+  fi
 
-  # ADR-012: inject schemas before invoking the agent
-  _cc_inject_schemas "$wt_path"
+  local rendered_prompt
+  rendered_prompt=$(render_phase_prompt "$phase") || return 1
 
-  # Capture exit code through the tee pipeline via pipefail in the subshell
+  local artifact_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$artifact_dir"
+  local artifact_file="$artifact_dir/${phase}.md"
+
   local exit_code=0
   (
     set -o pipefail
     cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
       ${effective_model:+--model "$effective_model"} \
-      --agent "$skill_arg" \
       $perm_flag \
-      ${interactive_flag:+$interactive_flag} \
-      -p "prd-$feat_id" 2>&1 | tee "$log_file"
+      -p "$rendered_prompt" 2>&1 | tee "$log_file"
   ) || exit_code=$?
+
+  [ "$exit_code" -eq 0 ] && [ -s "$log_file" ] && cp "$log_file" "$artifact_file" || true
+  return "$exit_code"
+}
+
+agent_run_phase() {
+  local feat_id="${MONOZUKURI_FEATURE_ID:?agent_run_phase: MONOZUKURI_FEATURE_ID not set}"
+  local wt_path="${MONOZUKURI_WORKTREE:?agent_run_phase: MONOZUKURI_WORKTREE not set}"
+  local log_file="${MONOZUKURI_LOG_FILE:-/tmp/monozukuri-${feat_id}-$(date +%s).log}"
+
+  # ADR-012: inject schemas before invoking the agent
+  _cc_inject_schemas "$wt_path"
+
+  local exit_code=0
+
+  # Phase-aware render path (prd/techspec when CONTEXT_JSON is set)
+  if [[ "${MONOZUKURI_PHASE:-}" == "prd" || "${MONOZUKURI_PHASE:-}" == "techspec" ]] && \
+     [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
+    _cc_run_phase_render "$MONOZUKURI_PHASE" "$feat_id" "$wt_path" "$log_file" \
+      || exit_code=$?
+  else
+    # Legacy feature-marker path
+    local skill_arg="${SKILL_COMMAND:-feature-marker}"
+    local effective_model="${MONOZUKURI_MODEL:-}"
+    [ "$effective_model" = "opusplan" ] && effective_model="opus"
+
+    local perm_flag=""
+    [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--permission-mode bypassPermissions"
+
+    local interactive_flag=""
+    [ "${MONOZUKURI_AUTONOMY:-}" = "supervised" ] && interactive_flag="--interactive"
+
+    (
+      set -o pipefail
+      cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        ${effective_model:+--model "$effective_model"} \
+        --agent "$skill_arg" \
+        $perm_flag \
+        ${interactive_flag:+$interactive_flag} \
+        -p "prd-$feat_id" 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+  fi
 
   # ADR-013: write error envelope so policy engine can classify without log scraping
   if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then

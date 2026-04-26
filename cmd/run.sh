@@ -50,6 +50,9 @@ sub_run() {
   module_require run/policy
   module_require run/manifest
   module_require run/ci-poll
+  # ADR-012 (Gap 3): phase template rendering + adapter routing
+  module_require prompt/context-pack
+  module_require agent/registry
   # Phase modules (extracted from pipeline.sh)
   module_require run/pause
   module_require run/phase-3

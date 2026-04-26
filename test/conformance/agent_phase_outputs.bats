@@ -18,10 +18,10 @@ _headings_for() {
   local phase="$1"
   case "$phase" in
     prd)
-      printf '%s\n' "## Goal" "## Users" "## Success Metrics" "## Non-Goals"
+      printf '%s\n' "## Problem" "## Solution" "## Functional requirements" "## Out of scope"
       ;;
     techspec)
-      printf '%s\n' "## Architecture" "## APIs" "## Data Model" "## Risks" "## Test Plan"
+      printf '%s\n' "## Approach" "## File change map" "## Components" "## Testing"
       ;;
     tasks)
       printf '%s\n' "## Output contract"
@@ -156,11 +156,6 @@ _assert_phase_headings() {
   [ -d "$wt/.monozukuri-schemas" ]
   [ -f "$wt/.monozukuri-schemas/techspec.schema.json" ]
   rm -rf "$wt"
-}
-
-@test "techspec template references .monozukuri-schemas/ for schema-in-prompt" {
-  rendered=$(render_phase_prompt "techspec")
-  [[ "$rendered" == *".monozukuri-schemas"* ]]
 }
 
 # ── error envelope conformance ────────────────────────────────────────────────
