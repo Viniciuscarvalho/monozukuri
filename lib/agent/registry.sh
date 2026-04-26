@@ -50,15 +50,15 @@ registry_prepare_phase() {
 }
 
 # registry_dispatch PHASE FEAT_ID WT_PATH
-# Prepares phase env, loads the adapter if needed, and calls agent_run_phase.
+# Loads the adapter first so agent_native_context_files is available during
+# context_pack_build, then prepares phase env and runs.
 registry_dispatch() {
   local phase="$1" feat_id="$2" wt_path="${3:-${MONOZUKURI_WORKTREE:-}}"
-
-  registry_prepare_phase "$phase" "$feat_id" "$wt_path"
 
   if ! declare -f agent_run_phase &>/dev/null; then
     agent_load "$(registry_adapter_for_phase "$phase")"
   fi
 
+  registry_prepare_phase "$phase" "$feat_id" "$wt_path"
   agent_run_phase
 }
