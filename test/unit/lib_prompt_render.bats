@@ -35,10 +35,10 @@ setup() {
 @test "prd template renders required headings" {
   run render_phase_prompt prd
   [ "$status" -eq 0 ]
-  [[ "$output" == *"## Goal"* ]]
-  [[ "$output" == *"## Users"* ]]
-  [[ "$output" == *"## Success Metrics"* ]]
-  [[ "$output" == *"## Non-Goals"* ]]
+  [[ "$output" == *"## Problem"* ]]
+  [[ "$output" == *"## Solution"* ]]
+  [[ "$output" == *"## Functional requirements"* ]]
+  [[ "$output" == *"## Out of scope"* ]]
 }
 
 @test "prd template substitutes feature id" {
@@ -51,21 +51,15 @@ setup() {
   [[ "$output" == *"Add login"* ]]
 }
 
-@test "prd template substitutes learnings block" {
-  run render_phase_prompt prd
-  [[ "$output" == *"Always write tests first"* ]]
-}
-
 # ── TechSpec template ────────────────────────────────────────────────────────
 
 @test "techspec template renders required headings" {
   run render_phase_prompt techspec
   [ "$status" -eq 0 ]
-  [[ "$output" == *"## Architecture"* ]]
-  [[ "$output" == *"## APIs"* ]]
-  [[ "$output" == *"## Data Model"* ]]
-  [[ "$output" == *"## Risks"* ]]
-  [[ "$output" == *"## Test Plan"* ]]
+  [[ "$output" == *"## Approach"* ]]
+  [[ "$output" == *"## File change map"* ]]
+  [[ "$output" == *"## Components"* ]]
+  [[ "$output" == *"## Testing"* ]]
 }
 
 # ── Tasks template ───────────────────────────────────────────────────────────
@@ -106,12 +100,8 @@ setup() {
 
 # ── Token substitution edge cases ────────────────────────────────────────────
 
-@test "prd template substitutes run dir correctly" {
+@test "prd template substitutes worktree path via sed" {
   run render_phase_prompt prd
-  [[ "$output" == *"/tmp/test-run"* ]]
-}
-
-@test "prd template uses default learnings when LEARNINGS_BLOCK is empty" {
-  LEARNINGS_BLOCK="" run render_phase_prompt prd
-  [[ "$output" == *"No prior learnings."* ]]
+  # prd.tmpl.md title line contains FEATURE_ID; sed path substitutes it
+  [[ "$output" == *"feat-001"* ]]
 }

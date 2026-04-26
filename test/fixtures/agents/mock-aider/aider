@@ -1,0 +1,8 @@
+#!/bin/bash
+# mock aider binary for conformance testing
+case "${1:-}" in
+  --version) echo "mock-aider 0.0.0"; exit 0 ;;
+  --fail)    echo "mock aider failure" >&2; exit 1 ;;
+esac
+echo "mock-aider: $*"
+exit 0

@@ -1,0 +1,23 @@
+{
+  "FEATURE_ID": "feat-001",
+  "FEATURE_TITLE": "Add login",
+  "SOURCE_REF": "test",
+  "DATE": "2026-04-26",
+  "STATUS": "draft",
+  "STACK": "Node.js",
+  "LANGUAGES": "TypeScript",
+  "FRAMEWORKS": "Express",
+  "PACKAGE_MANAGER": "npm",
+  "TEST_FRAMEWORK": "vitest",
+  "ENTRY_POINTS": "src/index.ts",
+  "ORIGINAL_PROMPT": "Add a user login endpoint",
+  "MAX_FILES": "8",
+  "project_learnings": [
+    {
+      "summary": "Always write tests first."
+    },
+    {
+      "summary": "Use TypeScript strict mode."
+    }
+  ]
+}
