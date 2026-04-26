@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.8.0...v1.9.0) (2026-04-26)
+
+
+### Features
+
+* **gap7:** implicit-dep detection + ingestion validator (ADR-015) ([5852a39](https://github.com/Viniciuscarvalho/monozukuri/commit/5852a392597df28ce150a65ee49ffd4ef3eb6d94))
+
 ## [1.8.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.7.0...v1.8.0) (2026-04-26)
 
 
