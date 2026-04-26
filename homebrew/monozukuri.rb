@@ -16,22 +16,22 @@ class Monozukuri < Formula
   def install
     libexec_dir = libexec/"monozukuri"
 
-    libexec_dir.install "scripts/orchestrate.sh"
-    libexec_dir.install Dir["scripts/lib"]
-    libexec_dir.install Dir["scripts/adapters"]
+    # Main entry point (top-level orchestrate.sh, not the scripts/ shim)
+    libexec_dir.install "orchestrate.sh"
 
-    # Loose helpers
-    %w[
-      doctor.sh
-      agent-discovery.sh route-tasks.sh worktree-manager.sh environment-discovery.sh
-      feedback-collector.sh guardrails.sh audit_commands.sh project_inventory.sh
-      validate_diff_scope.sh validate_spec_references.sh verify_build.sh
-      sanitize-backlog.js parse-config.js status-writer.js
-    ].each do |f|
-      libexec_dir.install "scripts/#{f}" if File.exist?("scripts/#{f}")
-    end
+    # Library modules and sub-commands (Compozy-style layout)
+    libexec_dir.install "lib"
+    libexec_dir.install "cmd"
 
-    libexec_dir.install Dir["templates"]
+    # Loose helpers called by lib/ via $SCRIPTS_DIR
+    scripts_dest = libexec_dir/"scripts"
+    scripts_dest.mkpath
+    Dir["scripts/*.sh", "scripts/*.js"].each { |f| scripts_dest.install f }
+    adapters_dest = scripts_dest/"adapters"
+    adapters_dest.mkpath
+    Dir["scripts/adapters/*"].each { |f| adapters_dest.install f }
+
+    libexec_dir.install "templates"
 
     libexec_dir.glob("**/*.sh").each { |f| f.chmod 0755 }
 
@@ -53,10 +53,11 @@ class Monozukuri < Formula
         monozukuri run --dry-run
         monozukuri run
 
-      By default, Monozukuri invokes the feature-marker Claude Code skill.
-      Change the skill in .monozukuri/config.yaml:
-        skill:
-          command: feature-marker   # or any other Claude Code skill
+      Choose your coding agent in .monozukuri/config.yaml:
+        agent: claude-code   # default
+        agent: codex         # OpenAI Codex CLI
+        agent: gemini        # Google Gemini CLI
+        agent: kiro          # AWS Kiro
 
       Dependencies installed automatically:
         jq   — JSON processing

@@ -2,9 +2,9 @@
 
 ## What this repo is
 
-Monozukuri is a terminal orchestrator that reads a backlog (Linear, GitHub Issues, or `features.md`), creates isolated git worktrees, and invokes a Claude Code skill for each feature — producing pull requests autonomously.
+Monozukuri is a terminal orchestrator that reads a backlog (Linear, GitHub Issues, or `features.md`), creates isolated git worktrees, and invokes a coding agent for each feature — producing pull requests autonomously. It supports Claude Code, Codex, Gemini, and Kiro through a uniform agent adapter contract.
 
-It is **not** a Claude Code skill itself. It runs _outside_ Claude Code and calls it via the `claude` CLI.
+It is **not** a Claude Code skill itself. It runs _outside_ any coding agent and calls it via the agent's CLI.
 
 ## State directory
 
@@ -14,12 +14,12 @@ It is **not** a Claude Code skill itself. It runs _outside_ Claude Code and call
 
 ## Key env vars
 
-| Variable          | Purpose                                                      |
-| ----------------- | ------------------------------------------------------------ |
-| `MONOZUKURI_HOME` | Set by wrappers; points to `scripts/` directory              |
-| `ANTHROPIC_MODEL` | Override model (takes highest precedence over config)        |
-| `LINEAR_API_KEY`  | Required when `source.adapter: linear`                       |
-| `SKILL_COMMAND`   | Exported from `config.sh`; which Claude Code skill to invoke |
+| Variable          | Purpose                                                       |
+| ----------------- | ------------------------------------------------------------- |
+| `MONOZUKURI_HOME` | Set by wrappers; points to the install root (contains `lib/`) |
+| `ANTHROPIC_MODEL` | Override model (takes highest precedence over config)         |
+| `LINEAR_API_KEY`  | Required when `source.adapter: linear`                        |
+| `SKILL_COMMAND`   | Deprecated; maps to `agents.claude-code.skills.<phase>`       |
 
 ## Entry points
 
@@ -27,24 +27,28 @@ It is **not** a Claude Code skill itself. It runs _outside_ Claude Code and call
 | ------------- | ----------------------------------------------- |
 | Homebrew      | `monozukuri <subcommand>`                       |
 | NPX           | `npx @viniciuscarvalho/monozukuri <subcommand>` |
-| Repo (dev)    | `./scripts/orchestrate.sh <subcommand>`         |
+| Repo (dev)    | `./orchestrate.sh <subcommand>`                 |
 
-All three set `MONOZUKURI_HOME` and exec `scripts/orchestrate.sh`.
+All three set `MONOZUKURI_HOME` and exec `orchestrate.sh`. The top-level `orchestrate.sh` resolves `LIB_DIR=$MONOZUKURI_HOME/lib`, `CMD_DIR=$MONOZUKURI_HOME/cmd`, and `SCRIPTS_DIR=$MONOZUKURI_HOME/scripts` (loose helpers).
 
-## Skill invocation
+`scripts/orchestrate.sh` is a compatibility shim for Homebrew v1.0.0 installs only.
 
-The default skill is `feature-marker`. Change it in `.monozukuri/config.yaml`:
+## Agent invocation
+
+The default agent is `claude-code`. Change it in `.monozukuri/config.yaml`:
 
 ```yaml
-skill:
-  command: feature-marker # any Claude Code slash-command
+agent: claude-code # default — uses the claude CLI
+# agent: codex       # OpenAI Codex CLI
+# agent: gemini      # Google Gemini CLI
+# agent: kiro        # AWS Kiro
 ```
 
-`config.sh` exports `SKILL_COMMAND`; `runner.sh` reads `${SKILL_COMMAND:-feature-marker}`.
+Legacy config (`skill.command: feature-marker`) is supported via a back-compat shim in `lib/config/load.sh`.
 
 ## Module load order (sub_run)
 
-`util → config → worktree → memory → display → json_io → stack_profile → cost → router → learning → size_gate → cycle_gate → [local_model] → [ingest] → [injection_screen] → runner`
+`lib/core/util.sh → lib/config/load.sh → lib/core/worktree.sh → lib/memory/memory.sh → lib/cli/output.sh → lib/core/json-io.sh → lib/core/stack-profile.sh → lib/core/cost.sh → lib/core/router.sh → lib/memory/learning.sh → lib/run/cycle-gate.sh → [lib/run/local-model.sh] → [lib/run/ingest.sh] → [lib/run/injection-screen.sh] → lib/run/pipeline.sh`
 
 ## Config resolution order
 
