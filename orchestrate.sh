@@ -89,11 +89,19 @@ OPT_INGEST_FEAT=""
 OPT_JSON=false
 OPT_NON_INTERACTIVE=false
 OPT_CONFIG_ACTION=""
+OPT_AGENT_SUBCMD=""
+OPT_AGENT_NAME=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config)
-      SUBCOMMAND="$1"
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent)
+      if [ -z "$SUBCOMMAND" ]; then
+        SUBCOMMAND="$1"
+      elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
+        OPT_AGENT_SUBCMD="$1"
+      elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_NAME" ]; then
+        OPT_AGENT_NAME="$1"
+      fi
       ;;
     --resume-paused)
       shift; OPT_RESUME_FEAT="$1"; SUBCOMMAND="resume-paused"
@@ -140,6 +148,9 @@ while [ $# -gt 0 ]; do
     validate|show)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
       ;;
+    list|enable)
+      [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ] && OPT_AGENT_SUBCMD="$1"
+      ;;
     --help|-h)
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
@@ -158,6 +169,9 @@ while [ $# -gt 0 ]; do
       echo "  learning promote <id>        Promote a project entry to global tier"
       echo "  promote-learning <id>        Alias for: learning promote <id>"
       echo "  ingest-status                Show active background ingest jobs (ADR-009)"
+      echo "  agent list                   List all adapters and their install status"
+      echo "  agent doctor [name]          Check install/auth for all or one adapter"
+      echo "  agent enable <name>          Set the active agent in .monozukuri/config.yaml"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -184,6 +198,10 @@ while [ $# -gt 0 ]; do
         OPT_LEARNING_ID="$1"
       elif [ "$SUBCOMMAND" = "ingest-reviews" ] && [ -z "$OPT_INGEST_FEAT" ]; then
         OPT_INGEST_FEAT="$1"
+      elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
+        OPT_AGENT_SUBCMD="$1"
+      elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_NAME" ]; then
+        OPT_AGENT_NAME="$1"
       else
         err "Unknown argument: $1"
         err "Run: monozukuri --help"
@@ -194,12 +212,12 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION
+export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
 # Verify we're in a git repo (doctor is exempt — it's a pre-flight check)
-if [ "$SUBCOMMAND" != "doctor" ] && ! git rev-parse --is-inside-work-tree &>/dev/null; then
+if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
   exit 1
@@ -219,4 +237,5 @@ case "$SUBCOMMAND" in
   promote-learning) source "$CMD_DIR/learning.sh"; sub_promote_learning ;;
   resume-paused)   source "$CMD_DIR/resume.sh"; sub_resume_paused ;;
   ingest-status)   source "$CMD_DIR/ingest-status.sh"; sub_ingest_status ;;
+  agent)           source "$CMD_DIR/agent.sh"; sub_agent ;;
 esac

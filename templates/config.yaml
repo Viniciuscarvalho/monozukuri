@@ -3,9 +3,9 @@
 # This file contains provider parameters but NOT API keys.
 # Keys are loaded from .env at runtime.
 
-# Which Claude Code skill to invoke per feature
-skill:
-  command: feature-marker # Change to any Claude Code skill command
+# Which coding agent to invoke (claude-code | codex | gemini | kiro)
+# legacy: skill.command: feature-marker still works via back-compat shim
+agent: claude-code
 
 source:
   # Active adapter to run before starting the loop.

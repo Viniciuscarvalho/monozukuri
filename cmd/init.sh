@@ -5,13 +5,39 @@
 # STATE_DIR, RESULTS_DIR, and all OPT_* variables.
 
 sub_init() {
-  # Interactive 3-question setup (TTY only; skipped when piped or --non-interactive)
-  local _adapter="markdown" _autonomy="checkpoint" _model="opusplan"
+  # Interactive setup (TTY only; skipped when piped or --non-interactive)
+  local _adapter="markdown" _autonomy="checkpoint" _model="opusplan" _agent="claude-code"
+
+  # Detect which agents are installed
+  source "$LIB_DIR/agent/contract.sh" 2>/dev/null || true
+  local _available_agents
+  _available_agents=$(agent_list 2>/dev/null || echo "claude-code")
+  local _installed_agents=""
+  local _ag
+  while IFS= read -r _ag; do
+    local _bin
+    case "$_ag" in
+      claude-code) _bin="claude" ;;
+      codex)       _bin="codex" ;;
+      gemini)      _bin="gemini" ;;
+      kiro)        _bin="kiro" ;;
+      *)           _bin="$_ag" ;;
+    esac
+    command -v "$_bin" &>/dev/null && _installed_agents="${_installed_agents:+$_installed_agents }$_ag"
+  done <<< "$_available_agents"
+  # Default to first installed agent (or claude-code if none detected)
+  _agent="${_installed_agents%% *}"
+  _agent="${_agent:-claude-code}"
+
   if [ -t 0 ] && [ "${OPT_NON_INTERACTIVE:-false}" != "true" ]; then
     if command -v gum >/dev/null 2>&1; then
       _adapter=$(gum choose --header "Which backlog adapter?" "markdown" "github" "linear")
       _autonomy=$(gum choose --header "Default autonomy level?" "checkpoint" "supervised" "full_auto")
       _model=$(gum choose --header "Default model?" "opusplan" "opus" "sonnet" "haiku")
+      # Offer only installed agents; fall back to full list if detection found nothing
+      local _agent_choices="${_installed_agents:-claude-code codex gemini kiro}"
+      # shellcheck disable=SC2086
+      _agent=$(gum choose --header "Which coding agent?" $_agent_choices)
     else
       printf "Adapter [markdown/github/linear] (default: markdown): "
       read -r _adapter; _adapter=${_adapter:-markdown}
@@ -19,6 +45,10 @@ sub_init() {
       read -r _autonomy; _autonomy=${_autonomy:-checkpoint}
       printf "Model [opusplan/opus/sonnet/haiku] (default: opusplan): "
       read -r _model; _model=${_model:-opusplan}
+      printf "Agent [claude-code/codex/gemini/kiro] (detected: %s, default: %s): " \
+        "${_installed_agents:-none}" "$_agent"
+      read -r _agent_input
+      _agent="${_agent_input:-$_agent}"
     fi
   fi
 
@@ -36,6 +66,7 @@ sub_init() {
           -e "s/^  adapter: .*/  adapter: $_adapter/" \
           -e "s/^autonomy: .*/autonomy: $_autonomy/" \
           -e "s/^  default: .*/  default: $_model/" \
+          -e "s/^agent: .*/agent: $_agent/" \
           .monozukuri/config.yaml && rm -f .monozukuri/config.yaml.bak
       fi
     else
@@ -78,8 +109,7 @@ discovery:
 model:
   default: $_model
 
-skill:
-  command: feature-marker
+agent: $_agent
 
 routing:
   prefer_agents: true
