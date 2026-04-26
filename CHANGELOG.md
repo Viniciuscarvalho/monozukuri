@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.4.0...v1.5.0) (2026-04-26)
+
+
+### Features
+
+* **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([cdfee8e](https://github.com/Viniciuscarvalho/monozukuri/commit/cdfee8ea67cd894caead3f164401542c0d822aa4))
+* **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([0edde5d](https://github.com/Viniciuscarvalho/monozukuri/commit/0edde5d59905161f8b7ae75e7805ac9fb0e8346d))
+* **gap3:** phase-aware templates, context-pack, registry, render node path ([d1396a9](https://github.com/Viniciuscarvalho/monozukuri/commit/d1396a941fb65babe0ee741e9492ec1773e078bb))
+
 ## [1.4.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.3.0...v1.4.0) (2026-04-26)
 
 
