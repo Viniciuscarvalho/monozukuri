@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>ものづくり — reads your backlog, creates worktrees, invokes a Claude Code skill for each feature, and opens PRs. While you're away.</strong>
+  <strong>ものづくり — reads your backlog, creates worktrees, runs your coding agent of choice for each feature, and opens PRs. While you're away.</strong>
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
   </a>
   <a href="https://github.com/Viniciuscarvalho/monozukuri">
-    <img src="https://img.shields.io/badge/platform-Claude%20Code-purple.svg" alt="Platform: Claude Code">
+    <img src="https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20Kiro-purple.svg" alt="Agents: Claude Code · Codex · Gemini · Kiro">
   </a>
   <a href="https://github.com/sponsors/Viniciuscarvalho">
     <img src="https://img.shields.io/badge/sponsor-♥-ea4aaa.svg" alt="Sponsor">
@@ -31,7 +31,7 @@
 </p>
 
 <p align="center">
-  <code>autonomous backlog</code> · <code>git worktrees</code> · <code>skill-agnostic</code> · <code>3-tier learning</code> · <code>Linear · GitHub · Markdown</code>
+  <code>autonomous backlog</code> · <code>git worktrees</code> · <code>agent-agnostic</code> · <code>3-tier learning</code> · <code>Linear · GitHub · Markdown</code>
 </p>
 
 ---
@@ -39,9 +39,15 @@
 ## Quick start
 
 ```bash
+# First install
 brew tap viniciuscarvalho/tap
 brew install monozukuri
 
+# Upgrade later
+brew update && brew upgrade monozukuri
+```
+
+```bash
 cd your-project
 monozukuri doctor       # verify all dependencies are present and authenticated
 monozukuri init
@@ -49,21 +55,37 @@ monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 ```
 
-> **Requires:** `node >= 18`, `jq`, `gh` (for PR creation), and the Claude Code CLI (`claude`).  
+> **Requires:** `node >= 18`, `jq`, `gh` (for PR creation), and a supported coding-agent CLI (`claude`, `codex`, `gemini`, or `kiro`).  
 > Run `monozukuri doctor` after install — it checks every dependency and surfaces missing auth in one pass.
+
+---
+
+## Choose your agent
+
+Monozukuri drives any major coding-agent CLI through a single adapter contract. Pick the one you already have installed:
+
+```yaml
+# .monozukuri/config.yaml
+agent: claude-code # default — needs the `claude` CLI
+# agent: codex       # OpenAI Codex CLI  (needs OPENAI_API_KEY)
+# agent: gemini      # Google Gemini CLI (needs GEMINI_API_KEY or gcloud ADC)
+# agent: kiro        # AWS Kiro          (needs AWS credentials)
+```
+
+Switch at any time with `monozukuri agent enable <name>`, or detect what's available with `monozukuri agent list`.
 
 ---
 
 ## Highlights
 
 - **One command, whole backlog.** `monozukuri run` walks every feature in your source — Linear, GitHub Issues, or a plain `features.md` — without further input.
-- **Skill-agnostic.** Defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker), but works with any Claude Code skill. Swap via a single config line.
+- **Agent-agnostic.** Drives Claude Code, Codex, Gemini, or Kiro through a single adapter contract. Switch agents with one config line — no other changes required.
 - **Isolated git worktrees per feature.** No branch juggling, no dirty working directory, no cross-contamination between runs.
 - **Three autonomy levels.** From `supervised` (pause after each phase) to `full_auto` (fully unattended overnight runs).
 - **Cost-aware size & cycle gates.** Skips features that are too large, verifies every phase completed, enforces token budgets.
 - **3-tier learning store.** Every completed feature writes learnings at feature / project / global scope — the next run starts smarter.
 - **Multiple backlog adapters.** `markdown`, `github`, `linear` — pick where your backlog already lives.
-- **Local-first, zero vendor lock-in.** Runs on your machine, writes plain files, uses your own `claude` CLI credentials.
+- **Local-first, zero vendor lock-in.** Runs on your machine, writes plain files, uses your own agent CLI credentials.
 
 ---
 
@@ -76,7 +98,7 @@ monozukuri run              # execute
 ```mermaid
 flowchart LR
   B[Backlog] -->|size gate| W[Git Worktree]
-  W -->|invoke skill| S["Claude Code Skill<br/>PRD → Tests → PR"]
+  W -->|adapter contract| S["Coding Agent<br/>PRD → Tests → PR"]
   S -->|cycle gate| PR[Pull Request]
   PR -->|learning store| B
 ```
@@ -87,7 +109,7 @@ For each feature in the backlog, Monozukuri:
 1. Reads + sorts backlog from your source (Linear, GitHub Issues, or features.md)
 2. Runs the size gate — skips features that are too large or too risky
 3. Creates an isolated git worktree with context from completed features
-4. Calls your Claude Code skill (default: /feature-marker)
+4. Invokes your coding agent (claude-code, codex, gemini, or kiro)
      └─ PRD → Tech Spec → Tasks → Code → Tests → PR
 5. Runs the cycle gate — verifies all phases completed and PR exists
 6. Writes learnings to the 3-tier store (feature / project / global)
@@ -103,12 +125,18 @@ For each feature in the backlog, Monozukuri:
 ```bash
 brew tap viniciuscarvalho/tap
 brew install monozukuri
+
+# Upgrade later
+brew update && brew upgrade monozukuri
 ```
 
 ### NPM (global)
 
 ```bash
 npm install -g @viniciuscarvalho/monozukuri
+
+# Upgrade later
+npm update -g @viniciuscarvalho/monozukuri
 ```
 
 ### NPX (no install)
@@ -143,6 +171,9 @@ monozukuri cleanup                        # remove worktrees and reset state
 monozukuri learning list                  # show captured learnings
 monozukuri calibrate                      # calibrate token cost estimates
 monozukuri doctor                         # verify dependencies, auth, and environment
+monozukuri agent list                     # list available agents and install status
+monozukuri agent enable <name>            # set active agent in config (claude-code | codex | gemini | kiro)
+monozukuri agent doctor [name]            # check install and auth for all or one agent
 ```
 
 ### `monozukuri init`
@@ -154,14 +185,15 @@ monozukuri doctor                         # verify dependencies, auth, and envir
 
 ### `monozukuri run`
 
-| Flag         | Default         | Description                                           |
-| ------------ | --------------- | ----------------------------------------------------- |
-| `--dry-run`  | `false`         | Preview the plan without executing                    |
-| `--autonomy` | _(from config)_ | `supervised`, `checkpoint`, `full_auto`               |
-| `--feature`  |                 | Run a single feature by ID                            |
-| `--resume`   | `false`         | Skip already-completed features                       |
-| `--model`    | _(from config)_ | Override model: `opus`, `sonnet`, `haiku`, `opusplan` |
-| `--skill`    | _(from config)_ | Override skill command                                |
+| Flag         | Default         | Description                                                          |
+| ------------ | --------------- | -------------------------------------------------------------------- |
+| `--dry-run`  | `false`         | Preview the plan without executing                                   |
+| `--autonomy` | _(from config)_ | `supervised`, `checkpoint`, `full_auto`                              |
+| `--feature`  |                 | Run a single feature by ID                                           |
+| `--resume`   | `false`         | Skip already-completed features                                      |
+| `--model`    | _(from config)_ | Override model: `opus`, `sonnet`, `haiku`, `opusplan`                |
+| `--agent`    | _(from config)_ | Override agent: `claude-code`, `codex`, `gemini`, `kiro`             |
+| `--skill`    | _(deprecated)_  | Deprecated — use `--agent` and `agents.claude-code.skills` in config |
 
 ### `monozukuri status`
 
@@ -224,9 +256,21 @@ Set a default in config or override with `--model`.
 After `monozukuri init`, edit `.monozukuri/config.yaml`:
 
 ```yaml
-# Which Claude Code skill to invoke for each feature
-skill:
-  command: feature-marker
+# Active coding agent (claude-code | codex | gemini | kiro)
+agent: claude-code
+
+# Per-agent settings (optional)
+agents:
+  claude-code:
+    skills:
+      prd: feature-marker # Claude Code skill to use for each phase
+      code: feature-marker # omit a phase to use the rendered prompt directly
+  codex:
+    model: gpt-5
+  gemini:
+    model: gemini-2.5-pro
+  kiro:
+    use_native_specs: true # use `kiro spec create` for prd/techspec phases
 
 source:
   adapter: markdown # linear | github | markdown
@@ -243,47 +287,27 @@ See [`templates/config.yaml`](./templates/config.yaml) for the full reference wi
 
 ---
 
-## Works with any Claude Code skill
-
-Monozukuri is skill-agnostic. It defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) but works with any Claude Code skill that handles feature implementation.
-
-Configure which skill to invoke in `.monozukuri/config.yaml`:
-
-```yaml
-skill:
-  command: feature-marker # any Claude Code slash-command
-```
-
-Popular options:
-
-- [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) — PRD → TechSpec → Tasks → Code → Tests → PR
-- Your own custom skill
-- No skill — just a well-written `CLAUDE.md` in your project
-
----
-
-## Relationship to Feature-marker
-
-Monozukuri and Feature-marker are **separate, independently installable tools** that work together:
-
-|               | Feature-marker                         | Monozukuri                        |
-| ------------- | -------------------------------------- | --------------------------------- |
-| **What**      | Claude Code skill for one feature      | Terminal loop for a whole backlog |
-| **Where**     | Inside Claude Code (`/feature-marker`) | Your terminal (`monozukuri run`)  |
-| **Installs**  | `brew install feature-marker`          | `brew install monozukuri`         |
-| **State dir** | `.claude/feature-state/`               | `.monozukuri/`                    |
-
-The only connection is the `skill.command` config value in `.monozukuri/config.yaml`.
-
----
-
 ## Project layout
 
 ```
-bin/                       CLI entry points (Node shim + shell dispatcher)
-scripts/                   Orchestrator shell implementation
-  orchestrate.sh           Main loop
+orchestrate.sh             Entry point (dev); Homebrew/NPX wrappers exec this
+cmd/                       Subcommand handlers (init, run, status, agent, …)
+lib/                       Library modules
+  agent/                   Adapter contract + per-agent adapters (claude-code, codex, gemini, kiro)
+  config/                  Config loader and schema
+  core/                    Utilities, router, cost, worktree
+  cli/                     Output helpers and JSONL emitter
+  prompt/phases/           Per-phase prompt templates (prd, techspec, tasks, code, tests, pr)
+  run/                     Pipeline, cycle gate, ingest, local-model
+  memory/                  3-tier learning store
+ui/                        Ink TUI — consumes JSONL event stream from orchestrator
 templates/                 Config templates copied by `monozukuri init`
+test/
+  unit/                    Bats unit tests (lib/agent/*, cmd/*)
+  integration/             Bats integration tests (dry-run, back-compat)
+  conformance/             Agent conformance suite + UI display tests
+  fixtures/                Mock agent binaries and sample project
+bin/                       CLI entry points (Node shim + shell dispatcher)
 homebrew/                  Homebrew formula source
 npm/                       npm package metadata and shim
 assets/                    Banner, architecture diagram
@@ -318,7 +342,7 @@ make release   # tag + publish to npm + bump Homebrew formula
 ## Contributing
 
 1. Fork and clone the repo
-2. Run `./scripts/orchestrate.sh --help` to confirm your environment
+2. Run `./orchestrate.sh --help` to confirm your environment
 3. Open a draft PR early — we review small, focused changes fastest
 4. Follow [Conventional Commits](https://www.conventionalcommits.org/) so release notes stay clean
 
