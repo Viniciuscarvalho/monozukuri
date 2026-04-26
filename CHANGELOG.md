@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.11.0...v1.12.0) (2026-04-26)
+
+
+### Features
+
+* **conventions:** auto-sync AGENTS.md after each run (PR4) ([793a678](https://github.com/Viniciuscarvalho/monozukuri/commit/793a6787943ad6a58da78737ec13c290724e6e45))
+* **conventions:** generate AGENTS.md from learning store (PR3) ([801ec1e](https://github.com/Viniciuscarvalho/monozukuri/commit/801ec1e893770dcf028ae4517a02c1910f84b279))
+* **conventions:** surface promotion candidates as convention entries (PR5) ([7782e3a](https://github.com/Viniciuscarvalho/monozukuri/commit/7782e3abd47528d53b52472f578499d89b0c7e31))
+* **conventions:** surface promotion candidates as convention entries (PR5) ([629488f](https://github.com/Viniciuscarvalho/monozukuri/commit/629488fd240414948a65141705ba3fd555aff40e))
+
 ## [1.11.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.10.0...v1.11.0) (2026-04-26)
 
 
