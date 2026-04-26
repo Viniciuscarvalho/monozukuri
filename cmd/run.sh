@@ -12,28 +12,40 @@ sub_run() {
     monozukuri_emit() { :; }
   fi
 
-  # Load modules
-  source "$LIB_DIR/core/util.sh"
-  source "$LIB_DIR/config/load.sh"
-  source "$LIB_DIR/core/worktree.sh"
-  source "$LIB_DIR/memory/memory.sh"
-  source "$LIB_DIR/cli/output.sh"
-  # ADR-011 foundation modules (must load before router)
-  source "$LIB_DIR/core/json-io.sh"
-  source "$LIB_DIR/core/stack-profile.sh"
+  # Bootstrap module registry — must come first so all subsequent loads are tracked
+  source "$LIB_DIR/core/modules.sh"
+  modules_init "$LIB_DIR"
+
+  # Foundation (required)
+  module_require core/util
+  module_require config/load
+  module_require core/worktree
+  module_require memory/memory
+  module_require cli/output
+  # ADR-011 foundation (must load before router and feature-state)
+  module_require core/json-io
+  module_require core/stack-profile
+  # Architecture seams (depend on worktree + json-io)
+  module_require core/feature-state
+  module_require core/platform
   # ADR-008 modules
-  source "$LIB_DIR/core/cost.sh"
-  source "$LIB_DIR/core/router.sh"
-  source "$LIB_DIR/memory/learning.sh"
-  source "$LIB_DIR/plan/size-gate.sh"
-  source "$LIB_DIR/plan/cycle-gate.sh"
-  # ADR-009 modules (optional — loaded if present)
-  [ -f "$LIB_DIR/run/local-model.sh"    ] && source "$LIB_DIR/run/local-model.sh"
-  [ -f "$LIB_DIR/run/ingest.sh"         ] && source "$LIB_DIR/run/ingest.sh"
-  # ADR-011 PR-F: local-model injection screen (optional — requires local-model.sh)
-  [ -f "$LIB_DIR/run/injection-screen.sh" ] && source "$LIB_DIR/run/injection-screen.sh"
-  source "$LIB_DIR/prompt/sanitize.sh"
-  source "$LIB_DIR/run/pipeline.sh"
+  module_require core/cost
+  module_require core/router
+  module_require memory/learning
+  module_require plan/size-gate
+  module_require plan/cycle-gate
+  # ADR-009 optional modules — stubs registered so `declare -f` guards work
+  module_optional run/local-model  "local_model::embed" "local_model::classify" \
+                                   "local_model::summarize" "local_model::generate"
+  module_optional run/ingest       "ingest_trigger_if_merged" "ingest_reap_stale"
+  # ADR-011 PR-F: injection screen (optional — requires local-model)
+  module_optional run/injection-screen "sanitize_with_local_model"
+  module_require  prompt/sanitize
+  # Phase modules (extracted from pipeline.sh)
+  module_require run/pause
+  module_require run/phase-3
+  module_require run/phase-4
+  module_require run/pipeline
 
   # Resolve config file — check multiple locations
   local config_file="$OPT_CONFIG"
