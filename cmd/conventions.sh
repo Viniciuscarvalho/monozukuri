@@ -5,6 +5,7 @@
 
 sub_conventions() {
   source "$LIB_DIR/agent/conventions.sh"
+  source "$LIB_DIR/agent/conventions-promote.sh"
 
   local action="${OPT_CONVENTIONS_ACTION:-list}"
   local repo_root="${ROOT_DIR:-$(pwd)}"
@@ -119,11 +120,42 @@ sub_conventions() {
       conventions_restore_list "$repo_root"
       ;;
 
+    candidates)
+      local records
+      records=$(conventions_list_candidates "$repo_root")
+      local count
+      count=$(jq 'length' <<<"$records")
+
+      if [[ "$count" -eq 0 ]]; then
+        printf 'No promotion candidates found.\n'
+        printf 'Candidates are learning entries with confidence >= 0.8 and hits >= 3.\n'
+        return 0
+      fi
+
+      if [[ "${OPT_JSON:-false}" == "true" ]]; then
+        printf '%s\n' "$records"
+      else
+        printf '%s candidate(s) ready for promotion:\n\n' "$count"
+        jq -r '.[] | "• [" + .source.file + "] " + .summary + " (" + (.confidence*100|floor|tostring) + "% confidence)"' \
+          <<<"$records"
+        printf '\nRun: monozukuri conventions promote <learn-id>\n'
+      fi
+      ;;
+
+    promote)
+      if [[ -z "${OPT_CONVENTIONS_ID:-}" ]]; then
+        printf 'Usage: monozukuri conventions promote <learn-id>\n' >&2
+        return 1
+      fi
+      conventions_write_promoted "$repo_root" "${OPT_CONVENTIONS_ID}"
+      ;;
+
     *)
       printf 'Unknown conventions action: %s\n' "$action" >&2
       printf 'Available: list [--source], show <query>, sources,\n' >&2
       printf '           generate [--write], write [-y], diff,\n' >&2
-      printf '           restore [<backup>], restore-list\n' >&2
+      printf '           restore [<backup>], restore-list,\n' >&2
+      printf '           candidates, promote <id>\n' >&2
       return 1
       ;;
   esac

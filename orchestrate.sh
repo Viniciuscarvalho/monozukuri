@@ -161,7 +161,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
-    sources|show|generate|preview|write|diff|restore|restore-list)
+    sources|show|generate|preview|write|diff|restore|restore-list|candidates)
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
     --source)
@@ -223,6 +223,8 @@ while [ $# -gt 0 ]; do
       echo "  conventions restore          Restore AGENTS.md from latest backup"
       echo "  conventions restore <file>   Restore from specific backup"
       echo "  conventions restore-list     List available backups"
+      echo "  conventions candidates       List promotion-ready learning entries"
+      echo "  conventions promote <id>     Write promotion candidate to AGENTS.md"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"

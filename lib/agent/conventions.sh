@@ -145,6 +145,18 @@ read_project_conventions() {
     jq -c '.[]' <<<"$file_records" >> "$tmpall" 2>/dev/null || true
   done
 
+  # Include promotion candidates when conventions-promote.sh is loaded.
+  if declare -f conventions_list_candidates &>/dev/null; then
+    local candidates
+    candidates=$(conventions_list_candidates "$repo_root" 2>/dev/null) || candidates='[]'
+    local cand_count
+    cand_count=$(jq 'length' <<<"$candidates" 2>/dev/null || echo 0)
+    if [[ "$cand_count" -gt 0 ]]; then
+      jq -c '.[]' <<<"$candidates" >> "$tmpall" 2>/dev/null || true
+      found=true
+    fi
+  fi
+
   local result
   if [[ "$found" == "true" && -s "$tmpall" ]]; then
     result=$(jq -s 'unique_by(.summary | ascii_downcase)' "$tmpall" 2>/dev/null) || result='[]'
