@@ -28,6 +28,9 @@
   <a href="https://github.com/sponsors/Viniciuscarvalho">
     <img src="https://img.shields.io/badge/sponsor-♥-ea4aaa.svg" alt="Sponsor">
   </a>
+  <a href="docs/canary-history.md">
+    <img src="https://img.shields.io/badge/L5-See%20History-blue.svg" alt="L5 Metrics">
+  </a>
 </p>
 
 <p align="center">

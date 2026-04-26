@@ -1,0 +1,36 @@
+{
+  "features": [
+    {
+      "id": "feat-001-node-api-endpoint",
+      "stack": "backend",
+      "repo": "monozukuri-canaries",
+      "path": "backend/node-api-endpoint",
+      "description": "Node.js Express API endpoint with validation"
+    },
+    {
+      "id": "feat-002-react-component",
+      "stack": "frontend",
+      "repo": "monozukuri-canaries",
+      "path": "frontend/react-component",
+      "description": "React functional component with hooks"
+    },
+    {
+      "id": "feat-003-python-data-pipeline",
+      "stack": "data",
+      "repo": "monozukuri-canaries",
+      "path": "data/python-pipeline",
+      "description": "Python ETL pipeline with pandas"
+    }
+  ],
+  "stacks": [
+    "backend",
+    "frontend",
+    "mobile",
+    "infra",
+    "data",
+    "go",
+    "swift",
+    "dbt"
+  ],
+  "_comment": "This is an example canary config. The monozukuri-canaries repo will contain the actual benchmark features. Each feature should be a complete, standalone implementation that can be executed via 'monozukuri run <feature_id>'."
+}

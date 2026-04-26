@@ -1,0 +1,60 @@
+name: Weekly Canary Benchmark
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sunday at 00:00 UTC
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  contents: write # Required for committing results
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Full history for git commits
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          node --version
+          jq --version
+
+      - name: Run canary benchmark
+        id: canary_run
+        run: |
+          bash lib/run/canary.sh
+        env:
+          MONOZUKURI_HOME: ${{ github.workspace }}
+          PROJECT_ROOT: ${{ github.workspace }}
+          CONFIG_DIR: ${{ github.workspace }}/.monozukuri
+          STATE_DIR: ${{ github.workspace }}/.monozukuri/state
+          LIB_DIR: ${{ github.workspace }}/lib
+
+      - name: Commit canary results
+        if: steps.canary_run.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage the updated canary history file
+          git add docs/canary-history.md
+
+          # Extract run_id from last row for commit message
+          RUN_ID=$(grep -o 'run-[0-9-]*' docs/canary-history.md | tail -1)
+
+          # Commit with conventional commit format
+          git commit -m "chore: update canary metrics ($RUN_ID)"
+
+          # Push to main
+          git push
