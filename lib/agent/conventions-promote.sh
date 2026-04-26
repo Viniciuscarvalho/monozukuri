@@ -15,6 +15,30 @@
 #       when no block exists), creates a timestamped backup, and marks the
 #       entry's promotion_candidate=false.
 
+# Source merge.sh once — provides _conventions_backup_create, _conventions_find_marker_line,
+# and conventions_merge_insert_above_marker so file-I/O logic lives in one module.
+_CONVENTIONS_PROMOTE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[[ "$(type -t _conventions_backup_create 2>/dev/null)" == "function" ]] || \
+  source "${_CONVENTIONS_PROMOTE_DIR}/conventions-merge.sh"
+
+# _lentry_validate ENTRY_JSON
+# Checks that all required learning entry fields are present and non-null.
+# See schemas/learned.schema.json for the full contract.
+_lentry_validate() {
+  local entry="$1"
+  local result
+  result=$(jq -r '
+    . as $e |
+    ["id","pattern","fix","tier","confidence","hits","archived","promotion_candidate"]
+    | map(select($e[.] == null))
+    | if length > 0 then "missing: " + join(", ") else "ok" end
+  ' <<<"$entry" 2>/dev/null) || result="parse-error"
+  if [[ "$result" != "ok" ]]; then
+    printf 'Error: learning entry has invalid shape (%s)\n' "$result" >&2
+    return 1
+  fi
+}
+
 # _promote_candidate_to_record ENTRY_JSON
 # Maps a learning entry to a convention record.
 _promote_candidate_to_record() {
@@ -57,6 +81,7 @@ conventions_list_candidates() {
     [[ -z "$candidates" ]] && continue
     while IFS= read -r entry; do
       [[ -z "$entry" ]] && continue
+      _lentry_validate "$entry" 2>/dev/null || continue
       local record
       record=$(_promote_candidate_to_record "$entry")
       [[ -n "$record" ]] && printf '%s\n' "$record" >> "$tmpjsonl"
@@ -89,6 +114,7 @@ _promote_find_entry() {
       '.[] | select(.id == $id and .archived != true)' \
       "$tier_path" 2>/dev/null)
     if [[ -n "$found" ]]; then
+      _lentry_validate "$found" || return 1
       printf '%s\t%s' "$found" "$tier_path"
       return 0
     fi
@@ -138,6 +164,7 @@ _promote_mark_handled() {
 conventions_write_promoted() {
   local repo_root="${1:?conventions_write_promoted: REPO_ROOT required}"
   local learn_id="${2:?conventions_write_promoted: LEARN_ID required}"
+  local agents_md="$repo_root/AGENTS.md"
 
   local found_line
   if ! found_line=$(_promote_find_entry "$learn_id" "$repo_root"); then
@@ -168,37 +195,13 @@ conventions_write_promoted() {
   new_section=$(printf '\n## %s\n\n%s\n<!-- promoted from learning-store:%s on %s -->\n' \
     "$heading" "$fix" "$learn_id" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
 
-  local agents_md="$repo_root/AGENTS.md"
-  local backup_dir="$repo_root/.monozukuri/conventions-backups"
-  mkdir -p "$backup_dir"
+  local content_tmp; content_tmp=$(mktemp)
+  printf '%s\n' "$new_section" > "$content_tmp"
 
-  local ts; ts=$(date +%Y%m%dT%H%M%S)
   local backup_file
-  backup_file=$(mktemp "$backup_dir/AGENTS.md.${ts}.XXXXX")
-  [[ -f "$agents_md" ]] && cp "$agents_md" "$backup_file" || true
+  backup_file=$(conventions_merge_insert_above_marker "$repo_root" "$content_tmp")
+  rm -f "$content_tmp"
 
-  local _MARKER_START='<!-- monozukuri:generated-start v1 -->'
-  local tmpout; tmpout=$(mktemp)
-
-  if [[ -f "$agents_md" ]]; then
-    local start_line
-    start_line=$(grep -n "^${_MARKER_START}$" "$agents_md" 2>/dev/null | head -1 | cut -d: -f1)
-
-    if [[ -n "$start_line" ]]; then
-      local prefix_end=$(( start_line - 1 ))
-      {
-        [[ "$prefix_end" -gt 0 ]] && head -n "$prefix_end" "$agents_md"
-        printf '%s\n' "$new_section"
-        tail -n "+${start_line}" "$agents_md"
-      } > "$tmpout"
-    else
-      { cat "$agents_md"; printf '%s\n' "$new_section"; } > "$tmpout"
-    fi
-  else
-    printf '%s\n' "$new_section" > "$tmpout"
-  fi
-
-  mv "$tmpout" "$agents_md"
   printf 'Written convention "%s" to %s\n' "$heading" "$agents_md"
   printf 'Backup: %s\n' "$(basename "$backup_file")"
 
