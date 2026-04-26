@@ -19,10 +19,10 @@ teardown() {
   unset CONTEXT_JSON 2>/dev/null || true
 }
 
-# ── node availability guard ────────────────────────────────────────────────────
+# ── jq availability guard ─────────────────────────────────────────────────────
 
-@test "node is available (required for CONTEXT_JSON path)" {
-  command -v node
+@test "jq is available (required for CONTEXT_JSON path)" {
+  command -v jq
 }
 
 # ── CONTEXT_JSON path: prd template ──────────────────────────────────────────
@@ -101,11 +101,7 @@ teardown() {
 @test "prd: empty project_learnings array leaves no {{#each}} markers" {
   local ctx_file
   ctx_file=$(mktemp)
-  SRC="$FIXTURE_CTX" DST="$ctx_file" node -e '
-    const c = JSON.parse(require("fs").readFileSync(process.env.SRC, "utf-8"));
-    c.project_learnings = [];
-    require("fs").writeFileSync(process.env.DST, JSON.stringify(c));
-  '
+  jq '.project_learnings = []' "$FIXTURE_CTX" > "$ctx_file"
   CONTEXT_JSON="$ctx_file" run render_phase_prompt prd
   [ "$status" -eq 0 ]
   [[ "$output" != *"{{#each"* ]]

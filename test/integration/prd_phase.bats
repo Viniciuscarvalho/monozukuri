@@ -100,9 +100,7 @@ teardown() {
     context_pack_build "feat-cp-001" "$ctx_file"
 
   [ -f "$ctx_file" ]
-  node -e "const d = JSON.parse(require('fs').readFileSync('$ctx_file','utf-8')); \
-    if (!d.FEATURE_ID) throw new Error('missing FEATURE_ID'); \
-    if (!Array.isArray(d.project_learnings)) throw new Error('missing project_learnings');"
+  jq -e 'has("FEATURE_ID") and (.project_learnings | type == "array")' "$ctx_file" > /dev/null
 }
 
 @test "full pipeline: context-pack JSON feeds render, render feeds adapter" {
