@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.1.2...v1.2.0) (2026-04-26)
+
+
+### Features
+
+* add Codex, Gemini, Kiro adapters + pricing.yaml (Phases 4-6) ([f2ac1f6](https://github.com/Viniciuscarvalho/monozukuri/commit/f2ac1f606ddd4b0bf604dd9f0dcb360b43b40dd4))
+* add monozukuri agent subcommands + wizard init (Phase 7) ([877bf0b](https://github.com/Viniciuscarvalho/monozukuri/commit/877bf0b4ba768d2944cd12c1674805ec8491792c))
+* add phase prompt templates and render.sh for multi-agent support ([cc163dd](https://github.com/Viniciuscarvalho/monozukuri/commit/cc163ddef66fb66cb761d0cf1a40e7471ef4f828))
+* agent conformance suite + mock fixtures (Phase 3) ([008a996](https://github.com/Viniciuscarvalho/monozukuri/commit/008a996231b80f1a4747493659b06c6ba5864077))
+* introduce multi-agent adapter contract (Phase 2) ([b143abd](https://github.com/Viniciuscarvalho/monozukuri/commit/b143abd84862c6fbb34ffedef3293c25b14fc162))
+* surface agent identity in TUI + stand up Jest test infra (Phase 8) ([95ec400](https://github.com/Viniciuscarvalho/monozukuri/commit/95ec40024841084a81b7dea12ca4f2ea8c50af0c))
+
 ## [1.1.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.1.1...v1.1.2) (2026-04-26)
 
 
