@@ -475,6 +475,14 @@ EOPRD
     }
   fi
 
+  # ADR-012: schema validation — 1 reprompt on failure, then error
+  if [ "$exit_code" -eq 0 ] && declare -f schema_validate_with_reprompt &>/dev/null; then
+    if ! schema_validate_with_reprompt "$feat_id" "$wt_path" "$task_dir"; then
+      fstate_transition "$feat_id" "error" "schema-validation-failed"
+      return 1
+    fi
+  fi
+
   # ADR-011 PR-E: build verification before Phase 3
   if [ "$exit_code" -eq 0 ] && [ -f "${SCRIPTS_DIR}/verify_build.sh" ]; then
     local build_exit=0

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monozukuri.dev/schemas/tasks.schema.json",
+  "title": "TaskList",
+  "description": "Phase 3 artifact: Atomic task list. Each task must be independently committable (ADR-008). Current format: Markdown checkbox list (validated structurally). Gap 3 transitions this to JSON.",
+  "type": "object",
+  "required": [
+    "feature_id",
+    "tasks"
+  ],
+  "properties": {
+    "feature_id": {
+      "type": "string"
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of atomic implementation tasks. Each task produces one commit.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "acceptance_criteria"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique task identifier within the feature (e.g. task-001)"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "description": "What this task does; should be implementable in one agent session"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files this specific task will modify (subset of techspec.files_likely_touched)"
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Verifiable conditions that determine this task is complete"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

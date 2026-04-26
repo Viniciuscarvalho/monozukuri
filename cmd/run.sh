@@ -43,6 +43,8 @@ sub_run() {
   # ADR-011 PR-F: injection screen (optional — requires local-model)
   module_optional run/injection-screen "sanitize_with_local_model"
   module_require  prompt/sanitize
+  # ADR-012: phase artifact schema validation
+  module_require schema/validate
   # Phase modules (extracted from pipeline.sh)
   module_require run/pause
   module_require run/phase-3

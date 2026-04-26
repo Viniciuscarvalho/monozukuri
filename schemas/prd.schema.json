@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monozukuri.dev/schemas/prd.schema.json",
+  "title": "ProductRequirementsDocument",
+  "description": "Phase 1 artifact: Product Requirements Document. Current format: Markdown (validated structurally). Gap 3 transitions this to JSON with full ajv enforcement.",
+  "type": "object",
+  "required": [
+    "feature_id",
+    "problem_statement",
+    "success_criteria"
+  ],
+  "properties": {
+    "feature_id": {
+      "type": "string",
+      "description": "Feature identifier (e.g. feat-001)"
+    },
+    "problem_statement": {
+      "type": "string",
+      "minLength": 50,
+      "description": "What problem this feature solves and why it matters"
+    },
+    "user_story": {
+      "type": "string",
+      "description": "Optional user story (As a ... I want ... So that ...)"
+    },
+    "success_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Measurable acceptance criteria; each item is independently verifiable"
+    },
+    "out_of_scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Explicit scope exclusions to prevent scope creep"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monozukuri.dev/schemas/commit-summary.schema.json",
+  "title": "CommitSummary",
+  "description": "Phase 4 artifact: Summary of code changes made by the agent for a single task commit. Emitted after each task commit during the Code phase. Gap 3 enforces this via ajv.",
+  "type": "object",
+  "required": [
+    "task_id",
+    "files_changed",
+    "summary"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Task identifier this commit implements"
+    },
+    "files_changed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Files created or modified in this commit (from git diff --name-only)"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "description": "One-sentence summary of what changed and why"
+    },
+    "test_coverage_note": {
+      "type": "string",
+      "description": "Optional note about what tests cover the change"
+    }
+  },
+  "additionalProperties": true
+}
