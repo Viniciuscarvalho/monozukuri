@@ -45,6 +45,11 @@ sub_run() {
   module_require  prompt/sanitize
   # ADR-012: phase artifact schema validation
   module_require schema/validate
+  # ADR-013: failure classification, policy, manifest, CI poll
+  module_require agent/error
+  module_require run/policy
+  module_require run/manifest
+  module_require run/ci-poll
   # Phase modules (extracted from pipeline.sh)
   module_require run/pause
   module_require run/phase-3
@@ -149,8 +154,33 @@ sub_run() {
     exit 0
   fi
 
+  # ADR-013: initialise run manifest (or reconcile on --resume)
+  if declare -f manifest_init &>/dev/null; then
+    if [ "${OPT_RESUME:-false}" = "true" ]; then
+      local _latest_run
+      _latest_run=$(manifest_find_latest)
+      if [ -n "$_latest_run" ]; then
+        MANIFEST_RUN_ID="$_latest_run"
+        export MANIFEST_RUN_ID
+        info "Resuming run $MANIFEST_RUN_ID"
+        manifest_reconcile "$MANIFEST_RUN_ID" || {
+          warn "Manifest drift: missing worktrees for ${MANIFEST_MISSING_WORKTREES:-unknown}"
+        }
+      else
+        manifest_init > /dev/null
+      fi
+    else
+      manifest_init > /dev/null
+    fi
+  fi
+
   # Execute
   run_backlog "$backlog_file"
+
+  # Finalize manifest
+  if declare -f manifest_finalize &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
+    manifest_finalize "$MANIFEST_RUN_ID" "completed"
+  fi
 
   # Cleanup backlog file
   rm -f "$backlog_file"
