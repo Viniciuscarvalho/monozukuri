@@ -88,6 +88,7 @@ OPT_LEARNING_CANDIDATES=false
 OPT_INGEST_FEAT=""
 OPT_JSON=false
 OPT_NON_INTERACTIVE=false
+OPT_RESUME=false
 OPT_CONFIG_ACTION=""
 OPT_AGENT_SUBCMD=""
 OPT_AGENT_NAME=""
@@ -142,6 +143,9 @@ while [ $# -gt 0 ]; do
     --non-interactive)
       OPT_NON_INTERACTIVE=true
       ;;
+    --resume)
+      OPT_RESUME=true
+      ;;
     list|archive|promote)
       [ "$SUBCOMMAND" = "learning" ] && OPT_LEARNING_ACTION="$1"
       ;;
@@ -186,6 +190,7 @@ while [ $# -gt 0 ]; do
       echo "  --sample <n>                 Sample size for calibrate (default: 10)"
       echo "  --json                       Emit machine-readable JSON (status, learning list)"
       echo "  --non-interactive            Skip all prompts; use defaults"
+      echo "  --resume                     Resume the most recent run (idempotent)"
       echo "  --help                       Show this help"
       exit 0
       ;;

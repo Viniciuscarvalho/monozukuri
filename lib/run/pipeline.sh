@@ -272,6 +272,11 @@ run_feature() {
 
   fstate_transition "$feat_id" "in-progress" "analysis"
 
+  # ADR-013: record start in run manifest
+  if declare -f manifest_update &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
+    manifest_update "$MANIFEST_RUN_ID" "$feat_id" "in-progress" "analysis" ""
+  fi
+
   cost_init "$feat_id"
 
   info "Creating worktree..."
@@ -553,6 +558,12 @@ EOPRD
   if [ "$exit_code" -eq 0 ]; then
     if [ "$AUTONOMY" = "full_auto" ] || [ "$AUTONOMY" = "checkpoint" ]; then
       run_pr_creation "$feat_id" "$title" "$wt_path" "$results_file"
+      # ADR-014: CI poll + flake detection + one reprompt
+      if declare -f ci_wait_for_green &>/dev/null; then
+        local _pr_url
+        _pr_url=$(fstate_get_pr_url "$feat_id")
+        [ -n "$_pr_url" ] && ci_wait_for_green "$feat_id" "$_pr_url" "$wt_path" || true
+      fi
     else
       fstate_transition "$feat_id" "done" "complete"
       monozukuri_emit feature.completed feature_id "$feat_id"
@@ -565,24 +576,79 @@ EOPRD
     fstate_record_pause "$feat_id" "human" "supervised-checkpoint"
     info "Paused: $feat_id (supervised mode)"
   else
-    local retry_count=0
-    [ -f "$STATE_DIR/$feat_id/retry-count" ] && retry_count=$(cat "$STATE_DIR/$feat_id/retry-count")
-    if [ "$retry_count" -lt "$MAX_RETRIES" ]; then
-      retry_count=$((retry_count + 1))
-      echo "$retry_count" > "$STATE_DIR/$feat_id/retry-count"
-      fstate_transition "$feat_id" "retrying" "retry-$retry_count"
-      info "Retrying $feat_id ($retry_count/$MAX_RETRIES)"
-      mem_record_error "$feat_id" "implementation" "exit code $exit_code"
+    # ADR-013: stratified failure policy
+    if declare -f policy_apply &>/dev/null && declare -f agent_error_classify &>/dev/null; then
+      local _err_json
+      _err_json=$(agent_error_classify "$exit_code" "$log_file")
+      local _policy_rc=0
+      policy_apply "$feat_id" "$_err_json" "$wt_path" "$log_file" || _policy_rc=$?
+
+      case "$_policy_rc" in
+        0)
+          # Reprompt/sleep done — one immediate retry
+          exit_code=0
+          agent_run_phase || exit_code=$?
+          if [ "$exit_code" -eq 0 ] && [ "$AUTONOMY" != "supervised" ]; then
+            run_phase3_tests "$feat_id" "$wt_path" || exit_code=$?
+          fi
+          if [ "$exit_code" -eq 0 ]; then
+            if [ "$AUTONOMY" = "full_auto" ] || [ "$AUTONOMY" = "checkpoint" ]; then
+              run_pr_creation "$feat_id" "$title" "$wt_path" "$results_file"
+              if declare -f ci_wait_for_green &>/dev/null; then
+                local _pr_url2
+                _pr_url2=$(fstate_get_pr_url "$feat_id")
+                [ -n "$_pr_url2" ] && ci_wait_for_green "$feat_id" "$_pr_url2" "$wt_path" || true
+              fi
+            else
+              fstate_transition "$feat_id" "done" "complete"
+              monozukuri_emit feature.completed feature_id "$feat_id" 2>/dev/null || true
+            fi
+          else
+            fstate_transition "$feat_id" "failed" "pipeline-error"
+            monozukuri_emit feature.failed feature_id "$feat_id" \
+              error "retry-failed (exit $exit_code)" 2>/dev/null || true
+            mem_record_error "$feat_id" "implementation" "FINAL FAILURE exit code $exit_code"
+            err "$feat_id failed after policy retry"
+          fi
+          ;;
+        1) : ;;  # already handled by policy_apply
+        2)
+          info "Deferred: $feat_id — will retry in next run"
+          ;;
+        3)
+          info "Pause-clean: stopping run for $feat_id"
+          cost_summary "$feat_id"
+          mem_record_context "$feat_id" "$title" "$priority" "$labels" "$wt_path" "$results_file"
+          return 2
+          ;;
+      esac
     else
-      fstate_transition "$feat_id" "failed" "pipeline-error"
-      monozukuri_emit feature.failed feature_id "$feat_id" error "max-retries-exceeded (exit $exit_code)"
-      fstate_record_pause "$feat_id" "transient" "max-retries-exceeded"
-      mem_record_error "$feat_id" "implementation" "FINAL FAILURE exit code $exit_code"
-      err "$feat_id failed after $MAX_RETRIES attempts"
+      # Fallback: legacy retry (policy module not loaded)
+      local retry_count=0
+      [ -f "$STATE_DIR/$feat_id/retry-count" ] && retry_count=$(cat "$STATE_DIR/$feat_id/retry-count")
+      if [ "$retry_count" -lt "${MAX_RETRIES:-3}" ]; then
+        retry_count=$((retry_count + 1))
+        echo "$retry_count" > "$STATE_DIR/$feat_id/retry-count"
+        fstate_transition "$feat_id" "retrying" "retry-$retry_count"
+        info "Retrying $feat_id ($retry_count/${MAX_RETRIES:-3})"
+        mem_record_error "$feat_id" "implementation" "exit code $exit_code"
+      else
+        fstate_transition "$feat_id" "failed" "pipeline-error"
+        monozukuri_emit feature.failed feature_id "$feat_id" \
+          error "max-retries-exceeded (exit $exit_code)" 2>/dev/null || true
+        fstate_record_pause "$feat_id" "transient" "max-retries-exceeded"
+        mem_record_error "$feat_id" "implementation" "FINAL FAILURE exit code $exit_code"
+        err "$feat_id failed after ${MAX_RETRIES:-3} attempts"
+      fi
     fi
   fi
 
   cost_summary "$feat_id"
+
+  # ADR-013: update run manifest with final status
+  if declare -f manifest_update &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
+    manifest_update "$MANIFEST_RUN_ID" "$feat_id" "$(fstate_get_status "$feat_id")" "" "$wt_path"
+  fi
 
   mem_record_context "$feat_id" "$title" "$priority" "$labels" "$wt_path" "$results_file"
   mem_refresh_env
