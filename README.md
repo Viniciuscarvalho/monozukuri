@@ -217,6 +217,32 @@ monozukuri agent doctor [name]            # check install and auth for all or on
 | ------- | ------- | ------------------------ |
 | `--yes` | `false` | Skip confirmation prompt |
 
+### `monozukuri calibrate`
+
+Analyzes the last N completed features, computes actual-vs-estimated token ratios per phase, and writes updated calibration coefficients to `config/pricing.yaml`. Requires 5+ completed features with `actual_tokens` recorded.
+
+| Flag         | Default | Description                          |
+| ------------ | ------- | ------------------------------------ |
+| `--sample N` | `20`    | Number of recent features to analyze |
+
+Example output:
+
+```
+Calibration Report (last 20 features):
+═══════════════════════════════════════════════════════════════
+
+Agent: claude-code / Model: claude-sonnet-4-6
+
+Phase      Est tokens   Act tokens   Ratio   Guidance
+─────────────────────────────────────────────────────────
+prd            25,000       18,432    0.74    ↓ reduce baseline
+code           12,000       15,891    1.32    ↑ raise baseline
+tests           8,000        7,821    0.98    ✓ baseline accurate
+...
+
+→ Updated calibration coefficients written to config/pricing.yaml
+```
+
 ---
 
 ## Autonomy levels

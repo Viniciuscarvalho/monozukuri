@@ -250,6 +250,21 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
       return { ...state, features, totals, current };
     }
 
+    case 'feature.deferred': {
+      const { feature_id, reason } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      const features = {
+        ...state.features,
+        [feature_id]: {
+          ...prev,
+          status: 'deferred' as const,
+          error: reason,
+        },
+      };
+      const current = state.current === feature_id ? null : state.current;
+      return { ...state, features, current };
+    }
+
     case 'learning.captured': {
       // No state change needed; could extend to show learning count
       return state;

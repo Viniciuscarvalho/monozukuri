@@ -1,58 +1,57 @@
 # Changelog
 
-## [1.9.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.8.0...v1.9.0) (2026-04-26)
-
+## [Unreleased]
 
 ### Features
 
-* **gap7:** implicit-dep detection + ingestion validator (ADR-015) ([5852a39](https://github.com/Viniciuscarvalho/monozukuri/commit/5852a392597df28ce150a65ee49ffd4ef3eb6d94))
+- **gap8:** pricing & calibration — versioned `config/pricing.yaml`, `pricing_cost_usd()` for real USD cost tracking, `monozukuri calibrate` subcommand with per-(agent,model,phase) coefficient learning, deferred feature UI state (ADR-008)
+
+## [1.9.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.8.0...v1.9.0) (2026-04-26)
+
+### Features
+
+- **gap7:** implicit-dep detection + ingestion validator (ADR-015) ([5852a39](https://github.com/Viniciuscarvalho/monozukuri/commit/5852a392597df28ce150a65ee49ffd4ef3eb6d94))
 
 ## [1.8.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.7.0...v1.8.0) (2026-04-26)
 
-
 ### Features
 
-* **gap6:** run review — export, open, list subcommands (ADR-015) ([7b6e03c](https://github.com/Viniciuscarvalho/monozukuri/commit/7b6e03ca322f4ede636fcbac96f460caef175b17))
+- **gap6:** run review — export, open, list subcommands (ADR-015) ([7b6e03c](https://github.com/Viniciuscarvalho/monozukuri/commit/7b6e03ca322f4ede636fcbac96f460caef175b17))
 
 ## [1.7.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.6.0...v1.7.0) (2026-04-26)
 
-
 ### Features
 
-* Gap 5 - L5 Measurability Infrastructure ([a86f766](https://github.com/Viniciuscarvalho/monozukuri/commit/a86f76677d429c85b4e5a7250733ae4dd039ebf9))
+- Gap 5 - L5 Measurability Infrastructure ([a86f766](https://github.com/Viniciuscarvalho/monozukuri/commit/a86f76677d429c85b4e5a7250733ae4dd039ebf9))
 
 ## [1.6.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.5.0...v1.6.0) (2026-04-26)
 
-
 ### Features
 
-* **gap4:** per-phase routing config, routing_load, and threshold-gated routing suggest (ADR-015) ([30cec4f](https://github.com/Viniciuscarvalho/monozukuri/commit/30cec4f26e8b9341cfddfdbc6bc85e691126e96d))
-* **gap4:** per-phase routing config, routing_load, and threshold-gated suggest (ADR-015) ([1272e08](https://github.com/Viniciuscarvalho/monozukuri/commit/1272e08128e4bc4dea41633bca256b3f36da0a20))
+- **gap4:** per-phase routing config, routing_load, and threshold-gated routing suggest (ADR-015) ([30cec4f](https://github.com/Viniciuscarvalho/monozukuri/commit/30cec4f26e8b9341cfddfdbc6bc85e691126e96d))
+- **gap4:** per-phase routing config, routing_load, and threshold-gated suggest (ADR-015) ([1272e08](https://github.com/Viniciuscarvalho/monozukuri/commit/1272e08128e4bc4dea41633bca256b3f36da0a20))
 
 ## [1.5.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.4.0...v1.5.0) (2026-04-26)
 
-
 ### Features
 
-* **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([cdfee8e](https://github.com/Viniciuscarvalho/monozukuri/commit/cdfee8ea67cd894caead3f164401542c0d822aa4))
-* **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([0edde5d](https://github.com/Viniciuscarvalho/monozukuri/commit/0edde5d59905161f8b7ae75e7805ac9fb0e8346d))
-* **gap3:** phase-aware templates, context-pack, registry, render node path ([d1396a9](https://github.com/Viniciuscarvalho/monozukuri/commit/d1396a941fb65babe0ee741e9492ec1773e078bb))
+- **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([cdfee8e](https://github.com/Viniciuscarvalho/monozukuri/commit/cdfee8ea67cd894caead3f164401542c0d822aa4))
+- **contract:** gap 3 — adapter contract v1.0.0, claude-code improvements, aider adapter (ADR-012) ([0edde5d](https://github.com/Viniciuscarvalho/monozukuri/commit/0edde5d59905161f8b7ae75e7805ac9fb0e8346d))
+- **gap3:** phase-aware templates, context-pack, registry, render node path ([d1396a9](https://github.com/Viniciuscarvalho/monozukuri/commit/d1396a941fb65babe0ee741e9492ec1773e078bb))
 
 ## [1.4.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.3.0...v1.4.0) (2026-04-26)
 
-
 ### Features
 
-* **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([92a4ceb](https://github.com/Viniciuscarvalho/monozukuri/commit/92a4ceb155d17bb3f175e98c28bd1d8187a08250))
-* **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([e63d1eb](https://github.com/Viniciuscarvalho/monozukuri/commit/e63d1eba70459021c4a57a8374ce55a1783ae21d))
+- **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([92a4ceb](https://github.com/Viniciuscarvalho/monozukuri/commit/92a4ceb155d17bb3f175e98c28bd1d8187a08250))
+- **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([e63d1eb](https://github.com/Viniciuscarvalho/monozukuri/commit/e63d1eba70459021c4a57a8374ce55a1783ae21d))
 
 ## [1.3.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.2.0...v1.3.0) (2026-04-26)
 
-
 ### Features
 
-* **schema:** gap 1 — phase artifact schemas and validation (ADR-012) ([6103b82](https://github.com/Viniciuscarvalho/monozukuri/commit/6103b826a7150338c6985bbeac169beb5130fb7b))
-* **schema:** Gap 1 — phase artifact schemas and validation (ADR-012) ([1e1ae12](https://github.com/Viniciuscarvalho/monozukuri/commit/1e1ae12003a623dc4a07f34c47d36efd74ac03ae))
+- **schema:** gap 1 — phase artifact schemas and validation (ADR-012) ([6103b82](https://github.com/Viniciuscarvalho/monozukuri/commit/6103b826a7150338c6985bbeac169beb5130fb7b))
+- **schema:** Gap 1 — phase artifact schemas and validation (ADR-012) ([1e1ae12](https://github.com/Viniciuscarvalho/monozukuri/commit/1e1ae12003a623dc4a07f34c47d36efd74ac03ae))
 
 ## [1.2.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.1.2...v1.2.0) (2026-04-26)
 

@@ -1,0 +1,63 @@
+version: "1.0.0"
+updated_at: "2026-04-26"
+# Pricing per 1M tokens (USD)
+providers:
+  claude-code:
+    models:
+      claude-opus-4-7:
+        input_per_1m: 15.00
+        output_per_1m: 75.00
+      claude-sonnet-4-6:
+        input_per_1m: 3.00
+        output_per_1m: 15.00
+      claude-haiku-4-5:
+        input_per_1m: 0.80
+        output_per_1m: 4.00
+  aider:
+    models:
+      gpt-4o:
+        input_per_1m: 5.00
+        output_per_1m: 15.00
+      gpt-4o-mini:
+        input_per_1m: 0.15
+        output_per_1m: 0.60
+# Calibration coefficients (per agent/model/phase)
+# Updated by `monozukuri calibrate` — default 1.0 means "use token estimate as-is"
+calibration:
+  claude-code:
+    claude-opus-4-7:
+      prd: 1.0
+      techspec: 1.0
+      tasks: 1.0
+      code: 1.0
+      tests: 1.0
+      pr: 1.0
+    claude-sonnet-4-6:
+      prd: 1.0
+      techspec: 1.0
+      tasks: 1.0
+      code: 1.00
+      tests: 1.0
+      pr: 1.0
+    claude-haiku-4-5:
+      prd: 1.0
+      techspec: 1.0
+      tasks: 1.0
+      code: 1.0
+      tests: 1.0
+      pr: 1.0
+  aider:
+    gpt-4o:
+      prd: 1.0
+      techspec: 1.0
+      tasks: 1.0
+      code: 1.0
+      tests: 1.0
+      pr: 1.0
+    gpt-4o-mini:
+      prd: 1.0
+      techspec: 1.0
+      tasks: 1.0
+      code: 1.0
+      tests: 1.0
+      pr: 1.0

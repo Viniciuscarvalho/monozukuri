@@ -46,6 +46,28 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
     return <WaitingCard />;
   }
 
+  if (feature.status === 'deferred') {
+    const reason = feature.error ?? 'no reason given';
+    return (
+      <Box flexDirection="column" paddingLeft={1}>
+        <Box>
+          <Text>│ </Text>
+          <Text color="yellow">⏸ </Text>
+          <Text bold color="yellow">{feature.id}</Text>
+          <Text>  </Text>
+          <Text dimColor>{truncate(feature.title || feature.id, 42)}</Text>
+          <Text> │</Text>
+        </Box>
+        <Box>
+          <Text>│   </Text>
+          <Text color="yellow">deferred: </Text>
+          <Text>{truncate(reason, 50)}</Text>
+          <Text> │</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   const elapsed = formatElapsed(feature.startedAt, now);
   const tokens = formatTokens(feature.tokens);
   const estTokens = feature.estimatedTokens ? formatTokens(feature.estimatedTokens) : '~?';
