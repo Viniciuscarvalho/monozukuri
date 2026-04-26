@@ -90,7 +90,7 @@ router_stack_to_agent() {
     python) echo "python-pro" ;;
     rust)   echo "rust-expert" ;;
     go)     echo "go-expert" ;;
-    *)      echo "feature-marker" ;;
+    *)      echo "${MONOZUKURI_AGENT:-claude-code}" ;;
   esac
 }
 
@@ -140,12 +140,13 @@ router_route_task() {
   local preferred_agent
   preferred_agent=$(router_stack_to_agent "$stack")
 
-  # Fallback if agent not installed
+  # Fallback if specialist agent not installed
+  local default_agent="${MONOZUKURI_AGENT:-claude-code}"
   local resolved_agent="$preferred_agent"
-  if [ "$preferred_agent" != "feature-marker" ]; then
+  if [ "$preferred_agent" != "$default_agent" ]; then
     if ! router_agent_installed "$preferred_agent"; then
-      info "Router: $preferred_agent not installed — falling back to feature-marker (task: $task_id)"
-      resolved_agent="feature-marker"
+      info "Router: $preferred_agent not installed — falling back to $default_agent (task: $task_id)"
+      resolved_agent="$default_agent"
     fi
   fi
 

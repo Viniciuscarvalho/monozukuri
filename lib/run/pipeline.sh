@@ -355,7 +355,7 @@ EOPRD
   stack_profile_init "$wt_path" 2>/dev/null || true
 
   local detected_stack="${PROJECT_STACK:-unknown}"
-  local routed_agent="${ROUTING_FALLBACK:-feature-marker}"
+  local routed_agent="${ROUTING_FALLBACK:-${MONOZUKURI_AGENT:-claude-code}}"
 
   local wt_file_paths
   wt_file_paths=$(find "$wt_path" -type f \
@@ -412,24 +412,18 @@ EOPRD
     task_count=$(grep -c "^\- \[" "$task_dir/tasks.md" 2>/dev/null || echo "1")
     [ "$task_count" -eq 0 ] && task_count=1
   fi
+  local default_agent="${MONOZUKURI_AGENT:-claude-code}"
   local agent_type="generic"
-  [ "$routed_agent" != "${SKILL_COMMAND:-feature-marker}" ] && agent_type="specialist"
+  [ "$routed_agent" != "$default_agent" ] && agent_type="specialist"
   local phase2_cost
   phase2_cost=$(cost_estimate_phase "2" "$task_count" "$agent_type")
   cost_record "$feat_id" "phase2" "$phase2_cost"
 
-  local skill_arg="${SKILL_COMMAND:-feature-marker}"
-  [ "$routed_agent" != "${SKILL_COMMAND:-feature-marker}" ] && skill_arg="$routed_agent"
+  # SKILL_COMMAND stays set for the claude-code adapter back-compat path.
+  # routed_agent overrides only for specialist routing.
+  [ "$routed_agent" != "$default_agent" ] && SKILL_COMMAND="$routed_agent"
 
-  local interactive_flag=""
-  [ "$AUTONOMY" = "supervised" ] && interactive_flag="--interactive"
-
-  local effective_model="${MODEL_DEFAULT:-}"
-  [ "$effective_model" = "opusplan" ] && effective_model="opus"
-
-  local perm_flag=""
   if [ "$AUTONOMY" = "full_auto" ]; then
-    perm_flag="--permission-mode bypassPermissions"
     echo ""
     echo "  ⚠  FULL_AUTO — running with bypassPermissions mode"
     echo "     File writes, bash commands, and network calls run WITHOUT prompts."
@@ -446,11 +440,22 @@ EOPRD
     echo ""
   fi
 
-  info "Autonomy=$AUTONOMY — invoking pipeline (model: ${effective_model:-default}, agent: $skill_arg)..."
+  # Export env vars consumed by adapter_run_phase
+  export MONOZUKURI_FEATURE_ID="$feat_id"
+  export MONOZUKURI_WORKTREE="$wt_path"
+  export MONOZUKURI_AUTONOMY="$AUTONOMY"
+  export MONOZUKURI_MODEL="${MODEL_DEFAULT:-}"
+  export MONOZUKURI_LOG_FILE="$log_file"
+  export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
+
+  # Load the adapter and dispatch
+  agent_load "${MONOZUKURI_AGENT:-claude-code}"
+  info "Autonomy=$AUTONOMY — invoking ${MONOZUKURI_AGENT:-claude-code} adapter (model: ${MODEL_DEFAULT:-default}, skill: ${SKILL_COMMAND:-feature-marker})..."
+
   if [ "$AUTONOMY" = "full_auto" ]; then
-    echo "  [progress] Claude runs in batch (-p) mode — output is buffered until completion."
+    echo "  [progress] Agent runs in batch mode — output buffered until completion."
     echo "             Monitor artifacts : $wt_path/tasks/prd-$feat_id/"
-    echo "             Monitor run log   : $log_file  (populates when Claude exits)"
+    echo "             Monitor run log   : $log_file  (populates when agent exits)"
     echo ""
     _orchestrator_watcher_start \
       "$STATE_DIR/$feat_id/.watcher-active" \
@@ -459,12 +464,7 @@ EOPRD
       "$feat_id"
   fi
 
-  (cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-    ${effective_model:+--model "$effective_model"} \
-    --agent "$skill_arg" \
-    $perm_flag \
-    ${interactive_flag:+$interactive_flag} \
-    -p "prd-$feat_id") 2>&1 | tee "$log_file" || exit_code=$?
+  agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
 

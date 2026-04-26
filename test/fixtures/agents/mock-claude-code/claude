@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# test/fixtures/agents/mock-claude-code/claude — mock claude CLI for integration tests.
+# Accepts any flags; prints canned output and exits 0.
+
+# Handle --version and auth subcommands used by agent_doctor
+if [[ "$1" == "--version" ]]; then
+  echo "Claude Code 1.0.0-mock"
+  exit 0
+fi
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+  echo "Authenticated as mock@example.com"
+  exit 0
+fi
+
+echo "mock-claude: invoked with args: $*"
+echo "Implementing feature..."
+echo "Done."
+exit 0

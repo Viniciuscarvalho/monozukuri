@@ -31,6 +31,8 @@ sub_run() {
   # ADR-008 modules
   module_require core/cost
   module_require core/router
+  # Agent adapter contract (multi-agent support)
+  source "$LIB_DIR/agent/contract.sh"
   module_require memory/learning
   module_require plan/size-gate
   module_require plan/cycle-gate

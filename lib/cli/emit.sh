@@ -18,6 +18,7 @@ monozukuri_emit() {
     --arg type "$type" \
     --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     --arg run_id "$MONOZUKURI_RUN_ID" \
+    --arg agent "${MONOZUKURI_AGENT:-claude-code}" \
     "${jq_args[@]}" \
-    '{type:$type,ts:$ts,run_id:$run_id} + $ARGS.named' 2>/dev/null || true
+    '{type:$type,ts:$ts,run_id:$run_id,agent:$agent} + $ARGS.named' 2>/dev/null || true
 }

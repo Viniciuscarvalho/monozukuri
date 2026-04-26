@@ -39,7 +39,7 @@ load_config() {
 
   # Adapter-specific config
   SOURCE_FILE="${CFG_SOURCE_MARKDOWN_FILE:-features.md}"
-  SOURCE_LABEL="${CFG_SOURCE_GITHUB_LABEL:-feature-marker}"
+  SOURCE_LABEL="${CFG_SOURCE_GITHUB_LABEL:-monozukuri}"
   SOURCE_TEAM="${CFG_SOURCE_LINEAR_TEAM:-ENG}"
 
   # Worktree config
@@ -57,14 +57,20 @@ load_config() {
   SCHEMA_REVIEW="${CFG_SAFETY_SCHEMA_MIGRATION_REVIEW:-true}"
   MAX_FILE_CHANGES="${CFG_SAFETY_MAX_FILE_CHANGES:-50}"
 
-  # Skill command — which Claude Code skill to invoke per feature
+  # Agent selection — new multi-agent config key.
+  # Back-compat: if only skill.command is present (no agent: key), default to claude-code.
+  MONOZUKURI_AGENT="${CFG_AGENT:-claude-code}"
+  export MONOZUKURI_AGENT
+
+  # Skill command (Claude Code specific) — deprecated; use agents.claude-code.skills.<phase>.
+  # Back-compat: old configs with skill.command: <skill> keep working as before.
   SKILL_COMMAND="${CFG_SKILL_COMMAND:-feature-marker}"
   export SKILL_COMMAND
 
   # Discovery (ADR-006)
   AGENT_DISCOVERY="${CFG_DISCOVERY_ENABLED:-true}"
   ROUTING_PREFER="${CFG_ROUTING_PREFER_AGENTS:-true}"
-  ROUTING_FALLBACK="${CFG_ROUTING_FALLBACK:-$SKILL_COMMAND}"
+  ROUTING_FALLBACK="${CFG_ROUTING_FALLBACK:-${MONOZUKURI_AGENT}}"
 
   # Model selection
   MODEL_DEFAULT="${CFG_MODEL_DEFAULT:-opusplan}"
