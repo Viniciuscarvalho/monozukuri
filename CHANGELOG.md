@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.10.0...v1.11.0) (2026-04-26)
+
+
+### Features
+
+* **conventions:** read and inject project convention files ([0da6119](https://github.com/Viniciuscarvalho/monozukuri/commit/0da611918f5f6a83689a9110d7c70de975ec5587))
+
 ## [1.10.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.9.0...v1.10.0) (2026-04-26)
 
 
