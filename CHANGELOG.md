@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.3.0...v1.4.0) (2026-04-26)
+
+
+### Features
+
+* **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([92a4ceb](https://github.com/Viniciuscarvalho/monozukuri/commit/92a4ceb155d17bb3f175e98c28bd1d8187a08250))
+* **failure:** gap 2 — stratified failure handling, idempotent resumption, CI poll (ADR-013/014) ([e63d1eb](https://github.com/Viniciuscarvalho/monozukuri/commit/e63d1eba70459021c4a57a8374ce55a1783ae21d))
+
 ## [1.3.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.2.0...v1.3.0) (2026-04-26)
 
 
