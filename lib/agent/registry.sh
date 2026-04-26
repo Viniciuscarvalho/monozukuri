@@ -13,9 +13,18 @@
 _REGISTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # registry_adapter_for_phase PHASE — echo adapter name for PHASE.
-# Reads MONOZUKURI_AGENT; future: per-phase routing.yaml overrides.
+# Reads PHASE_ADAPTER_<PHASE> env vars set by routing_load (ADR-015);
+# falls back to MONOZUKURI_AGENT.
 registry_adapter_for_phase() {
-  echo "${MONOZUKURI_AGENT:-claude-code}"
+  local phase="$1"
+  if declare -f routing_adapter_for_phase &>/dev/null; then
+    routing_adapter_for_phase "$phase"
+  else
+    local env_var
+    env_var="PHASE_ADAPTER_$(printf '%s' "$phase" | tr '[:lower:]-' '[:upper:]_')"
+    local adapter="${!env_var:-}"
+    printf '%s\n' "${adapter:-${MONOZUKURI_AGENT:-claude-code}}"
+  fi
 }
 
 # registry_prepare_phase PHASE FEAT_ID WT_PATH

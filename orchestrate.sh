@@ -92,16 +92,22 @@ OPT_RESUME=false
 OPT_CONFIG_ACTION=""
 OPT_AGENT_SUBCMD=""
 OPT_AGENT_NAME=""
+OPT_ROUTING_ACTION=""
+OPT_ROUTING_PHASE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
         OPT_AGENT_SUBCMD="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_NAME" ]; then
         OPT_AGENT_NAME="$1"
+      elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_ACTION" ]; then
+        OPT_ROUTING_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
+        OPT_ROUTING_PHASE="$1"
       fi
       ;;
     --resume-paused)
@@ -155,6 +161,9 @@ while [ $# -gt 0 ]; do
     list|enable)
       [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ] && OPT_AGENT_SUBCMD="$1"
       ;;
+    suggest)
+      [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_ACTION" ] && OPT_ROUTING_ACTION="$1"
+      ;;
     --help|-h)
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
@@ -176,6 +185,7 @@ while [ $# -gt 0 ]; do
       echo "  agent list                   List all adapters and their install status"
       echo "  agent doctor [name]          Check install/auth for all or one adapter"
       echo "  agent enable <name>          Set the active agent in .monozukuri/config.yaml"
+      echo "  routing suggest [phase]      Recommend adapter per phase (data-threshold-gated)"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -207,6 +217,10 @@ while [ $# -gt 0 ]; do
         OPT_AGENT_SUBCMD="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_NAME" ]; then
         OPT_AGENT_NAME="$1"
+      elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_ACTION" ]; then
+        OPT_ROUTING_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
+        OPT_ROUTING_PHASE="$1"
       else
         err "Unknown argument: $1"
         err "Run: monozukuri --help"
@@ -217,12 +231,15 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG
+export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
+       OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG \
+       OPT_ROUTING_ACTION OPT_ROUTING_PHASE
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
-# Verify we're in a git repo (doctor is exempt — it's a pre-flight check)
-if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && ! git rev-parse --is-inside-work-tree &>/dev/null; then
+# Verify we're in a git repo (doctor and routing are exempt — pre-flight or read-only)
+if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] \
+   && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
   exit 1
@@ -243,4 +260,5 @@ case "$SUBCOMMAND" in
   resume-paused)   source "$CMD_DIR/resume.sh"; sub_resume_paused ;;
   ingest-status)   source "$CMD_DIR/ingest-status.sh"; sub_ingest_status ;;
   agent)           source "$CMD_DIR/agent.sh"; sub_agent ;;
+  routing)         source "$CMD_DIR/routing.sh"; sub_routing ;;
 esac
