@@ -61,6 +61,14 @@ run_backlog() {
   local start_time
   start_time=$(date +%s)
 
+  # ADR-015 Gap 7: Validate all depends_on references before processing
+  if declare -f dep_check_explicit &>/dev/null; then
+    if ! dep_check_explicit "$backlog_file"; then
+      err "Dependency validation failed — fix backlog and re-run"
+      return 1
+    fi
+  fi
+
   # Sort by priority, filter by status, check local dependency ordering
   local items
   items=$(node -e "
@@ -475,6 +483,33 @@ EOPRD
       "$feat_id"
   fi
 
+  # ADR-015 Gap 7: Pre-Code gate — check for file-set overlap with in-flight features
+  if declare -f overlap_check &>/dev/null; then
+    local techspec_file="$task_dir/techspec.md"
+    if [ -f "$techspec_file" ]; then
+      # Extract files_likely_touched from TechSpec using JSON or YAML parsing
+      local files_likely_touched
+      files_likely_touched=$(grep -A 50 "files_likely_touched" "$techspec_file" | \
+        grep -E "^[[:space:]]*-[[:space:]]+" | \
+        sed 's/^[[:space:]]*-[[:space:]]*//g' | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' 2>/dev/null || echo "[]")
+
+      if [ -n "$files_likely_touched" ] && [ "$files_likely_touched" != "[]" ]; then
+        local overlaps
+        overlaps=$(overlap_check "$feat_id" "$files_likely_touched")
+
+        if [ -n "$overlaps" ]; then
+          info "Deferring $feat_id: file-set overlap detected with: $overlaps"
+          fstate_transition "$feat_id" "deferred" "file-overlap"
+          if declare -f manifest_update &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
+            manifest_update "$MANIFEST_RUN_ID" "$feat_id" "deferred" "file-overlap" "overlaps_with=$overlaps"
+          fi
+          return 0
+        fi
+      fi
+    fi
+  fi
+
   agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
@@ -492,6 +527,18 @@ EOPRD
       fstate_transition "$feat_id" "error" "schema-validation-failed"
       return 1
     fi
+  fi
+
+  # ADR-015 Gap 7: Post-Code — capture actual files touched for learning signal
+  if [ "$exit_code" -eq 0 ] && declare -f capture_actual_files &>/dev/null; then
+    cd "$wt_path" || true
+    local base_sha
+    base_sha=$(git merge-base HEAD "$BASE_BRANCH" 2>/dev/null || git rev-parse "${BASE_BRANCH}" 2>/dev/null || echo "")
+    if [ -n "$base_sha" ]; then
+      capture_actual_files "$feat_id" "$base_sha" 2>&1 || \
+        warn "capture_actual_files: failed for $feat_id (non-blocking)"
+    fi
+    cd "$ROOT_DIR" || cd - >/dev/null || true
   fi
 
   # ADR-011 PR-E: build verification before Phase 3
