@@ -122,6 +122,10 @@ learning:
     backend: embedding # exact | embedding (embedding requires local_model.enabled: true)
     threshold: 0.85
 
+# Convention file generation (PR3–PR4)
+conventions:
+  auto_sync: false # true = rewrite AGENTS.md from learning store after each successful run
+
 execution_timeouts:
   skill_timeout_seconds: 1800 # Wall-clock limit for claude --skill invocations (op_timeout)
 

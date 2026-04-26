@@ -195,6 +195,12 @@ sub_run() {
     manifest_finalize "$MANIFEST_RUN_ID" "completed"
   fi
 
+  # Auto-sync AGENTS.md from learning store (opt-in via conventions.auto_sync: true)
+  if [ -f "$LIB_DIR/run/conventions-sync.sh" ]; then
+    source "$LIB_DIR/run/conventions-sync.sh"
+    conventions_auto_sync "$ROOT_DIR" || true
+  fi
+
   # Cleanup backlog file
   rm -f "$backlog_file"
 }
