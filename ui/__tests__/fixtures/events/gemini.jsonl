@@ -1,0 +1,8 @@
+{"type":"run.started","ts":"2026-04-25T10:00:00Z","run_id":"ghi789","agent":"gemini","autonomy":"supervised","model":"gemini-2.5-pro","source":"linear","feature_count":1}
+{"type":"backlog.loaded","ts":"2026-04-25T10:00:01Z","run_id":"ghi789","features":[{"id":"feat-003","title":"Add dark mode"}]}
+{"type":"feature.queued","ts":"2026-04-25T10:00:02Z","run_id":"ghi789","feature_id":"feat-003","position":1}
+{"type":"feature.started","ts":"2026-04-25T10:00:03Z","run_id":"ghi789","feature_id":"feat-003","agent":"gemini","worktree_path":"/tmp/feat-003","branch":"feat/feat-003"}
+{"type":"phase.started","ts":"2026-04-25T10:00:04Z","run_id":"ghi789","feature_id":"feat-003","phase":"techspec"}
+{"type":"phase.completed","ts":"2026-04-25T10:00:15Z","run_id":"ghi789","feature_id":"feat-003","phase":"techspec","duration_ms":11000,"tokens_used":2100,"cost_usd":0.04}
+{"type":"feature.completed","ts":"2026-04-25T10:00:16Z","run_id":"ghi789","feature_id":"feat-003","pr_url":"https://github.com/org/repo/pull/3","total_tokens":2100,"total_cost_usd":0.04}
+{"type":"run.completed","ts":"2026-04-25T10:00:17Z","run_id":"ghi789","succeeded":1,"failed":0,"skipped":0,"total_cost_usd":0.04}

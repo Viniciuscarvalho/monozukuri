@@ -1,0 +1,8 @@
+{"type":"run.started","ts":"2026-04-25T10:00:00Z","run_id":"def456","agent":"codex","autonomy":"full_auto","model":"gpt-5","source":"github","feature_count":1}
+{"type":"backlog.loaded","ts":"2026-04-25T10:00:01Z","run_id":"def456","features":[{"id":"feat-002","title":"Refactor auth service"}]}
+{"type":"feature.queued","ts":"2026-04-25T10:00:02Z","run_id":"def456","feature_id":"feat-002","position":1}
+{"type":"feature.started","ts":"2026-04-25T10:00:03Z","run_id":"def456","feature_id":"feat-002","agent":"codex","worktree_path":"/tmp/feat-002","branch":"feat/feat-002"}
+{"type":"phase.started","ts":"2026-04-25T10:00:04Z","run_id":"def456","feature_id":"feat-002","phase":"code"}
+{"type":"phase.completed","ts":"2026-04-25T10:00:20Z","run_id":"def456","feature_id":"feat-002","phase":"code","duration_ms":16000,"tokens_used":4500,"cost_usd":0.09}
+{"type":"feature.completed","ts":"2026-04-25T10:00:21Z","run_id":"def456","feature_id":"feat-002","pr_url":"https://github.com/org/repo/pull/2","total_tokens":4500,"total_cost_usd":0.09}
+{"type":"run.completed","ts":"2026-04-25T10:00:22Z","run_id":"def456","succeeded":1,"failed":0,"skipped":0,"total_cost_usd":0.09}

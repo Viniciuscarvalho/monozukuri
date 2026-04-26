@@ -38,6 +38,9 @@ jobs:
       - name: Build UI
         run: npm run build --prefix ui
 
+      - name: Test UI
+        run: npm test --prefix ui
+
       - name: Lint shell scripts
         run: |
           npm install -g shellcheck 2>/dev/null || true
@@ -50,3 +53,6 @@ jobs:
 
       - name: Run integration tests
         run: bats test/integration || true
+
+      - name: Run conformance tests
+        run: bats test/conformance || true

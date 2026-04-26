@@ -41,6 +41,7 @@ export function initialState(): AppState {
     runId: null,
     autonomy: '',
     model: '',
+    agent: '',
     source: '',
     featureCount: 0,
     budget,
@@ -61,6 +62,7 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
         runId: event.run_id,
         autonomy: event.autonomy ?? '',
         model: event.model ?? '',
+        agent: event.agent ?? '',
         source: event.source ?? '',
         featureCount: event.feature_count ?? 0,
       };

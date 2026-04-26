@@ -1,0 +1,8 @@
+{"type":"run.started","ts":"2026-04-25T10:00:00Z","run_id":"jkl012","agent":"kiro","autonomy":"checkpoint","model":"amazon.nova-premier-v1:0","source":"markdown","feature_count":1}
+{"type":"backlog.loaded","ts":"2026-04-25T10:00:01Z","run_id":"jkl012","features":[{"id":"feat-004","title":"Setup CI pipeline"}]}
+{"type":"feature.queued","ts":"2026-04-25T10:00:02Z","run_id":"jkl012","feature_id":"feat-004","position":1}
+{"type":"feature.started","ts":"2026-04-25T10:00:03Z","run_id":"jkl012","feature_id":"feat-004","agent":"kiro","worktree_path":"/tmp/feat-004","branch":"feat/feat-004"}
+{"type":"phase.started","ts":"2026-04-25T10:00:04Z","run_id":"jkl012","feature_id":"feat-004","phase":"tasks"}
+{"type":"phase.completed","ts":"2026-04-25T10:00:12Z","run_id":"jkl012","feature_id":"feat-004","phase":"tasks","duration_ms":8000,"tokens_used":1800,"cost_usd":0.03}
+{"type":"feature.completed","ts":"2026-04-25T10:00:13Z","run_id":"jkl012","feature_id":"feat-004","pr_url":"https://github.com/org/repo/pull/4","total_tokens":1800,"total_cost_usd":0.03}
+{"type":"run.completed","ts":"2026-04-25T10:00:14Z","run_id":"jkl012","succeeded":1,"failed":0,"skipped":0,"total_cost_usd":0.03}

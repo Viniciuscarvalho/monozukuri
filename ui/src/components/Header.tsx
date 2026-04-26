@@ -46,7 +46,7 @@ function ProgressBar({
 }
 
 export function Header({ state, terminalWidth }: HeaderProps): React.ReactElement {
-  const { runId, autonomy, model, source, featureCount, budget, features, totals } = state;
+  const { runId, autonomy, model, agent, source, featureCount, budget, features, totals } = state;
 
   const completed = totals.succeeded + totals.failed + totals.skipped;
   const totalCost = totals.costUsd;
@@ -80,6 +80,8 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
         <Text color="cyan">{autonomy || '—'}</Text>
         <Text>   model: </Text>
         <Text color="yellow">{model || '—'}</Text>
+        <Text>   agent: </Text>
+        <Text color="green">{agent || '—'}</Text>
         <Text>   source: </Text>
         <Text color="magenta">{sourceLabel}</Text>
         <Text> │</Text>

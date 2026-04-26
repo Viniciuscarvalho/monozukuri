@@ -29,6 +29,7 @@ export interface AppState {
   runId: string | null;
   autonomy: string;
   model: string;
+  agent: string;
   source: string;
   featureCount: number;
   budget: number;
@@ -58,6 +59,7 @@ export interface RunStartedEvent extends BaseEvent {
   run_id: string;
   autonomy: string;
   model: string;
+  agent: string;
   source: string;
   feature_count: number;
 }
@@ -78,6 +80,7 @@ export interface FeatureStartedEvent extends BaseEvent {
   feature_id: string;
   worktree_path: string;
   branch: string;
+  agent?: string;
 }
 
 export interface FeatureSkippedEvent extends BaseEvent {

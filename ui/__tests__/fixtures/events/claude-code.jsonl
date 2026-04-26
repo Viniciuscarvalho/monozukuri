@@ -1,0 +1,8 @@
+{"type":"run.started","ts":"2026-04-25T10:00:00Z","run_id":"abc123","agent":"claude-code","autonomy":"checkpoint","model":"claude-sonnet-4-6","source":"markdown","feature_count":1}
+{"type":"backlog.loaded","ts":"2026-04-25T10:00:01Z","run_id":"abc123","features":[{"id":"feat-001","title":"Add login page"}]}
+{"type":"feature.queued","ts":"2026-04-25T10:00:02Z","run_id":"abc123","feature_id":"feat-001","position":1}
+{"type":"feature.started","ts":"2026-04-25T10:00:03Z","run_id":"abc123","feature_id":"feat-001","agent":"claude-code","worktree_path":"/tmp/feat-001","branch":"feat/feat-001"}
+{"type":"phase.started","ts":"2026-04-25T10:00:04Z","run_id":"abc123","feature_id":"feat-001","phase":"prd"}
+{"type":"phase.completed","ts":"2026-04-25T10:00:10Z","run_id":"abc123","feature_id":"feat-001","phase":"prd","duration_ms":6000,"tokens_used":1200,"cost_usd":0.02}
+{"type":"feature.completed","ts":"2026-04-25T10:00:11Z","run_id":"abc123","feature_id":"feat-001","pr_url":"https://github.com/org/repo/pull/1","total_tokens":1200,"total_cost_usd":0.02}
+{"type":"run.completed","ts":"2026-04-25T10:00:12Z","run_id":"abc123","succeeded":1,"failed":0,"skipped":0,"total_cost_usd":0.02}
