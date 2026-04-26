@@ -52,6 +52,9 @@ sub_run() {
   module_require run/ci-poll
   # ADR-015 (Gap 4): per-phase adapter routing
   module_require run/routing
+  # ADR-015 (Gap 7): explicit and implicit dependency detection
+  module_require run/dep-check
+  module_require run/implicit-dep
   # ADR-012 (Gap 3): phase template rendering + adapter routing
   module_require prompt/context-pack
   module_require agent/registry
