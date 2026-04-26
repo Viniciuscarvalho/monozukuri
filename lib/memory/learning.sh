@@ -24,6 +24,26 @@
 # use a mkdir-based spinlock so background ingest jobs (ADR-009 PR-G) and Phase 3
 # fix-retry loops cannot interleave their read-modify-write cycles.
 
+# ── _learning_validate ───────────────────────────────────────────────────────
+# _learning_validate ENTRY_JSON
+# Checks that all required fields are present and non-null in a learning entry.
+# See schemas/learned.schema.json for the full contract.
+# Returns 1 with an error message when validation fails.
+_learning_validate() {
+  local entry="$1"
+  local result
+  result=$(jq -r '
+    . as $e |
+    ["id","pattern","fix","tier","confidence","hits","archived","promotion_candidate"]
+    | map(select($e[.] == null))
+    | if length > 0 then "missing: " + join(", ") else "ok" end
+  ' <<<"$entry" 2>/dev/null) || result="parse-error"
+  if [[ "$result" != "ok" ]]; then
+    printf 'Error: learning entry has invalid shape (%s)\n' "$result" >&2
+    return 1
+  fi
+}
+
 # ── _learning_acquire_lock / _learning_release_lock ──────────────────────────
 # Portable lock using mkdir(1) which is atomic on POSIX filesystems.
 # Waits up to 10 s (100 × 0.1 s) then force-acquires to prevent deadlocks from

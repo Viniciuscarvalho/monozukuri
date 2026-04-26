@@ -10,16 +10,43 @@
 #
 # Usage:
 #   source "$LIB_DIR/agent/conventions-merge.sh"
-#   conventions_merge_diff    REPO_ROOT BLOCK_FILE  # show unified diff (no write)
-#   conventions_merge_write   REPO_ROOT BLOCK_FILE  # write with backup
-#   conventions_restore       REPO_ROOT [BACKUP]    # restore latest (or named) backup
-#   conventions_restore_list  REPO_ROOT             # list available backups
+#   conventions_merge_diff                REPO_ROOT BLOCK_FILE  # show unified diff (no write)
+#   conventions_merge_write               REPO_ROOT BLOCK_FILE  # write with backup
+#   conventions_merge_insert_above_marker REPO_ROOT CONTENT_FILE  # insert section above generated block
+#   conventions_restore                   REPO_ROOT [BACKUP]    # restore latest (or named) backup
+#   conventions_restore_list              REPO_ROOT             # list available backups
 #
-# BLOCK_FILE: path to a file containing the full generated block (with markers).
+# BLOCK_FILE / CONTENT_FILE: path to a file containing content to merge.
 
 _MERGE_MARKER_START='<!-- monozukuri:generated-start v1 -->'
 _MERGE_MARKER_END='<!-- monozukuri:generated-end -->'
 _MERGE_BACKUP_SUBDIR=".monozukuri/conventions-backups"
+
+# _conventions_backup_create REPO_ROOT
+# Creates a timestamped backup of AGENTS.md in the backups subdir.
+# Uses a zero-byte sentinel when AGENTS.md does not yet exist (restore removes it).
+# Prints the backup file path.
+_conventions_backup_create() {
+  local repo_root="$1"
+  local agents_md="$repo_root/AGENTS.md"
+  local backup_dir="$repo_root/$_MERGE_BACKUP_SUBDIR"
+  mkdir -p "$backup_dir"
+  local ts; ts=$(date +%Y%m%dT%H%M%S)
+  local backup_file
+  backup_file=$(mktemp "$backup_dir/AGENTS.md.${ts}.XXXXX")
+  if [[ -f "$agents_md" ]]; then
+    cp "$agents_md" "$backup_file"
+  fi
+  printf '%s' "$backup_file"
+}
+
+# _conventions_find_marker_line FILE MARKER
+# Prints the 1-based line number of MARKER in FILE, or empty string if absent.
+_conventions_find_marker_line() {
+  local file="$1"
+  local marker="$2"
+  grep -n "^${marker}$" "$file" 2>/dev/null | head -1 | cut -d: -f1
+}
 
 # _merge_compute REPO_ROOT BLOCK_FILE OUTFILE
 # Computes the merged content and writes it to OUTFILE. Returns 1 on conflict.
@@ -35,8 +62,8 @@ _merge_compute() {
   fi
 
   local start_line end_line total
-  start_line=$(grep -n "^${_MERGE_MARKER_START}$" "$agents_md" 2>/dev/null | head -1 | cut -d: -f1)
-  end_line=$(grep   -n "^${_MERGE_MARKER_END}$"   "$agents_md" 2>/dev/null | head -1 | cut -d: -f1)
+  start_line=$(_conventions_find_marker_line "$agents_md" "$_MERGE_MARKER_START")
+  end_line=$(_conventions_find_marker_line   "$agents_md" "$_MERGE_MARKER_END")
 
   if [[ -n "$start_line" && -z "$end_line" ]]; then
     printf 'Error: AGENTS.md has opening marker but no closing marker. Fix manually.\n' >&2
@@ -93,29 +120,53 @@ conventions_merge_write() {
   local block_file="${2:?conventions_merge_write: BLOCK_FILE required}"
   local agents_md="$repo_root/AGENTS.md"
 
-  local backup_dir="$repo_root/$_MERGE_BACKUP_SUBDIR"
-  mkdir -p "$backup_dir"
-
-  # Backup with timestamp + random suffix for uniqueness within the same second.
-  local ts; ts=$(date +%Y%m%dT%H%M%S)
   local backup_file
-  backup_file=$(mktemp "$backup_dir/AGENTS.md.${ts}.XXXXX")
-
-  # Write backup content (zero-byte if file doesn't exist yet — restore removes it).
-  if [[ -f "$agents_md" ]]; then
-    cp "$agents_md" "$backup_file"
-  fi
+  backup_file=$(_conventions_backup_create "$repo_root")
 
   local tmpout; tmpout=$(mktemp)
   if ! _merge_compute "$repo_root" "$block_file" "$tmpout"; then
-    rm -f "$tmpout"
-    # Remove the just-created backup sentinel to avoid confusing restore-list.
-    rm -f "$backup_file"
+    rm -f "$tmpout" "$backup_file"
     return 1
   fi
 
   mv "$tmpout" "$agents_md"
   printf 'Written: %s  (backup: %s)\n' "$agents_md" "$(basename "$backup_file")"
+}
+
+# conventions_merge_insert_above_marker REPO_ROOT CONTENT_FILE
+# Inserts CONTENT_FILE above the generated-start marker in AGENTS.md
+# (or appends if no markers exist; writes CONTENT_FILE as the whole file
+# if AGENTS.md doesn't exist). Creates a timestamped backup before writing.
+# Prints the backup file path.
+conventions_merge_insert_above_marker() {
+  local repo_root="${1:?conventions_merge_insert_above_marker: REPO_ROOT required}"
+  local content_file="${2:?conventions_merge_insert_above_marker: CONTENT_FILE required}"
+  local agents_md="$repo_root/AGENTS.md"
+
+  local backup_file
+  backup_file=$(_conventions_backup_create "$repo_root")
+
+  local tmpout; tmpout=$(mktemp)
+
+  if [[ -f "$agents_md" ]]; then
+    local start_line
+    start_line=$(_conventions_find_marker_line "$agents_md" "$_MERGE_MARKER_START")
+    if [[ -n "$start_line" ]]; then
+      local prefix_end=$(( start_line - 1 ))
+      {
+        [[ "$prefix_end" -gt 0 ]] && head -n "$prefix_end" "$agents_md"
+        cat "$content_file"
+        tail -n "+${start_line}" "$agents_md"
+      } > "$tmpout"
+    else
+      { cat "$agents_md"; cat "$content_file"; } > "$tmpout"
+    fi
+  else
+    cat "$content_file" > "$tmpout"
+  fi
+
+  mv "$tmpout" "$agents_md"
+  printf '%s' "$backup_file"
 }
 
 conventions_restore() {
