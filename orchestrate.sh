@@ -97,7 +97,7 @@ OPT_ROUTING_PHASE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -187,6 +187,9 @@ while [ $# -gt 0 ]; do
       echo "  agent enable <name>          Set the active agent in .monozukuri/config.yaml"
       echo "  routing suggest [phase]      Recommend adapter per phase (data-threshold-gated)"
       echo "  metrics                      View recent canary metrics and trends"
+      echo "  review export <run-id>       Generate static HTML review bundle"
+      echo "  review open <run-id>         Generate and open review bundle in browser"
+      echo "  review list                  List all runs with summaries"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -238,8 +241,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
-# Verify we're in a git repo (doctor, routing, and metrics are exempt — pre-flight or read-only)
-if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] \
+# Verify we're in a git repo (doctor, routing, metrics, and review are exempt — pre-flight or read-only)
+if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] && [ "$SUBCOMMAND" != "review" ] \
    && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
@@ -263,4 +266,5 @@ case "$SUBCOMMAND" in
   agent)           source "$CMD_DIR/agent.sh"; sub_agent ;;
   routing)         source "$CMD_DIR/routing.sh"; sub_routing ;;
   metrics)         source "$CMD_DIR/metrics.sh"; sub_metrics ;;
+  review)          source "$CMD_DIR/review.sh"; sub_review "${@:2}" ;;
 esac

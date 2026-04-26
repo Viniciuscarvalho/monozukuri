@@ -233,6 +233,12 @@ run_backlog() {
     ROOT_DIR="$ROOT_DIR" node "$SCRIPTS_DIR/status-writer.js" --json > /dev/null 2>&1 || true
     info "Status: $CONFIG_DIR/status.json"
   fi
+
+  # Generate run report (Gap 6)
+  if [ -f "$LIB_DIR/run/report.sh" ] && [ -n "${MANIFEST_RUN_ID:-}" ]; then
+    source "$LIB_DIR/run/report.sh"
+    generate_run_report "$MANIFEST_RUN_ID" || warn "Failed to generate run report"
+  fi
 }
 
 # ── process_item ──────────────────────────────────────────────────────────────
