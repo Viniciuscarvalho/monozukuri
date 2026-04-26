@@ -2,7 +2,7 @@
 
 export type Phase = 'prd' | 'techspec' | 'tasks' | 'code' | 'tests' | 'pr';
 export type PhaseStatus = 'pending' | 'in_progress' | 'done' | 'failed';
-export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped';
+export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped' | 'deferred';
 
 export interface Feature {
   id: string;
@@ -135,6 +135,13 @@ export interface FeatureFailedEvent extends BaseEvent {
   error: string;
 }
 
+export interface FeatureDeferredEvent extends BaseEvent {
+  type: 'feature.deferred';
+  feature_id: string;
+  reason: string;
+  blocked_by: string;
+}
+
 export interface LearningCapturedEvent extends BaseEvent {
   type: 'learning.captured';
   feature_id: string;
@@ -170,6 +177,7 @@ export type MonozukuriEvent =
   | PhaseFailedEvent
   | FeatureCompletedEvent
   | FeatureFailedEvent
+  | FeatureDeferredEvent
   | LearningCapturedEvent
   | LogLineEvent
   | RunCompletedEvent;

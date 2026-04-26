@@ -1,7 +1,8 @@
 #!/bin/bash
-# lib/cost.sh — Token-cost estimator (ADR-008 PR-A)
+# lib/cost.sh — Token-cost estimator (ADR-008 PR-A, Gap 8)
 #
 # Accumulates per-phase token estimates using baselines from config.yml.
+# Converts token estimates to USD costs using pricing.yaml (Gap 8).
 # All functions are additive; nothing here breaks existing behaviour.
 #
 # Exported variables (populated by cost_load_config):
@@ -10,6 +11,10 @@
 #   COST_PHASE_2_GENERIC       — tokens per task routed to feature-marker
 #   COST_PHASE_4_COMMIT_PR     — tokens for Phase 4 commit+PR creation
 #   COST_FIX_ATTEMPT           — overhead tokens per fix attempt in Phase 3
+
+# Source pricing module
+PRICING_MODULE="$(dirname "${BASH_SOURCE[0]}")/pricing.sh"
+[ -f "$PRICING_MODULE" ] && source "$PRICING_MODULE"
 
 # ── Load baselines from CFG_* (set by config.sh / parse-config.js) ──
 
@@ -95,6 +100,7 @@ cost_estimate_phase() {
 # ── cost_record ──────────────────────────────────────────────────────
 # Usage: cost_record <feat_id> <phase> <estimate>
 # Appends a phase entry to cost.json and updates the cumulative total.
+# Gap 8: Now also calculates and records USD cost.
 
 cost_record() {
   local feat_id="$1"
@@ -104,15 +110,34 @@ cost_record() {
 
   [ ! -f "$cost_file" ] && cost_init "$feat_id"
 
+  # Gap 8: Calculate USD cost
+  local agent="${MODEL_AGENT:-claude-code}"
+  local model="${MODEL_PRIMARY:-claude-sonnet-4-6}"
+  local estimated_usd="0.00"
+
+  # Only calculate USD if pricing module is available
+  if command -v pricing_cost_usd &>/dev/null; then
+    # Apply calibration factor
+    local calibration
+    calibration=$(pricing_calibration_factor "$agent" "$model" "$phase" 2>/dev/null || echo "1.0")
+    local calibrated_tokens
+    calibrated_tokens=$(awk -v est="$estimate" -v cal="$calibration" 'BEGIN { printf "%d", est * cal }')
+
+    # Calculate USD cost
+    estimated_usd=$(pricing_cost_usd "$agent" "$model" "$calibrated_tokens" "" 2>/dev/null || echo "0.00")
+  fi
+
   node -e "
     const fs = require('fs');
     const data = JSON.parse(fs.readFileSync('$cost_file', 'utf-8'));
     data.phases.push({
       phase: '$phase',
       estimated_tokens: $estimate,
+      estimated_usd: $estimated_usd,
       recorded_at: new Date().toISOString()
     });
     data.cumulative_tokens = data.phases.reduce((sum, p) => sum + p.estimated_tokens, 0);
+    data.cumulative_usd = data.phases.reduce((sum, p) => sum + (p.estimated_usd || 0), 0);
     data.updated_at = new Date().toISOString();
     fs.writeFileSync('$cost_file', JSON.stringify(data, null, 2));
   " 2>/dev/null || true
@@ -144,41 +169,14 @@ cost_summary() {
 # ── cost_calibrate ───────────────────────────────────────────────────
 # Usage: cost_calibrate <sample_n>
 # Reads timing data from the last N completed features.
-# v1: placeholder — prints guidance until telemetry data is available.
+# Gap 8: Real implementation — reads canary-history.md and cost.json files.
+# This function is now called by lib/run/calibrate.sh, not used standalone.
 
 cost_calibrate() {
   local sample_n="${1:-10}"
 
+  # This is a stub — the real calibration logic is in lib/run/calibrate.sh
+  # Keeping this for backward compatibility in case any code still calls it
   log "Cost calibration (sample=$sample_n)"
-  info "Manual calibration: check telemetry in \$STATE_DIR"
-  info "For each completed feature, review cost.json for cumulative_tokens."
-  info "Compare against actual Claude API usage to tune cost_baselines in config.yml."
-
-  local count=0
-  local total_tokens=0
-
-  for dir in "$STATE_DIR"/*/; do
-    [ -d "$dir" ] || continue
-    local cost_file="$dir/cost.json"
-    [ -f "$cost_file" ] || continue
-
-    count=$((count + 1))
-    [ "$count" -gt "$sample_n" ] && break
-
-    local tokens
-    tokens=$(node -p "JSON.parse(require('fs').readFileSync('$cost_file','utf-8')).cumulative_tokens" 2>/dev/null || echo "0")
-    total_tokens=$((total_tokens + tokens))
-
-    local fid
-    fid=$(basename "$dir")
-    info "  $fid: $tokens tokens (estimated)"
-  done
-
-  if [ "$count" -gt 0 ]; then
-    local avg=$(( total_tokens / count ))
-    info "Sample: $count features, avg estimated $avg tokens/feature"
-    info "Adjust phase_1_planning and phase_2_per_task_* in config.yml based on actual API bills."
-  else
-    info "No completed features with cost data found. Run the orchestrator first."
-  fi
+  info "Use 'monozukuri calibrate --sample $sample_n' for full calibration report"
 }
