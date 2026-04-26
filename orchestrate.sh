@@ -97,6 +97,8 @@ OPT_ROUTING_PHASE=""
 OPT_CONVENTIONS_ACTION=""
 OPT_CONVENTIONS_ID=""
 OPT_CONVENTIONS_SOURCE=false
+OPT_CONVENTIONS_WRITE=false
+OPT_CONVENTIONS_YES=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -159,11 +161,17 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
-    sources|show)
+    sources|show|generate|preview|write|diff|restore|restore-list|candidates)
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
     --source)
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_SOURCE=true
+      ;;
+    --write)
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_WRITE=true
+      ;;
+    -y|--yes)
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_YES=true
       ;;
     validate)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
@@ -208,6 +216,15 @@ while [ $# -gt 0 ]; do
       echo "  conventions list --source    Group conventions by source file"
       echo "  conventions show <query>     Show full body of matching convention"
       echo "  conventions sources          List detected convention files"
+      echo "  conventions generate         Preview generated AGENTS.md block"
+      echo "  conventions generate --write Apply generated block to AGENTS.md"
+      echo "  conventions write [-y]       Generate and write (prompts unless -y)"
+      echo "  conventions diff             Show diff of pending generation"
+      echo "  conventions restore          Restore AGENTS.md from latest backup"
+      echo "  conventions restore <file>   Restore from specific backup"
+      echo "  conventions restore-list     List available backups"
+      echo "  conventions candidates       List promotion-ready learning entries"
+      echo "  conventions promote <id>     Write promotion candidate to AGENTS.md"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -260,7 +277,8 @@ done
 export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG \
        OPT_ROUTING_ACTION OPT_ROUTING_PHASE \
-       OPT_CONVENTIONS_ACTION OPT_CONVENTIONS_ID OPT_CONVENTIONS_SOURCE
+       OPT_CONVENTIONS_ACTION OPT_CONVENTIONS_ID OPT_CONVENTIONS_SOURCE \
+       OPT_CONVENTIONS_WRITE OPT_CONVENTIONS_YES
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

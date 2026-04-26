@@ -110,6 +110,10 @@ load_config() {
   CFG_LOCAL_MODEL_ENGINE_PHASE2="${CFG_LOCAL_MODEL_ENGINE_PER_PHASE_PHASE_2:-claude}"
   export CFG_LOCAL_MODEL_ENGINE_PHASE2
 
+  # Convention auto-sync
+  CONVENTIONS_AUTO_SYNC="${CFG_CONVENTIONS_AUTO_SYNC:-false}"
+  export CONVENTIONS_AUTO_SYNC
+
   # Validate
   validate_config
 }

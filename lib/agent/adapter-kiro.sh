@@ -102,3 +102,7 @@ agent_report_cost() {
     echo "0.00"
   fi
 }
+
+agent_native_context_files() {
+  printf '%s\n' '["AGENTS.md"]'
+}

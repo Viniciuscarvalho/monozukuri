@@ -42,17 +42,57 @@ context_pack_build() {
     _conv_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../agent/conventions.sh"
     [[ -f "$_conv_sh" ]] && source "$_conv_sh" 2>/dev/null || true
   fi
+  if ! declare -f measure_tokens &>/dev/null; then
+    local _measure_sh
+    _measure_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../lib/run/measure.sh"
+    [[ -f "$_measure_sh" ]] && source "$_measure_sh" 2>/dev/null || true
+    # Also try relative to LIB_DIR
+    if ! declare -f measure_tokens &>/dev/null && [[ -n "${LIB_DIR:-}" ]]; then
+      [[ -f "$LIB_DIR/run/measure.sh" ]] && source "$LIB_DIR/run/measure.sh" 2>/dev/null || true
+    fi
+  fi
   if declare -f read_project_conventions &>/dev/null && [[ -n "${ROOT_DIR:-}" ]]; then
-    local _conv_json _conv_learnings
+    local _conv_json
     _conv_json=$(read_project_conventions "$ROOT_DIR" 2>/dev/null || echo '[]')
     if [[ "$_conv_json" != "[]" && -n "$_conv_json" ]]; then
-      # Project to {summary: "[Section] body"} for template rendering
-      _conv_learnings=$(jq '[.[] | {summary: ("[" + .source.section + "] " + .body)}]' \
+      # Ask the active adapter which files it reads natively (optional, fallback []).
+      local _native_files='[]'
+      if declare -f agent_native_context_files &>/dev/null; then
+        _native_files=$(agent_native_context_files 2>/dev/null || echo '[]')
+      fi
+
+      # Conventions from native files are replaced with a single reference line.
+      # Conventions from non-native files are injected in full.
+      local _inject _native_refs _conv_learnings
+      _inject=$(jq --argjson native "$_native_files" \
+        '[.[] | select(.source.file as $f | ($native | index($f)) == null)]' \
         <<<"$_conv_json" 2>/dev/null || echo '[]')
+
+      _native_refs=$(jq -n --argjson native "$_native_files" \
+        '$native | if length > 0 then
+          [.[] | {summary: ("See " + . + " for additional conventions")}]
+        else [] end' 2>/dev/null || echo '[]')
+
+      _conv_learnings=$(jq \
+        '[.[] | {summary: ("[" + .source.section + "] " + .body)}]' \
+        <<<"$_inject" 2>/dev/null || echo '[]')
+
+      # Measure: record token counts for economics reporting
+      if declare -f measure_tokens &>/dev/null; then
+        local _injected_tokens _suppressed_count
+        _injected_tokens=$(jq '[.[] | .body | length] | add // 0' <<<"$_inject")
+        _suppressed_count=$(jq --argjson native "$_native_files" \
+          '[.[] | select(.source.file as $f | ($native | index($f)) != null)] | length' \
+          <<<"$_conv_json" 2>/dev/null || echo '0')
+        measure_tokens "conventions-injected"   "$(jq -r '[.[].summary] | join(" ")' <<<"$_conv_learnings")"
+        measure_tokens "conventions-suppressed" "$_suppressed_count conventions suppressed"
+      fi
+
       learnings_json=$(jq -n \
-        --argjson conv  "$_conv_learnings" \
-        --argjson store "$learnings_json" \
-        '$conv + $store')
+        --argjson inject "$_conv_learnings" \
+        --argjson refs   "$_native_refs" \
+        --argjson store  "$learnings_json" \
+        '$inject + $refs + $store')
     fi
   fi
 
