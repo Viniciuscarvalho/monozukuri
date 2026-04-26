@@ -11,7 +11,7 @@
 #   test/fixtures/agents/mock-<name>/<binary>
 # and be prepended to PATH when agent_doctor runs.
 
-AGENTS_UNDER_TEST=(claude-code codex gemini kiro)
+AGENTS_UNDER_TEST=(claude-code codex gemini kiro aider)
 
 # Required headings per phase — one heading per line (bash 3 compatible)
 _headings_for() {
@@ -129,6 +129,89 @@ _assert_phase_headings() {
   [ "$status" -eq 0 ]
 }
 
+@test "aider adapter satisfies the six-function contract" {
+  agent_load "aider"
+  run agent_verify
+  [ "$status" -eq 0 ]
+}
+
+# ── schema injection conformance ──────────────────────────────────────────────
+
+@test "claude-code: _cc_inject_schemas populates .monozukuri-schemas/ in worktree" {
+  agent_load "claude-code"
+  local wt
+  wt=$(mktemp -d)
+  _cc_inject_schemas "$wt"
+  [ -d "$wt/.monozukuri-schemas" ]
+  # At least the techspec schema (most critical — has files_likely_touched) must be present
+  [ -f "$wt/.monozukuri-schemas/techspec.schema.json" ]
+  rm -rf "$wt"
+}
+
+@test "aider: _aider_inject_schemas populates .monozukuri-schemas/ in worktree" {
+  agent_load "aider"
+  local wt
+  wt=$(mktemp -d)
+  _aider_inject_schemas "$wt"
+  [ -d "$wt/.monozukuri-schemas" ]
+  [ -f "$wt/.monozukuri-schemas/techspec.schema.json" ]
+  rm -rf "$wt"
+}
+
+@test "techspec template references .monozukuri-schemas/ for schema-in-prompt" {
+  rendered=$(render_phase_prompt "techspec")
+  [[ "$rendered" == *".monozukuri-schemas"* ]]
+}
+
+# ── error envelope conformance ────────────────────────────────────────────────
+
+@test "claude-code: agent_run_phase writes MONOZUKURI_ERROR_FILE when claude exits non-zero" {
+  agent_load "claude-code"
+  # Stub platform_claude to exit 1 (simulating a failed agent run)
+  platform_claude() { shift; echo "mock claude failure" >&2; return 1; }
+  export -f platform_claude
+  # Stub op_timeout so it doesn't try to actually timeout
+  op_timeout() { shift; "$@"; }
+  export -f op_timeout
+
+  local wt; wt=$(mktemp -d)
+  local err_file; err_file=$(mktemp)
+  MONOZUKURI_FEATURE_ID="conf-feat-1" \
+  MONOZUKURI_WORKTREE="$wt" \
+  MONOZUKURI_LOG_FILE="$wt/run.log" \
+  MONOZUKURI_ERROR_FILE="$err_file" \
+    agent_run_phase 2>/dev/null || true
+
+  # Error file must contain valid JSON with a 'class' field
+  node -e "
+    const d = JSON.parse(require('fs').readFileSync('$err_file','utf-8'));
+    if (!d.class) throw new Error('missing class');
+    const valid = ['transient','phase','fatal','unknown'];
+    if (!valid.includes(d.class)) throw new Error('invalid class: ' + d.class);
+  "
+  rm -rf "$wt" "$err_file"
+}
+
+@test "aider: agent_run_phase writes MONOZUKURI_ERROR_FILE when aider exits non-zero" {
+  agent_load "aider"
+  op_timeout() { shift; echo "mock aider failure" >&2; return 1; }
+  export -f op_timeout
+
+  local wt; wt=$(mktemp -d)
+  local err_file; err_file=$(mktemp)
+  MONOZUKURI_FEATURE_ID="conf-feat-2" \
+  MONOZUKURI_WORKTREE="$wt" \
+  MONOZUKURI_LOG_FILE="$wt/run.log" \
+  MONOZUKURI_ERROR_FILE="$err_file" \
+    agent_run_phase 2>/dev/null || true
+
+  node -e "
+    const d = JSON.parse(require('fs').readFileSync('$err_file','utf-8'));
+    if (!d.class) throw new Error('missing class');
+  "
+  rm -rf "$wt" "$err_file"
+}
+
 # ── mock binary sanity checks ─────────────────────────────────────────────────
 
 @test "mock-claude-code/claude binary is executable" {
@@ -167,4 +250,14 @@ _assert_phase_headings() {
   run "$REPO_ROOT/test/fixtures/agents/mock-kiro/kiro" agent run --feature feat-001
   [ "$status" -eq 0 ]
   [[ "$output" == *"mock-kiro"* ]]
+}
+
+@test "mock-aider/aider binary is executable" {
+  [ -x "$REPO_ROOT/test/fixtures/agents/mock-aider/aider" ]
+}
+
+@test "mock-aider/aider exits 0 with --version" {
+  run "$REPO_ROOT/test/fixtures/agents/mock-aider/aider" --version
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mock-aider"* ]]
 }
