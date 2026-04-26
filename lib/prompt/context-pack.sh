@@ -35,6 +35,27 @@ context_pack_build() {
     | jq -R '{summary: .}' \
     | jq -s '.' 2>/dev/null || echo '[]')
 
+  # Prepend project convention records (AGENTS.md, CLAUDE.md, etc.) when available.
+  # Conventions are a separate read-only dataset — never written to the learning store.
+  if ! declare -f read_project_conventions &>/dev/null; then
+    local _conv_sh
+    _conv_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../agent/conventions.sh"
+    [[ -f "$_conv_sh" ]] && source "$_conv_sh" 2>/dev/null || true
+  fi
+  if declare -f read_project_conventions &>/dev/null && [[ -n "${ROOT_DIR:-}" ]]; then
+    local _conv_json _conv_learnings
+    _conv_json=$(read_project_conventions "$ROOT_DIR" 2>/dev/null || echo '[]')
+    if [[ "$_conv_json" != "[]" && -n "$_conv_json" ]]; then
+      # Project to {summary: "[Section] body"} for template rendering
+      _conv_learnings=$(jq '[.[] | {summary: ("[" + .source.section + "] " + .body)}]' \
+        <<<"$_conv_json" 2>/dev/null || echo '[]')
+      learnings_json=$(jq -n \
+        --argjson conv  "$_conv_learnings" \
+        --argjson store "$learnings_json" \
+        '$conv + $store')
+    fi
+  fi
+
   jq -n \
     --arg FEATURE_ID      "$feat_id" \
     --arg FEATURE_TITLE   "${FEATURE_TITLE:-}" \

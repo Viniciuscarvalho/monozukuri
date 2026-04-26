@@ -94,10 +94,13 @@ OPT_AGENT_SUBCMD=""
 OPT_AGENT_NAME=""
 OPT_ROUTING_ACTION=""
 OPT_ROUTING_PHASE=""
+OPT_CONVENTIONS_ACTION=""
+OPT_CONVENTIONS_ID=""
+OPT_CONVENTIONS_SOURCE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -153,10 +156,21 @@ while [ $# -gt 0 ]; do
       OPT_RESUME=true
       ;;
     list|archive|promote)
-      [ "$SUBCOMMAND" = "learning" ] && OPT_LEARNING_ACTION="$1"
+      [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
-    validate|show)
+    sources|show)
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
+      ;;
+    --source)
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_SOURCE=true
+      ;;
+    validate)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
+      ;;
+    show)
+      [ "$SUBCOMMAND" = "config" ]       && OPT_CONFIG_ACTION="$1"
+      [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       ;;
     list|enable)
       [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ] && OPT_AGENT_SUBCMD="$1"
@@ -190,6 +204,10 @@ while [ $# -gt 0 ]; do
       echo "  review export <run-id>       Generate static HTML review bundle"
       echo "  review open <run-id>         Generate and open review bundle in browser"
       echo "  review list                  List all runs with summaries"
+      echo "  conventions list             Show all parsed conventions"
+      echo "  conventions list --source    Group conventions by source file"
+      echo "  conventions show <query>     Show full body of matching convention"
+      echo "  conventions sources          List detected convention files"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -225,6 +243,10 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_ACTION="$1"
       elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
         OPT_ROUTING_PHASE="$1"
+      elif [ "$SUBCOMMAND" = "conventions" ] && [ -z "$OPT_CONVENTIONS_ACTION" ]; then
+        OPT_CONVENTIONS_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "conventions" ] && [ -z "$OPT_CONVENTIONS_ID" ]; then
+        OPT_CONVENTIONS_ID="$1"
       else
         err "Unknown argument: $1"
         err "Run: monozukuri --help"
@@ -237,12 +259,13 @@ done
 
 export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG \
-       OPT_ROUTING_ACTION OPT_ROUTING_PHASE
+       OPT_ROUTING_ACTION OPT_ROUTING_PHASE \
+       OPT_CONVENTIONS_ACTION OPT_CONVENTIONS_ID OPT_CONVENTIONS_SOURCE
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
 # Verify we're in a git repo (doctor, routing, metrics, and review are exempt — pre-flight or read-only)
-if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] && [ "$SUBCOMMAND" != "review" ] \
+if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] && [ "$SUBCOMMAND" != "review" ] && [ "$SUBCOMMAND" != "conventions" ] \
    && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
@@ -267,4 +290,5 @@ case "$SUBCOMMAND" in
   routing)         source "$CMD_DIR/routing.sh"; sub_routing ;;
   metrics)         source "$CMD_DIR/metrics.sh"; sub_metrics ;;
   review)          source "$CMD_DIR/review.sh"; sub_review "${@:2}" ;;
+  conventions)     source "$CMD_DIR/conventions.sh"; sub_conventions ;;
 esac
