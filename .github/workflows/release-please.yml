@@ -59,20 +59,47 @@ jobs:
           github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           script: |
             const { sha256, url, version } = ${{ toJSON(steps.sha.outputs) }};
+            const owner = 'Viniciuscarvalho';
+            const repo = 'homebrew-tap';
+            const branch = `bump/monozukuri-${version}`;
+
+            // Get default branch HEAD sha
+            const { data: ref } = await github.rest.git.getRef({
+              owner, repo, ref: 'heads/main'
+            });
+
+            // Create the bump branch
+            await github.rest.git.createRef({
+              owner, repo,
+              ref: `refs/heads/${branch}`,
+              sha: ref.object.sha
+            });
+
+            // Read current formula
             const { data: file } = await github.rest.repos.getContent({
-              owner: 'Viniciuscarvalho', repo: 'homebrew-tap',
-              path: 'Formula/monozukuri.rb'
+              owner, repo, path: 'Formula/monozukuri.rb'
             });
             const content = Buffer.from(file.content, 'base64').toString();
             const updated = content
               .replace(/url ".*"/, `url "${url}"`)
               .replace(/sha256 ".*"/, `sha256 "${sha256}"`)
               .replace(/version ".*"/, `version "${version}"`);
+
+            // Commit updated formula to the new branch
             await github.rest.repos.createOrUpdateFileContents({
-              owner: 'Viniciuscarvalho', repo: 'homebrew-tap',
+              owner, repo,
               path: 'Formula/monozukuri.rb',
               message: `chore: bump monozukuri to ${version}`,
               content: Buffer.from(updated).toString('base64'),
               sha: file.sha,
-              branch: `bump/monozukuri-${version}`
+              branch
+            });
+
+            // Open the PR
+            await github.rest.pulls.create({
+              owner, repo,
+              title: `chore: bump monozukuri to ${version}`,
+              head: branch,
+              base: 'main',
+              body: `Automated bump from [monozukuri release v${version}](https://github.com/Viniciuscarvalho/monozukuri/releases/tag/v${version}).`
             });
