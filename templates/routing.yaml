@@ -1,0 +1,20 @@
+# .monozukuri/routing.yaml — Per-phase adapter routing (ADR-015, Gap 4)
+#
+# Specifies which coding agent to use for each pipeline phase.
+# User-level defaults live at ~/.config/monozukuri/routing.yaml;
+# this project-level file takes precedence over that.
+#
+# Available phases: prd, techspec, tasks, code, tests, pr
+# Available adapters: claude-code, aider, codex, gemini, kiro
+
+phases:
+  prd: claude-code
+  techspec: claude-code
+  tasks: claude-code
+  code: claude-code # override to e.g. "aider" for agentic code generation
+  tests: claude-code
+  pr: claude-code
+
+# failover: true — on rate-limit, retry the phase with the next available adapter.
+# false (default) — treat rate-limit as a fatal error for this feature (ADR-013).
+failover: false

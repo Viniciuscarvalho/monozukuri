@@ -50,6 +50,8 @@ sub_run() {
   module_require run/policy
   module_require run/manifest
   module_require run/ci-poll
+  # ADR-015 (Gap 4): per-phase adapter routing
+  module_require run/routing
   # ADR-012 (Gap 3): phase template rendering + adapter routing
   module_require prompt/context-pack
   module_require agent/registry
@@ -91,6 +93,11 @@ sub_run() {
 
   # Load config + secrets + validate
   load_config "$config_file"
+
+  # ADR-015: load per-phase routing.yaml (exports PHASE_ADAPTER_<PHASE>)
+  if declare -f routing_load &>/dev/null; then
+    routing_load "$ROOT_DIR"
+  fi
 
   WORKTREE_ROOT="$ROOT_DIR/$WORKTREE_BASE"
   export ROOT_DIR CONFIG_DIR STATE_DIR RESULTS_DIR WORKTREE_ROOT
