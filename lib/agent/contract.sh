@@ -8,6 +8,13 @@
 #   agent_estimate_tokens() → stdin: prompt → stdout: int (estimated tokens)
 #   agent_run_phase()       → execute the current phase; reads MONOZUKURI_* env vars
 #   agent_report_cost()     → stdin: trace JSON → stdout: USD float
+#
+# Optional 7th function (not checked by agent_verify):
+#   agent_native_context_files() → echo JSON array of repo-relative paths this
+#                                   agent reads on its own (e.g. AGENTS.md, CLAUDE.md).
+#                                   Conventions from these files are referenced by path
+#                                   rather than re-injected into prompts. Fallback: [].
+#                                   Verified per-adapter in test/conformance/agent_native_context.bats.
 
 _AGENT_CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
