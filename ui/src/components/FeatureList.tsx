@@ -73,7 +73,7 @@ export function FeatureList({
     if (!f) continue;
     if (f.status === 'queued') {
       queued.push(f);
-    } else if (f.status === 'done' || f.status === 'failed' || f.status === 'skipped') {
+    } else if (f.status === 'done' || f.status === 'failed' || f.status === 'skipped' || f.status === 'deferred') {
       done.push(f);
     }
   }
@@ -124,8 +124,8 @@ export function FeatureList({
           <Box flexDirection="column">
             <Box>
               <Text>│  </Text>
-              <Text color={df.status === 'done' ? 'green' : 'red'}>
-                {df.status === 'done' ? '✓' : '✗'}{' '}
+              <Text color={df.status === 'done' ? 'green' : df.status === 'deferred' ? 'yellow' : 'red'}>
+                {df.status === 'done' ? '✓' : df.status === 'deferred' ? '⏸' : '✗'}{' '}
               </Text>
               <Text dimColor={df.status !== 'done'}>
                 {truncate(`${df.id}  ${df.title || df.id}`, maxTitleLen + 8)}
@@ -134,8 +134,8 @@ export function FeatureList({
             {df.status !== 'done' && df.error ? (
               <Box>
                 <Text>│     </Text>
-                <Text color="red" dimColor>
-                  ({truncate(df.error, maxTitleLen)})
+                <Text color={df.status === 'deferred' ? 'yellow' : 'red'} dimColor>
+                  ({df.status === 'deferred' ? 'deferred: ' : ''}{truncate(df.error, maxTitleLen)})
                 </Text>
               </Box>
             ) : null}
