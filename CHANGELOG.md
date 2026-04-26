@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.9.0...v1.10.0) (2026-04-26)
+
+
+### Features
+
+* **gap8:** deferred status in FeatureList — yellow icon and label in completed list ([b25aaf1](https://github.com/Viniciuscarvalho/monozukuri/commit/b25aaf1676a8e8223fe4604bf10ae6d4ee0f181b))
+* **gap8:** pricing and calibration — L5 cost honesty ([e930e07](https://github.com/Viniciuscarvalho/monozukuri/commit/e930e0763141eca52d999ab834c746a00a6144c9))
+* **gap8:** pricing and calibration — L5 cost honesty (ADR-008) ([f066ffe](https://github.com/Viniciuscarvalho/monozukuri/commit/f066ffef006f07f16fa68eb05c7cb642ac850d1c))
+
 ## [Unreleased]
 
 ### Features
