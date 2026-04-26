@@ -11,7 +11,7 @@
 #   test/fixtures/agents/mock-<name>/<binary>
 # and be prepended to PATH when agent_doctor runs.
 
-AGENTS_UNDER_TEST=(claude-code)
+AGENTS_UNDER_TEST=(claude-code codex gemini kiro)
 
 # Required headings per phase — one heading per line (bash 3 compatible)
 _headings_for() {
@@ -103,10 +103,28 @@ _assert_phase_headings() {
   _assert_phase_headings "claude-code" "pr"
 }
 
-# ── agent_verify for all installed adapters ───────────────────────────────────
+# ── agent_verify for all adapters ────────────────────────────────────────────
 
 @test "claude-code adapter satisfies the six-function contract" {
   agent_load "claude-code"
+  run agent_verify
+  [ "$status" -eq 0 ]
+}
+
+@test "codex adapter satisfies the six-function contract" {
+  agent_load "codex"
+  run agent_verify
+  [ "$status" -eq 0 ]
+}
+
+@test "gemini adapter satisfies the six-function contract" {
+  agent_load "gemini"
+  run agent_verify
+  [ "$status" -eq 0 ]
+}
+
+@test "kiro adapter satisfies the six-function contract" {
+  agent_load "kiro"
   run agent_verify
   [ "$status" -eq 0 ]
 }

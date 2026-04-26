@@ -1,0 +1,51 @@
+# lib/agent/pricing.yaml — Per-token pricing for cost estimation.
+#
+# Format:
+#   <model-id>:
+#     input:  <USD per 1M input tokens>
+#     output: <USD per 1M output tokens>
+#
+# Prices are approximate and may drift. Run `monozukuri pricing update` (future)
+# to refresh from provider APIs.
+#
+# Sources (as of 2026-04):
+#   Anthropic: https://www.anthropic.com/pricing
+#   OpenAI:    https://openai.com/api/pricing
+#   Google:    https://ai.google.dev/pricing
+#   AWS:       https://aws.amazon.com/bedrock/pricing
+
+# ── Anthropic ────────────────────────────────────────────────────────────────
+claude-opus-4-7:
+  input: 15.00
+  output: 75.00
+
+claude-sonnet-4-6:
+  input: 3.00
+  output: 15.00
+
+claude-haiku-4-5:
+  input: 0.80
+  output: 4.00
+
+# ── OpenAI ───────────────────────────────────────────────────────────────────
+gpt-5:
+  input: 10.00
+  output: 30.00
+
+gpt-5-mini:
+  input: 0.40
+  output: 1.60
+
+# ── Google ───────────────────────────────────────────────────────────────────
+gemini-2.5-pro:
+  input: 1.25
+  output: 10.00
+
+gemini-2.5-flash:
+  input: 0.075
+  output: 0.30
+
+# ── AWS ──────────────────────────────────────────────────────────────────────
+amazon.nova-premier-v1:0:
+  input: 2.50
+  output: 12.50
