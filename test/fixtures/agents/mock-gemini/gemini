@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# test/fixtures/agents/mock-gemini/gemini — mock Google Gemini CLI for integration tests.
+echo "mock-gemini: invoked with args: $*"
+echo "Implementing feature..."
+echo "Done."
+exit 0

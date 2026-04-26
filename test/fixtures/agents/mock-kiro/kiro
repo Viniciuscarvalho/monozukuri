@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# test/fixtures/agents/mock-kiro/kiro — mock AWS Kiro CLI for integration tests.
+if [[ "$1" == "spec" && "$2" == "create" ]]; then
+  echo "mock-kiro: creating spec for $*"
+  echo "Done."
+  exit 0
+fi
+if [[ "$1" == "agent" && "$2" == "run" ]]; then
+  echo "mock-kiro: running agent for $*"
+  echo "Done."
+  exit 0
+fi
+echo "mock-kiro: invoked with args: $*"
+echo "Done."
+exit 0

@@ -24,7 +24,7 @@ lint: ## Run shellcheck on all shell scripts
 	@shellcheck $(SCRIPTS_DIR)/*.sh
 
 test: ## Run bats test suites
-	@bats test/unit test/integration 2>/dev/null || echo "No tests yet"
+	@bats test/unit test/integration test/conformance 2>/dev/null || echo "No tests yet"
 
 verify: lint test ## Run lint then test
 

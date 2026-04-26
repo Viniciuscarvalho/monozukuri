@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# test/fixtures/agents/mock-codex/codex — mock OpenAI Codex CLI for integration tests.
+echo "mock-codex: invoked with args: $*"
+echo "Implementing feature..."
+echo "Done."
+exit 0
