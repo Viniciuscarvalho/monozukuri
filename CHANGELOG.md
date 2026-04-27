@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.16.0...v1.17.0) (2026-04-27)
+
+
+### Features
+
+* **validator:** couple validate.sh to skills/*-validation.md aliases (PR2) ([d52a25a](https://github.com/Viniciuscarvalho/monozukuri/commit/d52a25a0909e9488fe9bb0f7e08219a3b943dbef))
+
 ## [1.16.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.15.0...v1.16.0) (2026-04-27)
 
 
