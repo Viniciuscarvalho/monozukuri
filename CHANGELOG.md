@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.0...v1.19.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* **memory:** workflow_memory_prepare crash — exports lost in subshell ([747c8e7](https://github.com/Viniciuscarvalho/monozukuri/commit/747c8e78403022b41c0d776d2cca2e8ef98de6c8))
+* **memory:** workflow_memory_prepare must export to parent process ([23f629a](https://github.com/Viniciuscarvalho/monozukuri/commit/23f629a45db412ad0de2c8cf5f172e9dcffd05c6))
+
 ## [1.19.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.18.0...v1.19.0) (2026-04-27)
 
 
