@@ -155,9 +155,8 @@ workflow_memory_prepare() {
   export MONOZUKURI_MEMORY_DIR="$memory_dir"
   export MONOZUKURI_WORKFLOW_MEMORY="$workflow_path"
   export MONOZUKURI_TASK_MEMORY="$task_path"
+  export MONOZUKURI_TASK_FILE="$task_file"
   export MONOZUKURI_NEEDS_COMPACTION="$compaction"
-
-  printf "%s\n" "$task_file"
 }
 
 workflow_memory_inspect() {
