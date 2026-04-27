@@ -33759,6 +33759,9 @@ var import_react20 = __toESM(require_react(), 1);
 // node_modules/ink/build/hooks/use-focus-manager.js
 var import_react21 = __toESM(require_react(), 1);
 
+// src/index.tsx
+import { createReadStream } from "node:fs";
+
 // src/App.tsx
 var import_react24 = __toESM(require_react(), 1);
 
@@ -34676,6 +34679,9 @@ function App2() {
 var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 if (!process.stdout.isTTY) {
   process.stdin.pipe(process.stdout);
+} else if (!process.stdin.isTTY) {
+  const ttyStdin = createReadStream("/dev/tty");
+  render_default(/* @__PURE__ */ (0, import_jsx_runtime9.jsx)(App2, {}), { stdin: ttyStdin });
 } else {
   render_default(/* @__PURE__ */ (0, import_jsx_runtime9.jsx)(App2, {}));
 }
