@@ -16,14 +16,14 @@ Memory lives at `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/memory/`.
 
 This is **not** the same as the monozukuri global learning store at `~/.claude/monozukuri/learned/`. Workflow memory is transient within a feature run; the learning store is durable across features. Both layers are needed and serve different purposes.
 
-## Soft caps (aspirational — harness enforcement arrives in PR5)
+## Soft caps
 
 | File         | Line cap  | Byte cap |
 | ------------ | --------- | -------- |
 | `MEMORY.md`  | 150 lines | 12 KiB   |
 | `task_NN.md` | 200 lines | 16 KiB   |
 
-When a file exceeds its cap, apply compaction rules before continuing. The harness will flag `NeedsCompaction` in the prompt once PR5 lands.
+When a file exceeds its cap, the orchestrator sets `MONOZUKURI_NEEDS_COMPACTION` to `workflow`, `task`, or `both` before invoking the agent. When this env var is non-empty and not `none`, apply compaction rules before continuing any other work.
 
 ## Bootstrap (first task of a feature)
 
