@@ -83,9 +83,42 @@ _cc_inject_schemas() {
   done
 }
 
+# _cc_run_phase_skill SKILL FEAT_ID WT_PATH LOG_FILE
+# Native skill invocation: claude --agent <skill> -p <feat-id>.
+# Used when the mz-* skill for the current phase is installed in the worktree
+# or globally. The skill reads CONTEXT_JSON and MONOZUKURI_RUN_DIR from the
+# environment set by pipeline.sh.
+_cc_run_phase_skill() {
+  local skill="$1" feat_id="$2" wt_path="$3" log_file="$4"
+  local effective_model="${MONOZUKURI_MODEL:-}"
+  [ "$effective_model" = "opusplan" ] && effective_model="sonnet"
+
+  local perm_flag=""
+  [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--dangerously-skip-permissions"
+
+  local phase="${MONOZUKURI_PHASE:-}"
+  local artifact_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$artifact_dir"
+  local artifact_file="$artifact_dir/${phase}.md"
+
+  local exit_code=0
+  (
+    set -o pipefail
+    cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+      ${effective_model:+--model "$effective_model"} \
+      --agent "$skill" \
+      $perm_flag \
+      -p "$feat_id" 2>&1 | tee "$log_file"
+  ) || exit_code=$?
+
+  [ "$exit_code" -eq 0 ] && [ -s "$log_file" ] && cp "$log_file" "$artifact_file" || true
+  return "$exit_code"
+}
+
 # _cc_run_phase_render PHASE FEAT_ID WT_PATH LOG_FILE
-# Phase-aware render path: renders template → pipes to claude --print.
-# Used when MONOZUKURI_PHASE=prd|techspec and CONTEXT_JSON is set.
+# Template-render path: renders template → pipes to claude --print.
+# Used when no native skill is installed but CONTEXT_JSON is set.
+# Covers all six phases (prd, techspec, tasks, code, tests, pr).
 _cc_run_phase_render() {
   local phase="$1" feat_id="$2" wt_path="$3" log_file="$4"
   local effective_model="${MONOZUKURI_MODEL:-}"
@@ -130,14 +163,30 @@ agent_run_phase() {
   _cc_inject_schemas "$wt_path"
 
   local exit_code=0
+  local phase="${MONOZUKURI_PHASE:-}"
 
-  # Phase-aware render path (prd/techspec when CONTEXT_JSON is set)
-  if [[ "${MONOZUKURI_PHASE:-}" == "prd" || "${MONOZUKURI_PHASE:-}" == "techspec" ]] && \
-     [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
-    _cc_run_phase_render "$MONOZUKURI_PHASE" "$feat_id" "$wt_path" "$log_file" \
-      || exit_code=$?
+  # Lazy-load skill detection helpers
+  if ! declare -f phase_to_skill &>/dev/null; then
+    local _detect_sh
+    _detect_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/skill-detect.sh"
+    [[ -f "$_detect_sh" ]] && source "$_detect_sh"
+  fi
+
+  # Tier 1: native skill invocation (skill installed in worktree or globally)
+  local skill=""
+  [[ -n "$phase" ]] && declare -f phase_to_skill &>/dev/null && \
+    skill="$(phase_to_skill "$phase")"
+
+  if [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
+     skill_installed "claude-code" "$skill" "$wt_path"; then
+    _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+
+  # Tier 2: template-render path (any phase, when CONTEXT_JSON is available)
+  elif [[ -n "$phase" ]] && [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
+    _cc_run_phase_render "$phase" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+
+  # Tier 3: legacy feature-marker path
   else
-    # Legacy feature-marker path
     local skill_arg="${SKILL_COMMAND:-feature-marker}"
     local effective_model="${MONOZUKURI_MODEL:-}"
     [ "$effective_model" = "opusplan" ] && effective_model="opus"
