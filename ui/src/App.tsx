@@ -5,6 +5,7 @@ import { FeatureCard } from './components/FeatureCard.js';
 import { FeatureList } from './components/FeatureList.js';
 import { LogPane } from './components/LogPane.js';
 import { Footer } from './components/Footer.js';
+import { SetupPanel } from './components/SetupPanel.js';
 import { useEventStream } from './hooks/useEventStream.js';
 import { useKeybindings } from './hooks/useKeybindings.js';
 import { useTicker } from './hooks/useTicker.js';
@@ -76,6 +77,10 @@ export default function App(): React.ReactElement {
   }
 
   // Main dashboard view
+  if (state.setupMode) {
+    return <SetupPanel state={state} />;
+  }
+
   return (
     <Box flexDirection="column">
       {/* Header: title bar + metadata + progress */}

@@ -42,3 +42,7 @@ Read and satisfy `skills/mz-create-tasks/references/tasks-validation.md` before 
 ## Hard rule
 
 Never claim a phase is complete if the artifact has not been validated. "I checked it mentally" is not evidence. The validator must run and exit 0.
+
+## Workflow memory
+
+Before validating, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` for any prior validation failures or known heading-alias workarounds recorded by earlier runs. After validation succeeds, update `$MONOZUKURI_TASK_MEMORY` noting which artifact was validated and any aliased headings used. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.

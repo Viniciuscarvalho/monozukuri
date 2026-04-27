@@ -37,3 +37,7 @@ The file MUST satisfy `references/techspec-validation.md`. The validator runs im
 5. Grep for relevant existing files to populate `Existing codebase patterns` and `files_likely_touched`.
 6. Render the template, filling all placeholders.
 7. Write the rendered TechSpec to the output path.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` (if it exists) for shared feature context from the PRD phase. After writing the TechSpec, update `$MONOZUKURI_TASK_MEMORY` with the key architectural decisions and file scope recorded. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.

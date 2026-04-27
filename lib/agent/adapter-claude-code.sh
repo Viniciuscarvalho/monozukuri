@@ -179,11 +179,23 @@ agent_run_phase() {
 
   if [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
      skill_installed "claude-code" "$skill" "$wt_path"; then
+    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "1" skill "$skill"
     _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "1"
+    else
+      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "1" exit_code "$exit_code"
+    fi
 
   # Tier 2: template-render path (any phase, when CONTEXT_JSON is available)
   elif [[ -n "$phase" ]] && [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
+    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "2" skill "rendered:$phase"
     _cc_run_phase_render "$phase" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "2"
+    else
+      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "2" exit_code "$exit_code"
+    fi
 
   # Tier 3: legacy feature-marker path
   else
@@ -197,6 +209,7 @@ agent_run_phase() {
     local interactive_flag=""
     [ "${MONOZUKURI_AUTONOMY:-}" = "supervised" ] && interactive_flag="--interactive"
 
+    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "3" skill "legacy:feature-marker"
     (
       set -o pipefail
       cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
@@ -206,6 +219,11 @@ agent_run_phase() {
         ${interactive_flag:+$interactive_flag} \
         -p "prd-$feat_id" 2>&1 | tee "$log_file"
     ) || exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "3"
+    else
+      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "3" exit_code "$exit_code"
+    fi
   fi
 
   # ADR-013: write error envelope so policy engine can classify without log scraping

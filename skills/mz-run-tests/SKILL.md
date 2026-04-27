@@ -37,3 +37,7 @@ Write `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/tests.md` with:
 3. Run the full suite again — all tests must pass.
 4. Commit the new tests.
 5. Write `tests.md` with the summary.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` for shared context (e.g., test framework conventions noted during the code phase). After writing `tests.md`, update `$MONOZUKURI_TASK_MEMORY` with pass/fail counts and any flaky tests identified. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.

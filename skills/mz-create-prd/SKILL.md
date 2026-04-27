@@ -35,3 +35,7 @@ The file MUST satisfy `references/prd-validation.md`. The validator (`lib/schema
 5. Render the template: fill each `{{PLACEHOLDER}}` from the feature inputs and project context.
 6. Write the rendered PRD to `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/prd.md`.
 7. Do not emit commentary before or after the PRD content.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` (if it exists) for shared feature context from earlier phases. After writing the PRD, update `$MONOZUKURI_TASK_MEMORY` with the decisions made and any assumptions recorded. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.

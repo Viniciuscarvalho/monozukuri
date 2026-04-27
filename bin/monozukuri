@@ -29,7 +29,7 @@ const uiDist =
   process.env.MONOZUKURI_UI_DIST ??
   resolve(__dirname, '..', 'ui', 'dist', 'index.js');
 
-const UI_COMMANDS = new Set(['run']);
+const UI_COMMANDS = new Set(['run', 'setup']);
 const wantsUI =
   process.stdout.isTTY &&
   UI_COMMANDS.has(cmd) &&

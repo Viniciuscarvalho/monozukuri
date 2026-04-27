@@ -51,6 +51,9 @@ export function initialState(): AppState {
     totals: { succeeded: 0, failed: 0, skipped: 0, costUsd: 0 },
     log: [],
     spinner: '',
+    setupMode: false,
+    setupAgents: {},
+    setupSkills: [],
   };
 }
 
@@ -144,6 +147,8 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
           ...prev,
           phases,
           currentPhase: phase,
+          currentSkill: undefined,
+          currentTier: undefined,
         },
       };
       return {
@@ -290,6 +295,63 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
         costUsd: event.total_cost_usd ?? state.totals.costUsd,
       };
       return { ...state, totals, current: null };
+    }
+
+    case 'skill.invoked': {
+      const { feature_id, phase, tier, skill } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: { ...prev, currentSkill: skill, currentTier: tier },
+        },
+        spinner: `${phase}: ${skill} (tier ${tier})`,
+      };
+    }
+
+    case 'skill.completed':
+    case 'skill.failed': {
+      // Leave currentSkill/currentTier populated for display continuity
+      return state;
+    }
+
+    case 'memory.bootstrap': {
+      const { feature_id, memory_dir, compaction } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: { ...prev, memoryDir: memory_dir, compaction },
+        },
+      };
+    }
+
+    case 'memory.note': {
+      return state;  // informational; no state change needed
+    }
+
+    case 'setup.started': {
+      return { ...state, setupMode: true };
+    }
+
+    case 'setup.agent_progress': {
+      return {
+        ...state,
+        setupAgents: { ...state.setupAgents, [event.agent]: event.status },
+      };
+    }
+
+    case 'setup.skill_installed': {
+      return {
+        ...state,
+        setupSkills: [...state.setupSkills, { agent: event.agent, skill: event.skill, status: event.status }],
+      };
+    }
+
+    case 'setup.completed': {
+      return state;  // just keep the accumulated state visible
     }
 
     default:

@@ -39,3 +39,7 @@ The file MUST satisfy `references/tasks-validation.md`. The validator runs immed
 5. Identify every component, file change, and test from the TechSpec.
 6. Group into tasks satisfying the time and file-count constraints.
 7. Write the task list as valid JSON to `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/tasks.json`.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` (if it exists) for shared context from earlier planning phases. After writing `tasks.json`, update `$MONOZUKURI_TASK_MEMORY` with the decomposition rationale and any tasks flagged as risky. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.
