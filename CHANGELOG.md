@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.14.0...v1.15.0) (2026-04-27)
+
+
+### Features
+
+* **conventions:** seed AGENTS.md and add it to Claude Code adapter native context ([b987513](https://github.com/Viniciuscarvalho/monozukuri/commit/b9875133641939cbe606ad1b8f562ceb6ba7ed6c))
+* **conventions:** seed AGENTS.md and align Claude Code adapter with multi-agent convention surface ([d1e8f7a](https://github.com/Viniciuscarvalho/monozukuri/commit/d1e8f7a64630c6c2f3a1d6d74a7105f1c1a5e032))
+
 ## [1.14.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.13.0...v1.14.0) (2026-04-27)
 
 
