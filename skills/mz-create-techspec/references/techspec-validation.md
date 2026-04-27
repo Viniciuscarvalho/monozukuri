@@ -16,7 +16,7 @@ Accept any of:
 - `## Design`
 - `## Solution`
 
-_Current validator regex (`validate.sh:69`):_ `^#{2,3}[[:space:]]+(technical|implementation|approach|architecture|design|solution)` (case-insensitive)
+_Validator reads this alias table via `_validation_aliases()` in `validate.sh` (PR2)._
 
 ### Files likely touched (REQUIRED)
 
@@ -25,11 +25,9 @@ Accept any of:
 - A heading containing `files` + (`likely` or `touched`): `## Files likely touched` / `## Files to touch` / `## File change map`
 - The YAML key `files_likely_touched:` at line start
 
-_Current validator (`validate.sh:73`):_ `^#{2,3} [Ff]iles.*(likely|touched)|^files_likely_touched:`
-
 This section MUST contain at least one `- ` list item (a file path). An empty section fails validation.
 
-_Current validator (`validate.sh:78-85`):_ awk-based scan for a `- ` line after the files heading.
+_Validator reads this alias table via `_validation_aliases()` in `validate.sh` (PR2)._
 
 ---
 
@@ -59,7 +57,7 @@ The body of `techspec.md` MUST NOT exceed **1200 words**.
 
 ---
 
-## Heading aliases for PR2 validator
+## Heading aliases
 
 | Canonical section    | Accepted aliases                                                                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------------------- |

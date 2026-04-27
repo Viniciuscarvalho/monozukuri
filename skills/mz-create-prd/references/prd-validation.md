@@ -16,9 +16,7 @@ Accept any of:
 - `## Motivation`
 - `## Background/Motivation`
 
-_Current validator regex (`validate.sh:56`):_ `^#{2,3}[[:space:]]+(problem|overview|summary|background)` (case-insensitive)
-
-**Aliases pending PR2 coupling:** `Motivation`, `Background/Motivation`, `Problem Statement`
+_Validator reads this alias table via `_validation_aliases()` in `validate.sh` (PR2)._
 
 ### Solution (REQUIRED)
 
@@ -33,7 +31,7 @@ Accept any of:
 - `## Definition of done`
 - `## Goal`
 
-_Current validator regex (`validate.sh:60`):_ `^#{2,3}[[:space:]]+(success|acceptance|definition|criteria|goal)` (case-insensitive)
+_Validator reads this alias table via `_validation_aliases()` in `validate.sh` (PR2)._
 
 ### Functional requirements (RECOMMENDED)
 
@@ -65,9 +63,7 @@ The body of `prd.md` (excluding headings and metadata lines) MUST NOT exceed **6
 
 ---
 
-## Heading aliases for PR2 validator
-
-When PR2 ships, the validator reads this table to accept all aliases for each required section:
+## Heading aliases
 
 | Canonical section | Accepted aliases                                                                                   |
 | ----------------- | -------------------------------------------------------------------------------------------------- |
