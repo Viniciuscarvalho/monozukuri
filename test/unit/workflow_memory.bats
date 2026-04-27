@@ -186,7 +186,29 @@ teardown() {
   [[ "$output" == *"[NEEDS COMPACTION]"* ]]
 }
 
-# ── 18. _wfm_next_task_file returns task_01.md when no task files exist ───────
+# ── 18. MONOZUKURI_TASK_FILE is exported (regression: was lost inside $(...)) ──
+
+@test "MONOZUKURI_TASK_FILE is set to task_01.md on first call" {
+  workflow_memory_prepare "feat-taskfile" "$RUN_DIR"
+  [ "$MONOZUKURI_TASK_FILE" = "task_01.md" ]
+}
+
+@test "MONOZUKURI_TASK_FILE advances to task_02.md when task_01.md pre-exists" {
+  local mem_dir="$RUN_DIR/feat-taskfile2/memory"
+  mkdir -p "$mem_dir"
+  touch "$mem_dir/task_01.md"
+  workflow_memory_prepare "feat-taskfile2" "$RUN_DIR"
+  [ "$MONOZUKURI_TASK_FILE" = "task_02.md" ]
+}
+
+@test "MONOZUKURI_TASK_FILE is NOT set when prepare is called inside subshell" {
+  unset MONOZUKURI_TASK_FILE
+  # simulate the old broken pattern — exports must not escape the subshell
+  _captured=$(workflow_memory_prepare "feat-subshell" "$RUN_DIR")
+  [ -z "${MONOZUKURI_TASK_FILE:-}" ]
+}
+
+# ── 21. _wfm_next_task_file returns task_01.md when no task files exist ───────
 
 @test "_wfm_next_task_file returns task_01.md when no task files exist" {
   local mem_dir="$TMPDIR/empty-mem"
@@ -196,7 +218,7 @@ teardown() {
   [ "$output" = "task_01.md" ]
 }
 
-# ── 19. _wfm_next_task_file returns task_03.md when task_01 and task_02 exist ─
+# ── 22. _wfm_next_task_file returns task_03.md when task_01 and task_02 exist ─
 
 @test "_wfm_next_task_file returns task_03.md when task_01 and task_02 exist" {
   local mem_dir="$TMPDIR/two-tasks"

@@ -468,16 +468,16 @@ EOPRD
   export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
 
   # Workflow memory bootstrap — sets MONOZUKURI_MEMORY_DIR, MONOZUKURI_WORKFLOW_MEMORY,
-  # MONOZUKURI_TASK_MEMORY, MONOZUKURI_NEEDS_COMPACTION for the adapter and skill to read.
+  # MONOZUKURI_TASK_MEMORY, MONOZUKURI_TASK_FILE, MONOZUKURI_NEEDS_COMPACTION for the adapter and skill to read.
+  # Called directly (not via $(...)) so exports propagate to the parent shell.
   if ! declare -f workflow_memory_prepare &>/dev/null; then
     local _wfm_sh="$LIB_DIR/memory/workflow.sh"
     [[ -f "$_wfm_sh" ]] && source "$_wfm_sh"
   fi
   if declare -f workflow_memory_prepare &>/dev/null; then
-    local _wfm_task_file
-    _wfm_task_file=$(workflow_memory_prepare "$feat_id" "$CONFIG_DIR/runs")
-    info "Workflow memory: $MONOZUKURI_MEMORY_DIR (task: $_wfm_task_file, compaction: ${MONOZUKURI_NEEDS_COMPACTION:-none})"
-    monozukuri_emit memory.bootstrap feature_id "$feat_id" memory_dir "$MONOZUKURI_MEMORY_DIR" task_file "$_wfm_task_file" compaction "${MONOZUKURI_NEEDS_COMPACTION:-none}"
+    workflow_memory_prepare "$feat_id" "$CONFIG_DIR/runs"
+    info "Workflow memory: $MONOZUKURI_MEMORY_DIR (task: $MONOZUKURI_TASK_FILE, compaction: ${MONOZUKURI_NEEDS_COMPACTION:-none})"
+    monozukuri_emit memory.bootstrap feature_id "$feat_id" memory_dir "$MONOZUKURI_MEMORY_DIR" task_file "$MONOZUKURI_TASK_FILE" compaction "${MONOZUKURI_NEEDS_COMPACTION:-none}"
   fi
 
   # Load the adapter and dispatch
