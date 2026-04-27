@@ -22,5 +22,7 @@ ui/dist/*.map
 .trae/
 .windsurf/
 .zencoder/
-skills/
+# External skills installed by skill-sync tools (symlinks to .agents/skills/)
+skills/grill-me
+skills/to-prd
 test/fixtures/sample-project/.monozukuri/
