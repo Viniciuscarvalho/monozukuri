@@ -467,6 +467,18 @@ EOPRD
   export MONOZUKURI_LOG_FILE="$log_file"
   export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
 
+  # Workflow memory bootstrap — sets MONOZUKURI_MEMORY_DIR, MONOZUKURI_WORKFLOW_MEMORY,
+  # MONOZUKURI_TASK_MEMORY, MONOZUKURI_NEEDS_COMPACTION for the adapter and skill to read.
+  if ! declare -f workflow_memory_prepare &>/dev/null; then
+    local _wfm_sh="$LIB_DIR/memory/workflow.sh"
+    [[ -f "$_wfm_sh" ]] && source "$_wfm_sh"
+  fi
+  if declare -f workflow_memory_prepare &>/dev/null; then
+    local _wfm_task_file
+    _wfm_task_file=$(workflow_memory_prepare "$feat_id" "$CONFIG_DIR/runs")
+    info "Workflow memory: $MONOZUKURI_MEMORY_DIR (task: $_wfm_task_file, compaction: ${MONOZUKURI_NEEDS_COMPACTION:-none})"
+  fi
+
   # Load the adapter and dispatch
   agent_load "${MONOZUKURI_AGENT:-claude-code}"
   info "Autonomy=$AUTONOMY — invoking ${MONOZUKURI_AGENT:-claude-code} adapter (model: ${MODEL_DEFAULT:-default}, skill: ${SKILL_COMMAND:-feature-marker})..."
@@ -513,6 +525,12 @@ EOPRD
   agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
+
+  if [ "$exit_code" -eq 0 ] && declare -f workflow_memory_inspect &>/dev/null; then
+    workflow_memory_inspect "$feat_id" "$CONFIG_DIR/runs" | while IFS= read -r _wfm_line; do
+      info "Memory: $_wfm_line"
+    done
+  fi
 
   # EXIT_AGENT_BLOCKED (21): agent exited cleanly but embedded a human-input marker.
   # Pause immediately — do not run validation gates or phase 3 on a blocked feature.

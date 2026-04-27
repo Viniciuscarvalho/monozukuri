@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <code>autonomous backlog</code> · <code>git worktrees</code> · <code>agent-agnostic</code> · <code>3-tier learning</code> · <code>Linear · GitHub · Markdown</code>
+  <code>autonomous backlog</code> · <code>git worktrees</code> · <code>agent-agnostic</code> · <code>3-tier learning</code> · <code>workflow memory</code> · <code>Linear · GitHub · Markdown</code>
 </p>
 
 ---
@@ -87,6 +87,8 @@ Switch at any time with `monozukuri agent enable <name>`, or detect what's avail
 - **Three autonomy levels.** From `supervised` (pause after each phase) to `full_auto` (fully unattended overnight runs).
 - **Cost-aware size & cycle gates.** Skips features that are too large, verifies every phase completed, enforces token budgets.
 - **3-tier learning store.** Every completed feature writes learnings at feature / project / global scope — the next run starts smarter.
+- **Skills.** Installable `mz-*` skills give each pipeline phase a dedicated agent persona with its own prompt, validation rules, and reference materials. Install once with `monozukuri setup`; the adapter picks them up automatically.
+- **Workflow memory.** Per-feature `MEMORY.md` and `task_NN.md` files let the agent carry decisions, learnings, and handoffs across tasks within a single feature run — without polluting the global learning store.
 - **Multiple backlog adapters.** `markdown`, `github`, `linear` — pick where your backlog already lives.
 - **Local-first, zero vendor lock-in.** Runs on your machine, writes plain files, uses your own agent CLI credentials.
 
@@ -112,11 +114,15 @@ For each feature in the backlog, Monozukuri:
 1. Reads + sorts backlog from your source (Linear, GitHub Issues, or features.md)
 2. Runs the size gate — skips features that are too large or too risky
 3. Creates an isolated git worktree with context from completed features
-4. Invokes your coding agent (claude-code, codex, gemini, or kiro)
+4. Bootstraps workflow memory (MEMORY.md + task_NN.md) for cross-task context
+5. Invokes your coding agent through 3-tier routing:
+     Tier 1 — native skill  (mz-create-prd, mz-execute-task, …)  if installed
+     Tier 2 — rendered prompt  when CONTEXT_JSON is available (all 6 phases)
+     Tier 3 — legacy feature-marker  (always available, no setup required)
      └─ PRD → Tech Spec → Tasks → Code → Tests → PR
-5. Runs the cycle gate — verifies all phases completed and PR exists
-6. Writes learnings to the 3-tier store (feature / project / global)
-7. Moves to the next feature → repeat until backlog is clean
+6. Runs the cycle gate — verifies all phases completed and PR exists
+7. Writes learnings to the 3-tier store (feature / project / global)
+8. Moves to the next feature → repeat until backlog is clean
 ```
 
 ---
@@ -178,6 +184,29 @@ monozukuri agent list                     # list available agents and install st
 monozukuri agent enable <name>            # set active agent in config (claude-code | codex | gemini | kiro)
 monozukuri agent doctor [name]            # check install and auth for all or one agent
 ```
+
+### `monozukuri setup`
+
+Install `mz-*` skills for any supported coding agent:
+
+```bash
+monozukuri setup install --agent claude-code   # installs to ~/.claude/skills/
+monozukuri setup install --agent cursor        # installs to .agents/skills/ in your project
+monozukuri setup status                        # shows installed skills per agent
+monozukuri setup list                          # lists available skills
+monozukuri setup uninstall mz-create-prd       # remove a single skill
+monozukuri setup --dry-run                     # preview without writing
+```
+
+Skills are not required — the pipeline falls back to Tier 2 (rendered prompt) or Tier 3 (feature-marker) automatically. Install them for a more focused agent persona with built-in validation rules.
+
+| Flag        | Default | Description                                                  |
+| ----------- | ------- | ------------------------------------------------------------ |
+| `--agent`   | _auto_  | Target agent: `claude-code`, `cursor`, `gemini-cli`, `codex` |
+| `--dry-run` | `false` | Preview without writing                                      |
+| `--yes`     | `false` | Skip confirmation                                            |
+
+---
 
 ### `monozukuri init`
 
@@ -316,24 +345,85 @@ See [`templates/config.yaml`](./templates/config.yaml) for the full reference wi
 
 ---
 
+## Skills
+
+Skills are installable agent personas that replace the generic feature-marker with phase-specific prompts, validation rules, and reference materials. Each skill lives in `skills/mz-*/` and is invoked natively when detected by the adapter.
+
+### Install
+
+```bash
+monozukuri setup install --agent claude-code
+```
+
+Skills install to `~/.claude/skills/` (global) or `.claude/skills/` (project-local). Universal agents (Cursor, Codex, Gemini) use `.agents/skills/` instead.
+
+### How routing works
+
+Every phase invocation checks three tiers in order:
+
+| Tier                | Condition                                           | Invocation                                       |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------ |
+| 1 — Native skill    | `mz-<phase>` skill installed in project or globally | `claude --agent mz-create-prd -p <feat-id>`      |
+| 2 — Rendered prompt | `CONTEXT_JSON` available, no skill installed        | Rendered phase template piped to `claude -p`     |
+| 3 — Legacy          | No skill, no context                                | `claude --agent feature-marker -p prd-<feat-id>` |
+
+Skills are not required. The pipeline works on any machine with just the agent CLI.
+
+### Available skills
+
+| Skill                  | Phase         | Description                                                              |
+| ---------------------- | ------------- | ------------------------------------------------------------------------ |
+| `mz-create-prd`        | `prd`         | Generates a PRD with strict heading and FR-NNN validation                |
+| `mz-create-techspec`   | `techspec`    | Generates a TechSpec with decisions table and files_likely_touched list  |
+| `mz-create-tasks`      | `tasks`       | Generates task breakdown validated against `schemas/tasks.schema.json`   |
+| `mz-execute-task`      | `code`        | Executes one task end-to-end inside the worktree                         |
+| `mz-run-tests`         | `tests`       | Runs the test suite and writes per-task acceptance criteria              |
+| `mz-open-pr`           | `pr`          | Opens a GitHub PR with a structured body                                 |
+| `mz-workflow-memory`   | _(all)_       | Maintains `MEMORY.md` and `task_NN.md` across tasks within a feature run |
+| `mz-validate-artifact` | _(validator)_ | Validates a generated artifact against its skill's validation rules      |
+
+### Workflow memory
+
+Before each feature invocation the orchestrator bootstraps two files:
+
+- **`MEMORY.md`** — shared across all tasks of the feature run (cap: 150 lines / 12 KiB)
+- **`task_NN.md`** — specific to the current invocation (cap: 200 lines / 16 KiB)
+
+Both live at `.monozukuri/runs/<feature-id>/memory/`. When a file exceeds its cap the orchestrator sets `MONOZUKURI_NEEDS_COMPACTION` (`workflow`, `task`, or `both`) in the environment before calling the agent. The `mz-workflow-memory` skill reads that variable and compacts the relevant file before continuing.
+
+This is separate from the 3-tier learning store (`~/.claude/monozukuri/learned/`), which persists knowledge across features and projects.
+
+---
+
 ## Project layout
 
 ```
 orchestrate.sh             Entry point (dev); Homebrew/NPX wrappers exec this
-cmd/                       Subcommand handlers (init, run, status, agent, …)
+cmd/                       Subcommand handlers (init, run, status, agent, setup, …)
 lib/                       Library modules
   agent/                   Adapter contract + per-agent adapters (claude-code, codex, gemini, kiro)
+    skill-detect.sh        Phase→skill mapping and install detection (Tier 1 routing)
   config/                  Config loader and schema
   core/                    Utilities, router, cost, worktree
   cli/                     Output helpers and JSONL emitter
   prompt/phases/           Per-phase prompt templates (prd, techspec, tasks, code, tests, pr)
   run/                     Pipeline, cycle gate, ingest, local-model
-  memory/                  3-tier learning store
+  memory/                  3-tier learning store + workflow memory harness
+  setup/                   Skill installer helpers (detect, install, verify)
+skills/                    Installable mz-* skills
+  mz-create-prd/           PRD generation skill
+  mz-create-techspec/      TechSpec generation skill
+  mz-create-tasks/         Task breakdown skill
+  mz-execute-task/         Code execution skill
+  mz-run-tests/            Test execution skill
+  mz-open-pr/              PR creation skill
+  mz-workflow-memory/      Cross-task workflow memory skill
+  mz-validate-artifact/    Artifact validation skill
 ui/                        Ink TUI — consumes JSONL event stream from orchestrator
 templates/                 Config templates copied by `monozukuri init`
 test/
-  unit/                    Bats unit tests (lib/agent/*, cmd/*)
-  integration/             Bats integration tests (dry-run, back-compat)
+  unit/                    Bats unit tests (lib/agent/*, cmd/*, lib/memory/*)
+  integration/             Bats integration tests (dry-run, back-compat, setup)
   conformance/             Agent conformance suite + UI display tests
   fixtures/                Mock agent binaries and sample project
 bin/                       CLI entry points (Node shim + shell dispatcher)
