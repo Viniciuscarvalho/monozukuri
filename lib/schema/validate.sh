@@ -106,12 +106,26 @@ schema_humanize_error() {
 
 # schema_validate_with_reprompt <feat_id> <wt_path> <task_dir>
 # Validates prd.md, techspec.md, tasks.md in order. On the first failure,
-# reprompts the agent exactly once (ADR-012 §3). Returns 1 if still invalid
-# after reprompt; caller should transition the feature to error state.
+# reprompts the agent up to MONOZUKURI_SCHEMA_MAX_REPROMPTS times (default 1,
+# ADR-012 §3). Returns:
+#   0 — all artifacts valid
+#   1 — still invalid; caller should transition the feature to error state
+#   2 — still invalid but MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN=true fired;
+#       feature is already paused — caller must NOT overwrite with error state
 schema_validate_with_reprompt() {
   local feat_id="$1"
   local wt_path="$2"
   local task_dir="$3"
+
+  local max_reprompts="${MONOZUKURI_SCHEMA_MAX_REPROMPTS:-1}"
+
+  local model_flag=""
+  local _fix_model="${MODEL_DEFAULT:-}"
+  [ "$_fix_model" = "opusplan" ] && _fix_model="opus"
+  [ -n "$_fix_model" ] && model_flag="--model $_fix_model"
+
+  local fix_perm_flag=""
+  [ "${AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
 
   local artifact_type artifact_file
   for artifact_type in prd techspec tasks; do
@@ -128,28 +142,36 @@ schema_validate_with_reprompt() {
     local error_msg="$SCHEMA_VALIDATE_ERROR"
     warn "Schema validation failed ($feat_id/$artifact_type): $error_msg"
 
-    local fix_prompt
-    fix_prompt=$(schema_humanize_error "$artifact_type" "$error_msg")
+    local attempt=0 validated=false
+    while [ "$attempt" -lt "$max_reprompts" ]; do
+      attempt=$((attempt + 1))
+      info "Schema: reprompting agent for $feat_id/$artifact_type (attempt $attempt/$max_reprompts, ADR-012)..."
+      local fix_prompt
+      fix_prompt=$(schema_humanize_error "$artifact_type" "$error_msg")
+      (cd "$wt_path" && printf '%b' "$fix_prompt" |
+        platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" $model_flag $fix_perm_flag --print) \
+        2>/dev/null || true
 
-    local model_flag=""
-    local _fix_model="${MODEL_DEFAULT:-}"
-    [ "$_fix_model" = "opusplan" ] && _fix_model="opus"
-    [ -n "$_fix_model" ] && model_flag="--model $_fix_model"
+      if schema_validate "$artifact_type" "$artifact_file"; then
+        info "Schema: $artifact_type valid after reprompt (attempt $attempt)"
+        validated=true
+        break
+      fi
+      error_msg="$SCHEMA_VALIDATE_ERROR"
+      warn "Schema: $artifact_type still invalid after reprompt $attempt — $error_msg"
+    done
 
-    local fix_perm_flag=""
-    [ "${AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
-
-    info "Schema: reprompting agent for $feat_id/$artifact_type (1 attempt, ADR-012)..."
-    (cd "$wt_path" && printf '%b' "$fix_prompt" |
-      platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" $model_flag $fix_perm_flag --print) \
-      2>/dev/null || true
-
-    if ! schema_validate "$artifact_type" "$artifact_file"; then
-      warn "Schema: $artifact_type still invalid after reprompt — $SCHEMA_VALIDATE_ERROR"
+    if [ "$validated" = "false" ]; then
+      if [ "${MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN:-false}" = "true" ]; then
+        if declare -f fstate_transition &>/dev/null && declare -f fstate_record_pause &>/dev/null; then
+          fstate_transition "$feat_id" "paused" "schema-needs-review"
+          fstate_record_pause "$feat_id" "human" "schema-needs-review"
+          info "Schema: escalating $feat_id to human review after $max_reprompts reprompt(s)"
+        fi
+        return 2
+      fi
       return 1
     fi
-
-    info "Schema: $artifact_type valid after reprompt"
   done
 
   return 0

@@ -521,10 +521,14 @@ EOPRD
     }
   fi
 
-  # ADR-012: schema validation — 1 reprompt on failure, then error
+  # ADR-012: schema validation — configurable reprompts (MONOZUKURI_SCHEMA_MAX_REPROMPTS),
+  # optional human escalation (MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN).
+  # exit 2 from the validator = already paused via escalation, do not overwrite with error.
   if [ "$exit_code" -eq 0 ] && declare -f schema_validate_with_reprompt &>/dev/null; then
-    if ! schema_validate_with_reprompt "$feat_id" "$wt_path" "$task_dir"; then
-      fstate_transition "$feat_id" "error" "schema-validation-failed"
+    local _schema_rc=0
+    schema_validate_with_reprompt "$feat_id" "$wt_path" "$task_dir" || _schema_rc=$?
+    if [ "$_schema_rc" -ne 0 ]; then
+      [ "$_schema_rc" -eq 1 ] && fstate_transition "$feat_id" "error" "schema-validation-failed"
       return 1
     fi
   fi
