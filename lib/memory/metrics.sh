@@ -28,9 +28,7 @@ _metrics_validate_schema() {
 
   while IFS= read -r line; do
     line_num=$((line_num + 1))
-
     [[ -z "$line" || "$line" =~ ^[[:space:]]*$ ]] && continue
-    # Skip markdown headings (# and ## lines)
     [[ "$line" =~ ^# ]] && continue
 
     if [[ "$line" =~ date.*run_id.*headline ]]; then
