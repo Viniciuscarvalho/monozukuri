@@ -48,7 +48,7 @@ generate_run_report() {
   local total_features completed_features failed_features
   total_features=$(echo "$features_json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')).length")
   completed_features=$(echo "$features_json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')).filter(f => f.status === 'done' || f.status === 'pr-created').length")
-  failed_features=$((total_features - completed_features))
+  failed_features=$(echo "$features_json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')).filter(f => f.status === 'failed' || f.status === 'error').length")
 
   # Calculate headline percentage
   local headline_pct=0

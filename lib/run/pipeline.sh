@@ -222,7 +222,7 @@ run_backlog() {
       done)       done_n=$((done_n+1)) ;;
       pr-created) pr_n=$((pr_n+1)) ;;
       ready)      ready_n=$((ready_n+1)) ;;
-      failed)     failed_n=$((failed_n+1)) ;;
+      failed|error) failed_n=$((failed_n+1)) ;;
       paused)     paused_n=$((paused_n+1)) ;;
     esac
   done
