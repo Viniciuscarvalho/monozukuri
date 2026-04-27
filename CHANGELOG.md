@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.13.0...v1.14.0) (2026-04-27)
+
+
+### Features
+
+* add agent-blocker channel (EXIT_AGENT_BLOCKED=21) ([93b4697](https://github.com/Viniciuscarvalho/monozukuri/commit/93b46974489d34bc920544ea3a1b6caf7f055dc3))
+* configurable schema reprompt budget + human escalation ([682f63f](https://github.com/Viniciuscarvalho/monozukuri/commit/682f63fb4ef31c79c83678741eaef8f5cf76c6ca))
+* configurable schema reprompt budget + human escalation path ([6d974f5](https://github.com/Viniciuscarvalho/monozukuri/commit/6d974f5d3e2a228d0419cea7a80e21f3c01da92f))
+
+
+### Bug Fixes
+
+* fold error status into failed counter across all three reporters ([e6e5762](https://github.com/Viniciuscarvalho/monozukuri/commit/e6e57626e308e2079fef48ed51ca8f1729e46f62))
+
 ## [1.13.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.12.0...v1.13.0) (2026-04-27)
 
 
