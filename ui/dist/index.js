@@ -7930,7 +7930,7 @@ var require_react_reconciler_development = __commonJS({
         var HostPortal = 4;
         var HostComponent = 5;
         var HostText = 6;
-        var Fragment2 = 7;
+        var Fragment3 = 7;
         var Mode = 8;
         var ContextConsumer = 9;
         var ContextProvider = 10;
@@ -8070,7 +8070,7 @@ var require_react_reconciler_development = __commonJS({
               return "DehydratedFragment";
             case ForwardRef:
               return getWrappedName$1(type, type.render, "ForwardRef");
-            case Fragment2:
+            case Fragment3:
               return "Fragment";
             case HostComponent:
               return type;
@@ -11203,7 +11203,7 @@ var require_react_reconciler_development = __commonJS({
             }
           }
           function updateFragment2(returnFiber, current2, fragment, lanes, key) {
-            if (current2 === null || current2.tag !== Fragment2) {
+            if (current2 === null || current2.tag !== Fragment3) {
               var created = createFiberFromFragment(fragment, returnFiber.mode, lanes, key);
               created.return = returnFiber;
               return created;
@@ -11606,7 +11606,7 @@ var require_react_reconciler_development = __commonJS({
               if (child.key === key) {
                 var elementType = element.type;
                 if (elementType === REACT_FRAGMENT_TYPE) {
-                  if (child.tag === Fragment2) {
+                  if (child.tag === Fragment3) {
                     deleteRemainingChildren(returnFiber, child.sibling);
                     var existing = useFiber(child, element.props.children);
                     existing.return = returnFiber;
@@ -17096,7 +17096,7 @@ var require_react_reconciler_development = __commonJS({
               var _resolvedProps2 = workInProgress2.elementType === type ? _unresolvedProps2 : resolveDefaultProps(type, _unresolvedProps2);
               return updateForwardRef(current2, workInProgress2, type, _resolvedProps2, renderLanes2);
             }
-            case Fragment2:
+            case Fragment3:
               return updateFragment(current2, workInProgress2, renderLanes2);
             case Mode:
               return updateMode(current2, workInProgress2, renderLanes2);
@@ -17533,7 +17533,7 @@ var require_react_reconciler_development = __commonJS({
             case SimpleMemoComponent:
             case FunctionComponent:
             case ForwardRef:
-            case Fragment2:
+            case Fragment3:
             case Mode:
             case Profiler:
             case ContextConsumer:
@@ -22291,7 +22291,7 @@ var require_react_reconciler_development = __commonJS({
           return fiber;
         }
         function createFiberFromFragment(elements, mode, lanes, key) {
-          var fiber = createFiber(Fragment2, elements, key, mode);
+          var fiber = createFiber(Fragment3, elements, key, mode);
           fiber.lanes = lanes;
           return fiber;
         }
@@ -28089,11 +28089,11 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx9 = jsxWithValidationDynamic;
-        var jsxs8 = jsxWithValidationStatic;
+        var jsx10 = jsxWithValidationDynamic;
+        var jsxs9 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx9;
-        exports.jsxs = jsxs8;
+        exports.jsx = jsx10;
+        exports.jsxs = jsxs9;
       })();
     }
   }
@@ -33923,6 +33923,16 @@ function FeatureCard({ feature, spinner, now }) {
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: elapsed }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
     ] }),
+    feature.currentSkill && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "skill: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.currentSkill }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: " \xB7 tier " }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: feature.currentTier ?? "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: " \xB7 mem: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.compaction && feature.compaction !== "none" ? `compaction:${feature.compaction}` : "ok" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PhaseTimeline, { phases: feature.phases }),
@@ -34120,6 +34130,48 @@ function Footer({ terminalWidth = 70 }) {
   ] });
 }
 
+// src/components/SetupPanel.tsx
+var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+function SetupPanel({ state }) {
+  const agentEntries = Object.entries(state.setupAgents);
+  const skills = state.setupSkills;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", paddingX: 2, paddingY: 1, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "monozukuri setup" }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " }),
+    agentEntries.length === 0 && skills.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "waiting for install events..." }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+      agentEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, dimColor: true, children: "Agents" }),
+        agentEntries.map(([agent, status]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { color: status === "ok" ? "green" : "yellow", children: status === "ok" ? "\u2713" : "\u2192" }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { children: [
+            "  ",
+            agent
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { dimColor: true, children: [
+            "  ",
+            status
+          ] })
+        ] }, agent)),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " })
+      ] }),
+      skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, dimColor: true, children: "Skills installed" }),
+        skills.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { color: "green", children: "\u2713" }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { children: [
+            "  ",
+            s.skill
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { dimColor: true, children: [
+            "  \u2192 ",
+            s.agent
+          ] })
+        ] }, i))
+      ] })
+    ] })
+  ] });
+}
+
 // src/hooks/useEventStream.ts
 var import_react22 = __toESM(require_react(), 1);
 
@@ -34163,7 +34215,10 @@ function initialState() {
     current: null,
     totals: { succeeded: 0, failed: 0, skipped: 0, costUsd: 0 },
     log: [],
-    spinner: ""
+    spinner: "",
+    setupMode: false,
+    setupAgents: {},
+    setupSkills: []
   };
 }
 function reducer(state, event) {
@@ -34247,7 +34302,9 @@ function reducer(state, event) {
         [feature_id]: {
           ...prev,
           phases,
-          currentPhase: phase
+          currentPhase: phase,
+          currentSkill: void 0,
+          currentTier: void 0
         }
       };
       return {
@@ -34384,6 +34441,54 @@ function reducer(state, event) {
       };
       return { ...state, totals, current: null };
     }
+    case "skill.invoked": {
+      const { feature_id, phase, tier, skill } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: { ...prev, currentSkill: skill, currentTier: tier }
+        },
+        spinner: `${phase}: ${skill} (tier ${tier})`
+      };
+    }
+    case "skill.completed":
+    case "skill.failed": {
+      return state;
+    }
+    case "memory.bootstrap": {
+      const { feature_id, memory_dir, compaction } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: { ...prev, memoryDir: memory_dir, compaction }
+        }
+      };
+    }
+    case "memory.note": {
+      return state;
+    }
+    case "setup.started": {
+      return { ...state, setupMode: true };
+    }
+    case "setup.agent_progress": {
+      return {
+        ...state,
+        setupAgents: { ...state.setupAgents, [event.agent]: event.status }
+      };
+    }
+    case "setup.skill_installed": {
+      return {
+        ...state,
+        setupSkills: [...state.setupSkills, { agent: event.agent, skill: event.skill, status: event.status }]
+      };
+    }
+    case "setup.completed": {
+      return state;
+    }
     default:
       return state;
   }
@@ -34487,10 +34592,10 @@ function useTicker() {
 }
 
 // src/App.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 function Separator({ width }) {
   const dashes = "\u2500".repeat(Math.max(0, width - 2));
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "\u251C" + dashes + "\u2524" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "\u251C" + dashes + "\u2524" }) });
 }
 function App2() {
   const [view, setView] = (0, import_react24.useState)("main");
@@ -34501,43 +34606,46 @@ function App2() {
   useKeybindings({ setView });
   const currentFeature = state.current ? state.features[state.current] ?? null : null;
   if (view === "help") {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "Monozukuri \u2014 Keyboard Shortcuts" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  q         Quit (sends SIGINT to orchestrator)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  p         Pause / resume orchestrator (SIGUSR1)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  l         View learnings" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  f         Filter features" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  /         Search" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  ?         This help screen" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "  Escape    Return to main view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "Press Escape to return." })
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Monozukuri \u2014 Keyboard Shortcuts" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  q         Quit (sends SIGINT to orchestrator)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  p         Pause / resume orchestrator (SIGUSR1)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  l         View learnings" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  f         Filter features" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  /         Search" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  ?         This help screen" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  Escape    Return to main view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "Press Escape to return." })
     ] });
   }
   if (view === "learnings") {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "Learnings view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Learnings view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
   if (view === "filter") {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "Filter view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Filter view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
   if (view === "search") {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "Search view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Search view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Header, { state, terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Separator, { width: terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(FeatureCard, { feature: currentFeature, spinner: state.spinner, now }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+  if (state.setupMode) {
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SetupPanel, { state });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Header, { state, terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Separator, { width: terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(FeatureCard, { feature: currentFeature, spinner: state.spinner, now }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       FeatureList,
       {
         features: state.features,
@@ -34545,17 +34653,17 @@ function App2() {
         terminalWidth
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(LogPane, { log: state.log, terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Footer, { terminalWidth })
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(LogPane, { log: state.log, terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Footer, { terminalWidth })
   ] });
 }
 
 // src/index.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 if (!process.stdout.isTTY) {
   process.stdin.pipe(process.stdout);
 } else {
-  render_default(/* @__PURE__ */ (0, import_jsx_runtime8.jsx)(App2, {}));
+  render_default(/* @__PURE__ */ (0, import_jsx_runtime9.jsx)(App2, {}));
 }
 /*! Bundled license information:
 

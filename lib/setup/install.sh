@@ -233,6 +233,7 @@ setup_install() {
 
     # ── per-agent install ──────────────────────────────────────────────────
     for ag in $agents_arg; do
+      declare -f monozukuri_emit &>/dev/null && monozukuri_emit setup.agent_progress agent "$ag" status "installing" || true
       local base_path
       if [ "$global" = "true" ]; then
         base_path="$(setup_agent_global_path "$ag")"
@@ -277,6 +278,7 @@ setup_install() {
         rel_target="$(_relpath "$canon_abs" "$link_dir")"
         ln -s "$rel_target" "$dst"
         printf "  %-22s  %-30s  symlink → %s\n" "$ag" "$skill" "$rel_target"
+        declare -f monozukuri_emit &>/dev/null && monozukuri_emit setup.skill_installed agent "$ag" skill "$skill" status "ok" || true
 
       # global mode with symlinks: symlink each agent path to global canonical
       elif [ "$global" = "true" ] && [ "$copy" = "false" ]; then
@@ -293,12 +295,14 @@ setup_install() {
         rel_target="$(_relpath "$global_canon" "$link_dir_abs")"
         ln -s "$rel_target" "$dst"
         printf "  %-22s  %-30s  symlink → %s\n" "$ag" "$skill" "$rel_target"
+        declare -f monozukuri_emit &>/dev/null && monozukuri_emit setup.skill_installed agent "$ag" skill "$skill" status "ok" || true
 
       # copy mode (or single-agent project install)
       else
         mkdir -p "$dst"
         _setup_copy_skill_files "$src" "$dst" false
         printf "  %-22s  %-30s  installed → %s\n" "$ag" "$skill" "$dst"
+        declare -f monozukuri_emit &>/dev/null && monozukuri_emit setup.skill_installed agent "$ag" skill "$skill" status "ok" || true
       fi
     done
   done

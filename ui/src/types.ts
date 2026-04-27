@@ -16,6 +16,10 @@ export interface Feature {
   prUrl?: string;
   error?: string;
   startedAt?: string;
+  currentSkill?: string;
+  currentTier?: string;
+  memoryDir?: string;
+  compaction?: 'none' | 'workflow' | 'task' | 'both';
 }
 
 export interface LogLine {
@@ -44,6 +48,9 @@ export interface AppState {
   };
   log: LogLine[];
   spinner: string;
+  setupMode: boolean;
+  setupAgents: Record<string, string>;
+  setupSkills: Array<{ agent: string; skill: string; status: string }>;
 }
 
 // ── Raw event shapes ────────────────────────────────────────────────────
@@ -165,6 +172,66 @@ export interface RunCompletedEvent extends BaseEvent {
   total_cost_usd: number;
 }
 
+export interface SkillInvokedEvent extends BaseEvent {
+  type: 'skill.invoked';
+  feature_id: string;
+  phase: Phase;
+  tier: string;
+  skill: string;
+}
+
+export interface SkillCompletedEvent extends BaseEvent {
+  type: 'skill.completed';
+  feature_id: string;
+  phase: Phase;
+  tier: string;
+}
+
+export interface SkillFailedEvent extends BaseEvent {
+  type: 'skill.failed';
+  feature_id: string;
+  phase: Phase;
+  tier: string;
+  exit_code: string;
+}
+
+export interface MemoryBootstrapEvent extends BaseEvent {
+  type: 'memory.bootstrap';
+  feature_id: string;
+  memory_dir: string;
+  task_file: string;
+  compaction: 'none' | 'workflow' | 'task' | 'both';
+}
+
+export interface MemoryNoteEvent extends BaseEvent {
+  type: 'memory.note';
+  feature_id: string;
+  line: string;
+}
+
+export interface SetupStartedEvent extends BaseEvent {
+  type: 'setup.started';
+  action: string;
+}
+
+export interface SetupAgentProgressEvent extends BaseEvent {
+  type: 'setup.agent_progress';
+  agent: string;
+  status: string;
+}
+
+export interface SetupSkillInstalledEvent extends BaseEvent {
+  type: 'setup.skill_installed';
+  agent: string;
+  skill: string;
+  status: string;
+}
+
+export interface SetupCompletedEvent extends BaseEvent {
+  type: 'setup.completed';
+  action: string;
+}
+
 export type MonozukuriEvent =
   | RunStartedEvent
   | BacklogLoadedEvent
@@ -180,6 +247,15 @@ export type MonozukuriEvent =
   | FeatureDeferredEvent
   | LearningCapturedEvent
   | LogLineEvent
-  | RunCompletedEvent;
+  | RunCompletedEvent
+  | SkillInvokedEvent
+  | SkillCompletedEvent
+  | SkillFailedEvent
+  | MemoryBootstrapEvent
+  | MemoryNoteEvent
+  | SetupStartedEvent
+  | SetupAgentProgressEvent
+  | SetupSkillInstalledEvent
+  | SetupCompletedEvent;
 
 export type ViewMode = 'main' | 'learnings' | 'filter' | 'search' | 'help';

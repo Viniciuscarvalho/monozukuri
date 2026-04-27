@@ -12,7 +12,7 @@ Workflow memory is feature-scoped and consists of two file types:
 - `MEMORY.md` — shared across all tasks of a feature run. Holds context that matters to more than one task.
 - `task_NN.md` — per-task file. Holds context specific to the current task's execution.
 
-Memory lives at `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/memory/`.
+Memory lives at `$MONOZUKURI_MEMORY_DIR` (exported by the workflow-memory harness; resolves to `<run-dir>/<feature-id>/memory/`). Use `$MONOZUKURI_WORKFLOW_MEMORY` for the full path to `MEMORY.md` and `$MONOZUKURI_TASK_MEMORY` for the current task file.
 
 This is **not** the same as the monozukuri global learning store at `~/.claude/monozukuri/learned/`. Workflow memory is transient within a feature run; the learning store is durable across features. Both layers are needed and serve different purposes.
 

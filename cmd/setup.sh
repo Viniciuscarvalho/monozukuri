@@ -17,6 +17,7 @@
 source "$LIB_DIR/setup/detect.sh"
 source "$LIB_DIR/setup/install.sh"
 source "$LIB_DIR/cli/colors.sh" 2>/dev/null || true
+source "$LIB_DIR/cli/emit.sh" 2>/dev/null || true
 
 _setup_pass() { printf "  ${C_GREEN:-}✓${C_NC:-} %s\n" "$1"; }
 _setup_info() { printf "  ${C_DIM:-}→${C_NC:-} %s\n" "$1"; }
@@ -46,6 +47,7 @@ sub_setup() {
 
   # ── action: --status ──────────────────────────────────────────────────
   if [ "${OPT_SETUP_ACTION:-}" = "status" ]; then
+    monozukuri_emit setup.started action "${OPT_SETUP_ACTION:-install}"
     local agents
     agents="$(_setup_resolve_agents)"
     [ -z "$agents" ] && { _setup_warn "No agents detected. Use --agent <id> to specify one."; return 1; }
@@ -54,6 +56,7 @@ sub_setup() {
     [ "${OPT_SETUP_GLOBAL:-false}" = "true" ] && flags+=(--global)
     setup_status "$agents" "all" "${flags[@]}"
     echo ""
+    monozukuri_emit setup.completed action "${OPT_SETUP_ACTION:-install}"
     return 0
   fi
 
@@ -80,6 +83,7 @@ sub_setup() {
   fi
 
   # ── default action: install ───────────────────────────────────────────
+  monozukuri_emit setup.started action "${OPT_SETUP_ACTION:-install}"
   banner "monozukuri setup — install skills"
 
   local agents
@@ -112,6 +116,7 @@ sub_setup() {
   else
     _setup_pass "Setup complete."
     _setup_info "Run 'monozukuri setup --status' to verify."
+    monozukuri_emit setup.completed action "${OPT_SETUP_ACTION:-install}"
   fi
 }
 

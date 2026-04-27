@@ -38,3 +38,7 @@ For each task in `tasks.json` in order:
 5. Move to the next task.
 
 After all tasks: write `code.md` with the outcome summary.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` for shared decisions from the planning phases (PRD constraints, TechSpec architecture choices). After each task, update `$MONOZUKURI_TASK_MEMORY` with files touched, decisions made, and any errors corrected. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before starting the next task.

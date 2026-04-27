@@ -38,3 +38,7 @@ Write `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/pr.md` with:
 3. Push the worktree branch: `git push -u origin HEAD`
 4. Run `gh pr create --title "$MONOZUKURI_FEATURE_TITLE" --body "<rendered body>"`
 5. Write `pr.md` with the PR URL, number, and branches.
+
+## Workflow memory
+
+Before starting, read `$MONOZUKURI_MEMORY_DIR/MEMORY.md` for any cross-phase notes worth including in the PR body (e.g., deferred decisions, reviewer callouts). After writing `pr.md`, update `$MONOZUKURI_TASK_MEMORY` with the PR URL and branch names for any downstream reference. If `$MONOZUKURI_NEEDS_COMPACTION` is non-empty and not `none`, run the `mz-workflow-memory` skill to compact memory files before continuing.

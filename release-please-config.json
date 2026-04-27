@@ -3,6 +3,7 @@
     ".": {
       "release-type": "node",
       "include-component-in-tag": false,
+      "include-merge-commits": false,
       "changelog-sections": [
         {
           "type": "feat",

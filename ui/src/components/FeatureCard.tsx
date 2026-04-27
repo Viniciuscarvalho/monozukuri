@@ -88,6 +88,26 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
         <Text> │</Text>
       </Box>
 
+      {/* Skill / memory subtitle */}
+      {feature.currentSkill && (
+        <Box>
+          <Text>│   </Text>
+          <Text dimColor>{'skill: '}</Text>
+          <Text color={feature.compaction && feature.compaction !== 'none' ? 'yellow' : 'green'}>
+            {feature.currentSkill}
+          </Text>
+          <Text dimColor>{' · tier '}</Text>
+          <Text>{feature.currentTier ?? '—'}</Text>
+          <Text dimColor>{' · mem: '}</Text>
+          <Text color={feature.compaction && feature.compaction !== 'none' ? 'yellow' : 'green'}>
+            {feature.compaction && feature.compaction !== 'none'
+              ? `compaction:${feature.compaction}`
+              : 'ok'}
+          </Text>
+          <Text> │</Text>
+        </Box>
+      )}
+
       {/* Phase timeline */}
       <Box>
         <Text>│   </Text>
