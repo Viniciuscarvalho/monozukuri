@@ -23,12 +23,14 @@
   "license": "MIT",
   "author": "Vinicius Carvalho",
   "bin": {
-    "monozukuri": "npm/bin/monozukuri.js"
+    "monozukuri": "bin/monozukuri"
   },
   "files": [
+    "bin/",
     "npm/bin/",
     "scripts/",
-    "templates/"
+    "templates/",
+    "ui/dist/"
   ],
   "engines": {
     "node": ">=18.0.0"

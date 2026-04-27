@@ -16,10 +16,10 @@ class Monozukuri < Formula
   def install
     libexec_dir = libexec/"monozukuri"
 
-    # Main entry point (top-level orchestrate.sh, not the scripts/ shim)
+    # Main entry point
     libexec_dir.install "orchestrate.sh"
 
-    # Library modules and sub-commands (Compozy-style layout)
+    # Library modules and sub-commands
     libexec_dir.install "lib"
     libexec_dir.install "cmd"
 
@@ -33,13 +33,24 @@ class Monozukuri < Formula
 
     libexec_dir.install "templates"
 
+    # Node dispatcher — enables the Ink terminal UI for `monozukuri run`
+    bin_dest = libexec_dir/"bin"
+    bin_dest.mkpath
+    bin_dest.install "bin/monozukuri"
+    (bin_dest/"monozukuri").chmod 0755
+
+    # Pre-built Ink UI bundle (ESM, self-contained)
+    ui_dist = libexec_dir/"ui/dist"
+    ui_dist.mkpath
+    ui_dist.install "ui/dist/index.js"
+    ui_dist.install "ui/dist/package.json"
+
     libexec_dir.glob("**/*.sh").each { |f| f.chmod 0755 }
 
     (bin/"monozukuri").write <<~EOS
       #!/bin/bash
       set -euo pipefail
-      export MONOZUKURI_HOME="#{libexec}/monozukuri"
-      exec bash "#{libexec}/monozukuri/orchestrate.sh" "$@"
+      exec node "#{libexec}/monozukuri/bin/monozukuri" "$@"
     EOS
   end
 
@@ -61,7 +72,7 @@ class Monozukuri < Formula
 
       Dependencies installed automatically:
         jq   — JSON processing
-        node — JavaScript runtime (adapters and config parser)
+        node — JavaScript runtime (UI and adapters)
     EOS
   end
 
