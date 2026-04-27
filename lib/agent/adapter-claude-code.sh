@@ -202,5 +202,5 @@ agent_report_cost() {
 # Returns JSON array of repo-relative paths this agent reads on its own.
 # Conventions from these files are referenced by path rather than re-injected.
 agent_native_context_files() {
-  printf '%s\n' '["CLAUDE.md", ".claude/CLAUDE.md"]'
+  printf '%s\n' '["AGENTS.md", "CLAUDE.md", ".claude/CLAUDE.md"]'
 }
