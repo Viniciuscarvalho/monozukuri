@@ -63,6 +63,7 @@ if (fs.existsSync(STATE_DIR)) {
         summary.queued++;
         break;
       case 'failed':
+      case 'error':
         summary.failed++;
         break;
       case 'blocked':
