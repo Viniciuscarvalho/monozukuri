@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.18.0...v1.19.0) (2026-04-27)
+
+
+### Features
+
+* **ui:** surface skills, workflow memory, and setup events in TUI (PR6) ([e75bc65](https://github.com/Viniciuscarvalho/monozukuri/commit/e75bc65fbf7010c8d012727b9e4ab1850b8385e1))
+* **ui:** surface skills, workflow memory, and setup events in TUI (PR6) ([8116c7b](https://github.com/Viniciuscarvalho/monozukuri/commit/8116c7b98e37ef27df2f35c88e988e90908d0f78))
+
 ## [1.18.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.17.0...v1.18.0) (2026-04-27)
 
 
