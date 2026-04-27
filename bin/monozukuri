@@ -30,8 +30,11 @@ const uiDist =
   resolve(__dirname, '..', 'ui', 'dist', 'index.js');
 
 const UI_COMMANDS = new Set(['run', 'setup']);
+// Both stdout and stdin must be a real TTY: stdout so we can render, stdin so
+// Ink (or /dev/tty fallback) can set raw mode for keyboard input.
 const wantsUI =
   process.stdout.isTTY &&
+  process.stdin.isTTY &&
   UI_COMMANDS.has(cmd) &&
   !args.includes('--no-ui') &&
   !args.includes('--json') &&
