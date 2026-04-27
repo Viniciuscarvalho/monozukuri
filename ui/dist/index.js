@@ -1,3 +1,4 @@
+import{createRequire}from'module';const require=createRequire(import.meta.url);
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -26753,13 +26754,26 @@ var init_devtools_window_polyfill = __esm({
   }
 });
 
+// src/react-devtools-stub.js
+var stub, react_devtools_stub_default;
+var init_react_devtools_stub = __esm({
+  "src/react-devtools-stub.js"() {
+    "use strict";
+    stub = {
+      connectToDevTools: () => {
+      }
+    };
+    react_devtools_stub_default = stub;
+  }
+});
+
 // node_modules/ink/build/devtools.js
 var devtools_exports = {};
-import devtools from "react-devtools-core";
 var init_devtools = __esm({
   "node_modules/ink/build/devtools.js"() {
     init_devtools_window_polyfill();
-    devtools.connectToDevTools();
+    init_react_devtools_stub();
+    react_devtools_stub_default.connectToDevTools();
   }
 });
 
