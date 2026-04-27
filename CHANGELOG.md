@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.1...v1.19.2) (2026-04-27)
+
+
+### Bug Fixes
+
+* **ui:** open /dev/tty for Ink keyboard input; avoid raw mode error in non-TTY context ([7ca35f5](https://github.com/Viniciuscarvalho/monozukuri/commit/7ca35f5054542c1f10becd9b9e3004e45868ef93))
+* **ui:** open /dev/tty for Ink keyboard input; avoid raw mode error in non-TTY context ([82ee32b](https://github.com/Viniciuscarvalho/monozukuri/commit/82ee32b855700edb878a8469b2cda147c4e89a7a))
+
 ## [1.19.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.0...v1.19.1) (2026-04-27)
 
 
