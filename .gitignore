@@ -1,5 +1,5 @@
 ui/node_modules/
-ui/dist/
+ui/dist/*.map
 .monozukuri-test/
 
 # AI agent skill dirs (agent-specific; canonical source is .agents/skills/)

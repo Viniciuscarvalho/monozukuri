@@ -1,25 +1,21 @@
 #!/usr/bin/env node
-// bin/monozukuri — Node dispatcher
-// Resolves the shell orchestrator, optionally pipes stdout through the Ink UI.
-// Non-TTY or --no-ui: raw passthrough (same behavior as the old bash wrapper).
-// TTY + long commands (run): pipes events to ui/dist/index.js when it exists.
+'use strict';
+const { spawn } = require('node:child_process');
+const { existsSync } = require('node:fs');
+const { join, resolve } = require('node:path');
+const { randomUUID } = require('node:crypto');
 
-import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// Resolve script root: Homebrew (../libexec/monozukuri/), repo root (../), or repo scripts (../scripts/)
+// Resolve the directory containing orchestrate.sh.
+// Search order: Homebrew libexec sibling → repo root → repo scripts/ fallback.
 function findScriptRoot() {
-  const homebrewPath = resolve(__dirname, '..', 'libexec', 'monozukuri');
-  if (existsSync(join(homebrewPath, 'orchestrate.sh'))) return homebrewPath;
-  const repoRoot = resolve(__dirname, '..');
-  if (existsSync(join(repoRoot, 'orchestrate.sh'))) return repoRoot;
-  const repoScripts = resolve(__dirname, '..', 'scripts');
-  if (existsSync(join(repoScripts, 'orchestrate.sh'))) return repoScripts;
+  const candidates = [
+    resolve(__dirname, '..', 'libexec', 'monozukuri'),
+    resolve(__dirname, '..'),
+    resolve(__dirname, '..', 'scripts'),
+  ];
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'orchestrate.sh'))) return dir;
+  }
   throw new Error('Cannot find Monozukuri scripts. Check your installation.');
 }
 
@@ -28,8 +24,11 @@ const orchestrate = join(SCRIPT_ROOT, 'orchestrate.sh');
 const args = process.argv.slice(2);
 const cmd = args[0] ?? '';
 
-// Decide whether to pipe through the Ink UI
-const uiDist = resolve(__dirname, '..', 'ui', 'dist', 'index.js');
+// MONOZUKURI_UI_DIST allows the Homebrew formula to inject the absolute path.
+const uiDist =
+  process.env.MONOZUKURI_UI_DIST ??
+  resolve(__dirname, '..', 'ui', 'dist', 'index.js');
+
 const UI_COMMANDS = new Set(['run']);
 const wantsUI =
   process.stdout.isTTY &&
@@ -40,7 +39,7 @@ const wantsUI =
   !args.includes('--plan') &&
   existsSync(uiDist);
 
-const runId = crypto.randomUUID();
+const runId = randomUUID();
 
 const orchestrator = spawn('bash', [orchestrate, ...args], {
   env: { ...process.env, MONOZUKURI_HOME: SCRIPT_ROOT, MONOZUKURI_RUN_ID: runId },
