@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.15.0...v1.16.0) (2026-04-27)
+
+
+### Features
+
+* **skills:** scaffold 8 mz-* phase skills (PR1 of skills plan) ([200cc90](https://github.com/Viniciuscarvalho/monozukuri/commit/200cc90a3ee2cf6afc2b0af3b77620946c55a6e3))
+* **skills:** scaffold 8 mz-* phase skills (PR1 of skills plan) ([ebf01a9](https://github.com/Viniciuscarvalho/monozukuri/commit/ebf01a9276f4bb7dcdf62748f93fcba047642f78))
+
 ## [1.15.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.14.0...v1.15.0) (2026-04-27)
 
 
