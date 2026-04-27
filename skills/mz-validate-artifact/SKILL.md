@@ -19,24 +19,17 @@ This skill is a **discipline contract** — it defines the quality bar an artifa
 
 Read and satisfy `skills/mz-create-prd/references/prd-validation.md` before submitting.
 
-Current hard checks (`lib/schema/validate.sh:56-64`):
-
-- A section heading matching `problem | overview | summary | background` (case-insensitive, `##` or `###` level) MUST be present.
-- A section heading matching `success | acceptance | definition | criteria | goal` MUST be present.
+Heading aliases are read from `references/prd-validation.md` by the validator (PR2). Any accepted alias in the "Problem framing" and "Success criteria" rows passes.
 
 ### TechSpec (`techspec.md`)
 
 Read and satisfy `skills/mz-create-techspec/references/techspec-validation.md` before submitting.
 
-Current hard checks (`lib/schema/validate.sh:67-88`):
-
-- A section heading matching `technical | implementation | approach | architecture | design | solution` MUST be present.
-- A `files_likely_touched` section heading or key MUST be present.
-- That section MUST contain at least one `- ` list item.
+Heading aliases are read from `references/techspec-validation.md` by the validator (PR2). The "Files likely touched" section MUST contain at least one `- ` list item.
 
 ### Tasks (`tasks.json`)
 
-Read and satisfy `skills/mz-create-tasks/references/tasks-validation.md` before submitting.
+Read and satisfy `skills/mz-create-tasks/references/tasks-validation.md` before submitting. The validator checks valid JSON, non-empty array, and all five required fields per task.
 
 ## When validation fails
 

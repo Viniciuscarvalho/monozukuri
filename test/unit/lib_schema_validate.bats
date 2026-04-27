@@ -54,15 +54,23 @@ EOF
 }
 
 _make_valid_tasks() {
-  cat >"$TMPDIR_TEST/tasks.md" <<'EOF'
-# Tasks
-
-## Task 1: Create auth route
-- [ ] Add POST /auth/login endpoint
-- [ ] Validate request body schema
-
-## Task 2: Add middleware
-- [ ] Create authenticate middleware
+  cat >"$TMPDIR_TEST/tasks.json" <<'EOF'
+[
+  {
+    "id": "task-001",
+    "title": "Create auth route",
+    "description": "Add POST /auth/login endpoint and validate request body schema",
+    "files_touched": ["src/routes/auth.js"],
+    "acceptance_criteria": ["POST /auth/login returns 200 for valid credentials"]
+  },
+  {
+    "id": "task-002",
+    "title": "Add middleware",
+    "description": "Create authenticate middleware to protect routes",
+    "files_touched": ["src/middleware/authenticate.js"],
+    "acceptance_criteria": ["Middleware rejects unauthenticated requests with 401"]
+  }
+]
 EOF
 }
 
@@ -226,36 +234,54 @@ EOF
 
 # ── schema_validate: tasks ────────────────────────────────────────────────────
 
-@test "schema_validate tasks: returns 0 for valid tasks.md" {
+@test "schema_validate tasks: returns 0 for valid tasks.json" {
   _make_valid_tasks
   local rc=0
-  schema_validate "tasks" "$TMPDIR_TEST/tasks.md" || rc=$?
+  schema_validate "tasks" "$TMPDIR_TEST/tasks.json" || rc=$?
   [ "$rc" -eq 0 ]
 }
 
-@test "schema_validate tasks: returns 1 when no checkboxes present" {
-  cat >"$TMPDIR_TEST/tasks.md" <<'EOF'
-# Tasks
-
-1. Create auth route
-2. Add middleware
-3. Write tests for the implementation
+@test "schema_validate tasks: returns 1 when tasks.json is not valid JSON" {
+  cat >"$TMPDIR_TEST/tasks.json" <<'EOF'
+this is not json at all, just plain text that happens to be long enough
 EOF
   local rc=0
-  schema_validate "tasks" "$TMPDIR_TEST/tasks.md" || rc=$?
+  schema_validate "tasks" "$TMPDIR_TEST/tasks.json" || rc=$?
   [ "$rc" -eq 1 ]
-  [[ "$SCHEMA_VALIDATE_ERROR" == *"checkbox"* ]]
+  [[ "$SCHEMA_VALIDATE_ERROR" == *"tasks.json"* ]]
 }
 
-@test "schema_validate tasks: accepts checked [x] and [X] items" {
-  cat >"$TMPDIR_TEST/tasks.md" <<'EOF'
-# Tasks
-- [x] Implement the feature
-- [X] Write tests
+@test "schema_validate tasks: returns 1 when tasks.json is missing required fields" {
+  cat >"$TMPDIR_TEST/tasks.json" <<'EOF'
+[
+  {
+    "id": "task-001",
+    "title": "incomplete task without description or acceptance_criteria"
+  }
+]
 EOF
   local rc=0
-  schema_validate "tasks" "$TMPDIR_TEST/tasks.md" || rc=$?
-  [ "$rc" -eq 0 ]
+  schema_validate "tasks" "$TMPDIR_TEST/tasks.json" || rc=$?
+  [ "$rc" -eq 1 ]
+  [[ "$SCHEMA_VALIDATE_ERROR" == *"tasks.json"* ]]
+}
+
+@test "schema_validate tasks: returns 1 when tasks.json has empty files_touched" {
+  cat >"$TMPDIR_TEST/tasks.json" <<'EOF'
+[
+  {
+    "id": "task-001",
+    "title": "Task",
+    "description": "Do something useful here in the description",
+    "files_touched": [],
+    "acceptance_criteria": ["it works"]
+  }
+]
+EOF
+  local rc=0
+  schema_validate "tasks" "$TMPDIR_TEST/tasks.json" || rc=$?
+  [ "$rc" -eq 1 ]
+  [[ "$SCHEMA_VALIDATE_ERROR" == *"tasks.json"* ]]
 }
 
 # ── schema_humanize_error ─────────────────────────────────────────────────────

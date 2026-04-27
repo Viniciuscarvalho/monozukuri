@@ -34,23 +34,17 @@ Every FR and NFR from the PRD must appear in at least one task. The reviewer can
 
 ---
 
-## Current validator behavior
+## Validator behavior
 
-_From `validate.sh:91-98`:_
+The validator (`validate.sh`) checks `tasks.json` using Python's `json` module (PR2). It verifies:
 
-The validator checks the tasks artifact for at least one checkbox pattern:
-
-```
-^[[:space:]]*-[[:space:]]\[[ xX]\]
-```
-
-This pattern targets a markdown `tasks.md`, but the tasks phase outputs `tasks.json`. This mismatch is part of the 40% validation failure rate documented in `MONOZUKURI_SKILLS_PLAN.md`. PR2 of the skills plan will update the validator to check `tasks.json` against the JSON schema instead.
-
-**Until PR2 ships:** when using the raw-prompt adapter path, ensure a `tasks.md` summary with checkboxes for each task is generated alongside `tasks.json`. When the skill-native path is active (PR4+), only `tasks.json` is required.
+1. The file is valid JSON.
+2. The top-level value is a non-empty array.
+3. Each task object has all five required fields with non-empty `files_touched` and `acceptance_criteria` arrays.
 
 ---
 
-## Heading aliases for PR2 validator
+## Validation rules summary
 
 | Rule              | Pattern                                                                            |
 | ----------------- | ---------------------------------------------------------------------------------- |
