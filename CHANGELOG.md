@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.12.0...v1.13.0) (2026-04-27)
+
+
+### Features
+
+* enable Ink terminal UI via Node dispatcher in Homebrew ([3a9e226](https://github.com/Viniciuscarvalho/monozukuri/commit/3a9e226006585d425701b1253141df58f881adf6))
+* enable Ink terminal UI via Node dispatcher in Homebrew ([8c12967](https://github.com/Viniciuscarvalho/monozukuri/commit/8c12967d1158674256e426b53752bf46d14c95d2))
+
 ## [1.12.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.11.0...v1.12.0) (2026-04-26)
 
 
