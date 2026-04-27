@@ -99,10 +99,17 @@ OPT_CONVENTIONS_ID=""
 OPT_CONVENTIONS_SOURCE=false
 OPT_CONVENTIONS_WRITE=false
 OPT_CONVENTIONS_YES=false
+OPT_SETUP_AGENT=""
+OPT_SETUP_ACTION=""
+OPT_SETUP_ALL=false
+OPT_SETUP_GLOBAL=false
+OPT_SETUP_COPY=false
+OPT_SETUP_FORCE=false
+OPT_SETUP_YES=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -172,6 +179,33 @@ while [ $# -gt 0 ]; do
       ;;
     -y|--yes)
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_YES=true
+      [ "$SUBCOMMAND" = "setup" ]        && OPT_SETUP_YES=true
+      ;;
+    --all)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ALL=true
+      ;;
+    --global)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_GLOBAL=true
+      ;;
+    --copy)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_COPY=true
+      ;;
+    --force)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_FORCE=true
+      ;;
+    --uninstall)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=uninstall
+      ;;
+    --status)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=status
+      ;;
+    --list)
+      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=list
+      ;;
+    --agent)
+      if [ "$SUBCOMMAND" = "setup" ]; then
+        shift; OPT_SETUP_AGENT="$1"
+      fi
       ;;
     validate)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
@@ -225,6 +259,16 @@ while [ $# -gt 0 ]; do
       echo "  conventions restore-list     List available backups"
       echo "  conventions candidates       List promotion-ready learning entries"
       echo "  conventions promote <id>     Write promotion candidate to AGENTS.md"
+      echo "  setup                        Install skills into detected coding agents"
+      echo "  setup --agent <id>           Install for a specific agent only"
+      echo "  setup --all --yes            Install for all detected agents (no prompt)"
+      echo "  setup --global               Install globally (~/.agent/skills/)"
+      echo "  setup --copy                 Copy files instead of symlinking"
+      echo "  setup --list                 List bundled skills without installing"
+      echo "  setup --dry-run              Preview what would be installed"
+      echo "  setup --status               Show current install state"
+      echo "  setup --uninstall            Remove monozukuri-installed skills"
+      echo "  setup --force                Overwrite foreign/drifted skills"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -278,12 +322,14 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_AGENT_SUBCMD OPT_AGENT_NAME OPT_CONFIG \
        OPT_ROUTING_ACTION OPT_ROUTING_PHASE \
        OPT_CONVENTIONS_ACTION OPT_CONVENTIONS_ID OPT_CONVENTIONS_SOURCE \
-       OPT_CONVENTIONS_WRITE OPT_CONVENTIONS_YES
+       OPT_CONVENTIONS_WRITE OPT_CONVENTIONS_YES \
+       OPT_SETUP_AGENT OPT_SETUP_ACTION OPT_SETUP_ALL OPT_SETUP_GLOBAL \
+       OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
 # Verify we're in a git repo (doctor, routing, metrics, and review are exempt — pre-flight or read-only)
-if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] && [ "$SUBCOMMAND" != "review" ] && [ "$SUBCOMMAND" != "conventions" ] \
+if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMAND" != "routing" ] && [ "$SUBCOMMAND" != "metrics" ] && [ "$SUBCOMMAND" != "review" ] && [ "$SUBCOMMAND" != "conventions" ] && [ "$SUBCOMMAND" != "setup" ] \
    && ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "✗ Not inside a git repository." >&2
   echo "  Run this from the root of your project." >&2
@@ -309,4 +355,5 @@ case "$SUBCOMMAND" in
   metrics)         source "$CMD_DIR/metrics.sh"; sub_metrics ;;
   review)          source "$CMD_DIR/review.sh"; sub_review "${@:2}" ;;
   conventions)     source "$CMD_DIR/conventions.sh"; sub_conventions ;;
+  setup)           source "$CMD_DIR/setup.sh"; sub_setup ;;
 esac

@@ -21,44 +21,26 @@ set -euo pipefail
 _metrics_validate_schema() {
   local history_file="$1"
 
-  [ ! -f "$history_file" ] && return 0  # Skip if file doesn't exist (not an error)
+  [ ! -f "$history_file" ] && return 0
 
-  # Read data rows (skip header and separator)
   local line_num=0
-  local history_section=false
   local data_started=false
 
   while IFS= read -r line; do
-    ((line_num++))
-
-    # Skip empty lines
+    line_num=$((line_num + 1))
     [[ -z "$line" || "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" =~ ^# ]] && continue
 
-    # Detect "## History" section
-    if [[ "$line" =~ ^##[[:space:]]*History ]]; then
-      history_section=true
-      continue
-    fi
-
-    # Skip if not in history section yet
-    [ "$history_section" = false ] && continue
-
-    # Detect data table header (with or without leading pipe)
     if [[ "$line" =~ date.*run_id.*headline ]]; then
       data_started=true
       continue
     fi
 
-    # Skip table separator row
     [[ "$line" =~ ^[[:space:]]*[\|]*[[:space:]]*-+[[:space:]]*\| ]] && continue
-
-    # Skip if we haven't reached data rows yet
     [ "$data_started" = false ] && continue
 
-    # Strip leading/trailing pipes and whitespace if present (formatted table style)
     line=$(echo "$line" | sed -e 's/^[[:space:]]*|[[:space:]]*//' -e 's/[[:space:]]*|[[:space:]]*$//')
 
-    # Validate data row
     local col_count
     col_count=$(echo "$line" | grep -o '|' | wc -l | tr -d ' ')
 
@@ -67,11 +49,9 @@ _metrics_validate_schema() {
       return 2
     fi
 
-    # Extract date field (first column)
     local date_field
     date_field=$(echo "$line" | cut -d'|' -f1 | xargs)
 
-    # Validate date format (YYYY-MM-DD)
     if ! [[ "$date_field" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
       echo "invalid date format at line $line_num: expected YYYY-MM-DD, got '$date_field'" >&2
       return 2
@@ -91,49 +71,32 @@ _metrics_extract_recent() {
 
   [ ! -f "$history_file" ] && return 0
 
-  # Extract data rows (skip header, separator, empty lines)
-  local history_section=false
   local data_started=false
   local -a rows=()
 
   while IFS= read -r line; do
-    # Skip empty lines
     [[ -z "$line" || "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" =~ ^# ]] && continue
 
-    # Detect "## History" section
-    if [[ "$line" =~ ^##[[:space:]]*History ]]; then
-      history_section=true
-      continue
-    fi
-
-    # Skip if not in history section yet
-    [ "$history_section" = false ] && continue
-
-    # Detect data table header
     if [[ "$line" =~ date.*run_id.*headline ]]; then
       data_started=true
       continue
     fi
 
-    # Skip separator (with or without leading pipe)
     [[ "$line" =~ ^[[:space:]]*[\|]*[[:space:]]*-+[[:space:]]*\| ]] && continue
-
-    # Skip if not in data section yet
     [ "$data_started" = false ] && continue
 
-    # Strip leading/trailing pipes and whitespace if present
     line=$(echo "$line" | sed -e 's/^[[:space:]]*|[[:space:]]*//' -e 's/[[:space:]]*|[[:space:]]*$//')
-
-    # Collect data row
     rows+=("$line")
   done < "$history_file"
 
-  # Return last N rows (or all if fewer than N)
   local total=${#rows[@]}
   local start=$((total > n ? total - n : 0))
 
-  for ((i=start; i<total; i++)); do
+  local i=$start
+  while [ "$i" -lt "$total" ]; do
     echo "${rows[$i]}"
+    i=$((i + 1))
   done
 }
 
@@ -170,7 +133,7 @@ _metrics_calculate_trailing_average() {
     # Skip non-numeric values
     if [[ "$headline" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
       sum=$(awk -v s="$sum" -v h="$headline" 'BEGIN {printf "%.2f", s + h}')
-      ((count++))
+      count=$((count + 1))
     fi
   done <<< "$rows"
 

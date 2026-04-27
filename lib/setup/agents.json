@@ -1,0 +1,70 @@
+{
+  "agents": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "type": "specific",
+      "detect": [
+        {
+          "kind": "dir",
+          "path": "~/.claude"
+        },
+        {
+          "kind": "dir",
+          "path": ".claude"
+        }
+      ],
+      "project_path": ".claude/skills",
+      "global_path_env": "CLAUDE_CONFIG_DIR",
+      "global_path_default": "~/.claude/skills"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "type": "universal",
+      "detect": [
+        {
+          "kind": "dir",
+          "path": "~/.cursor"
+        },
+        {
+          "kind": "dir",
+          "path": ".cursor"
+        }
+      ],
+      "project_path": ".agents/skills",
+      "global_path": "~/.cursor/skills"
+    },
+    {
+      "id": "gemini-cli",
+      "name": "Google Gemini CLI",
+      "type": "universal",
+      "detect": [
+        {
+          "kind": "dir",
+          "path": "~/.gemini"
+        }
+      ],
+      "project_path": ".agents/skills",
+      "global_path": "~/.gemini/skills"
+    },
+    {
+      "id": "codex",
+      "name": "OpenAI Codex CLI",
+      "type": "universal",
+      "detect": [
+        {
+          "kind": "dir",
+          "path": "~/.codex"
+        },
+        {
+          "kind": "env",
+          "name": "CODEX_HOME"
+        }
+      ],
+      "project_path": ".agents/skills",
+      "global_path_env": "CODEX_HOME",
+      "global_path_default": "~/.codex/skills"
+    }
+  ]
+}

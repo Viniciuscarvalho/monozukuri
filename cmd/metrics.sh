@@ -18,8 +18,8 @@ sub_metrics() {
   local history_file="${PROJECT_ROOT}/docs/canary-history.md"
 
   if [ ! -f "$history_file" ]; then
-    err "No canary history found. Run canary benchmarks to collect data."
-    exit 1
+    printf "No canary history found. Run canary benchmarks to collect data.\n" >&2
+    return 1
   fi
 
   metrics_display "$history_file"
