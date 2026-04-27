@@ -514,6 +514,15 @@ EOPRD
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
 
+  # EXIT_AGENT_BLOCKED (21): agent exited cleanly but embedded a human-input marker.
+  # Pause immediately — do not run validation gates or phase 3 on a blocked feature.
+  if [ "$exit_code" -eq 21 ]; then
+    fstate_transition "$feat_id" "paused" "agent-blocker"
+    fstate_record_pause "$feat_id" "human" "agent-blocker"
+    info "Paused: $feat_id — agent requested human input (see run log: $log_file)"
+    return 0
+  fi
+
   # ADR-011 PR-E: spec reference validation
   if [ "$exit_code" -eq 0 ] && [ -f "${SCRIPTS_DIR}/validate_spec_references.sh" ]; then
     bash "${SCRIPTS_DIR}/validate_spec_references.sh" "$wt_path" "$task_dir" 2>&1 || {

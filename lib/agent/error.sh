@@ -2,14 +2,16 @@
 # lib/agent/error.sh — Adapter error envelope and classification (ADR-013)
 #
 # Provides a structured error envelope for agent failures:
-#   {class: transient|phase|fatal|unknown, code, message, retryable_after?}
+#   {class: transient|phase|fatal|human|unknown, code, message, retryable_after?}
 #
+# class "human" signals the agent paused for human input (not a failure).
 # Adapters may write a structured error to $MONOZUKURI_ERROR_FILE.
 # The classifier falls back to log inspection and exit-code heuristics.
 #
 # Public interface:
 #   agent_error_classify <exit_code> <log_file> [error_file]
 #   agent_error_field <envelope_json> <field>
+#   agent_scan_for_blocker <log_file> [error_file]
 
 # agent_error_classify <exit_code> <log_file> [error_file]
 # Prints a JSON error envelope to stdout. Never fails itself.
@@ -24,7 +26,7 @@ agent_error_classify() {
     adapter_class=$(node -p \
       "try{JSON.parse(require('fs').readFileSync('$error_file','utf-8')).class||''}catch(e){''}" \
       2>/dev/null || echo "")
-    if echo "$adapter_class" | grep -qE "^(transient|phase|fatal|unknown)$"; then
+    if echo "$adapter_class" | grep -qE "^(transient|phase|fatal|human|unknown)$"; then
       cat "$error_file"
       return 0
     fi
@@ -80,4 +82,35 @@ agent_error_field() {
   printf '%s' "$envelope" | node -p \
     "try{JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'))['$field']||''}catch(e){''}" \
     2>/dev/null || echo ""
+}
+
+# agent_scan_for_blocker <log_file> [error_file]
+# Greps the agent log for human-input blocker markers. If found, writes a
+# class:"human" envelope to error_file (if given) and returns 1 so callers
+# can exit EXIT_AGENT_BLOCKED (21). Returns 0 when no blocker is found.
+# The marker regex is intentionally broad to catch feature-marker and custom
+# agent skills that follow the "## ⚠️ Blocker" or "Need Your Input" pattern.
+agent_scan_for_blocker() {
+  local log_file="${1:-}"
+  local error_file="${2:-${MONOZUKURI_ERROR_FILE:-}}"
+
+  [ -z "$log_file" ] || [ ! -f "$log_file" ] && return 0
+
+  local marker_pattern='Blocker[[:space:]]*[-—][[:space:]]*(Need|Wait|Require)|Need[[:space:]]+Your[[:space:]]+Input|human[[:space:]]+intervention[[:space:]]+required'
+  if ! grep -qiE "$marker_pattern" "$log_file" 2>/dev/null; then
+    return 0
+  fi
+
+  local message
+  message=$(grep -iE "$marker_pattern" "$log_file" | head -1 | sed 's/^[[:space:]]*//' || echo "Agent requested human input")
+
+  local envelope
+  envelope=$(printf '{"class":"human","code":"agent-blocker","message":"%s"}\n' \
+    "$(printf '%s' "$message" | sed 's/"/\\"/g')")
+
+  if [ -n "$error_file" ]; then
+    printf '%s\n' "$envelope" > "$error_file" 2>/dev/null || true
+  fi
+
+  return 1
 }

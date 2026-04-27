@@ -169,6 +169,24 @@ agent_run_phase() {
     fi
   fi
 
+  # Post-success scan: agent may have exited 0 while embedding a human-input blocker.
+  # Use adapter-specific regex when available, otherwise fall back to the generic scanner.
+  if [ "$exit_code" -eq 0 ] && [ -s "$log_file" ]; then
+    local _blocker_fn="agent_blocker_marker"
+    if declare -f "$_blocker_fn" &>/dev/null; then
+      local _marker
+      _marker=$("$_blocker_fn")
+      if grep -qiE "$_marker" "$log_file" 2>/dev/null; then
+        [ -n "${MONOZUKURI_ERROR_FILE:-}" ] && \
+          printf '{"class":"human","code":"agent-blocker","message":"Agent requested human input"}\n' \
+          > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
+        exit_code=21  # EXIT_AGENT_BLOCKED
+      fi
+    elif declare -f agent_scan_for_blocker &>/dev/null; then
+      agent_scan_for_blocker "$log_file" "${MONOZUKURI_ERROR_FILE:-}" || exit_code=21
+    fi
+  fi
+
   return "$exit_code"
 }
 
