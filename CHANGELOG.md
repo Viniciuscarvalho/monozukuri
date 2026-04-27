@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.18.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.17.0...v1.18.0) (2026-04-27)
+
+
+### Features
+
+* **adapter:** add skill-native invocation path to adapter-claude-code (PR4) ([8ff8c15](https://github.com/Viniciuscarvalho/monozukuri/commit/8ff8c15513bcd3a580dbbd2b9a442338a7dffda7))
+* **adapter:** skill-native invocation path + release-please v5 (PR4) ([2b26d3d](https://github.com/Viniciuscarvalho/monozukuri/commit/2b26d3d3cb6bb4a198846434592e82f89af0f33e))
+* **memory:** workflow memory harness + README skills documentation (PR5) ([088a305](https://github.com/Viniciuscarvalho/monozukuri/commit/088a30590541702259e79ef2bfeda95587766c1d))
+* **memory:** workflow memory harness + README skills documentation (PR5) ([7ced242](https://github.com/Viniciuscarvalho/monozukuri/commit/7ced242e2fa6205106e7597fc65ca527f938fd42))
+* **setup:** add monozukuri setup installer command (PR3) ([62f83b3](https://github.com/Viniciuscarvalho/monozukuri/commit/62f83b3f374960f79a949b1aba3a86ed00074e68))
+
+
+### Bug Fixes
+
+* **ci:** suppress monozukuri-vX prefix in release-please v5 tags ([8a7d11e](https://github.com/Viniciuscarvalho/monozukuri/commit/8a7d11e78715df6ea844998bc87e2b97bc853192))
+* **ci:** suppress monozukuri-vX prefix in release-please v5 tags ([64fe15d](https://github.com/Viniciuscarvalho/monozukuri/commit/64fe15decd1e43018c36b230484b96753f47f92b))
+* **metrics:** fix 8 pre-existing test failures in metrics module ([fff0494](https://github.com/Viniciuscarvalho/monozukuri/commit/fff0494c86cd22e656d0c8cbb7d76797c170293a))
+* **metrics:** remove comment drift from linter revert in metrics.sh ([4a1a628](https://github.com/Viniciuscarvalho/monozukuri/commit/4a1a628bac077a629b7bdb31abcafc110049e203))
+
 ## [1.17.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.16.0...v1.17.0) (2026-04-27)
 
 
