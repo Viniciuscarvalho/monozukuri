@@ -23,7 +23,7 @@ jobs:
           manifest-file: .release-please-manifest.json
       - name: Enable auto-merge on release PR
         if: ${{ steps.release.outputs.pr }}
-        run: gh pr merge --auto --squash "${{ steps.release.outputs.pr }}"
+        run: gh pr merge --auto --squash "${{ fromJSON(steps.release.outputs.pr).number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
