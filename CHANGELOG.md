@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.6](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.5...v1.19.6) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ci:** extract PR number from release-please JSON output for auto-merge ([#72](https://github.com/Viniciuscarvalho/monozukuri/issues/72)) ([bf87666](https://github.com/Viniciuscarvalho/monozukuri/commit/bf87666ddb51517cc7d0f6c04470baa932c5ecc3))
+
 ## [1.19.5](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.4...v1.19.5) (2026-04-28)
 
 
