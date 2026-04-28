@@ -1,0 +1,9 @@
+{
+  "feature_id": "feat-compat-001",
+  "status": "paused",
+  "worktree": "/tmp/placeholder-worktree-path",
+  "branch": "feat/feat-compat-001",
+  "created_at": "2025-10-15T08:00:00Z",
+  "updated_at": "2025-10-15T09:00:00Z",
+  "phase": "implementation"
+}

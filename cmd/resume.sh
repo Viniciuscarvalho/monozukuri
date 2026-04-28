@@ -10,22 +10,49 @@ sub_resume_paused() {
     exit 1
   fi
 
-  source "$LIB_DIR/core/util.sh"
-  source "$LIB_DIR/config/load.sh"
-  source "$LIB_DIR/core/worktree.sh"
-  source "$LIB_DIR/memory/memory.sh"
-  source "$LIB_DIR/cli/output.sh"
-  source "$LIB_DIR/core/cost.sh"
-  source "$LIB_DIR/core/router.sh"
-  source "$LIB_DIR/memory/learning.sh"
-  source "$LIB_DIR/plan/size-gate.sh"
-  source "$LIB_DIR/plan/cycle-gate.sh"
-  [ -f "$LIB_DIR/run/local-model.sh" ] && source "$LIB_DIR/run/local-model.sh"
-  [ -f "$LIB_DIR/run/ingest.sh"      ] && source "$LIB_DIR/run/ingest.sh"
-  source "$LIB_DIR/core/json-io.sh"
-  source "$LIB_DIR/core/stack-profile.sh"
-  source "$LIB_DIR/prompt/sanitize.sh"
-  source "$LIB_DIR/run/pipeline.sh"
+  if [ -f "$LIB_DIR/cli/emit.sh" ]; then
+    source "$LIB_DIR/cli/emit.sh"
+  else
+    monozukuri_emit() { :; }
+  fi
+
+  source "$LIB_DIR/core/modules.sh"
+  modules_init "$LIB_DIR"
+
+  module_require core/util
+  module_require config/load
+  module_require core/worktree
+  module_require memory/memory
+  module_require cli/output
+  module_require core/json-io
+  module_require core/stack-profile
+  module_require core/feature-state
+  module_require core/platform
+  module_require core/cost
+  module_require core/router
+  source "$LIB_DIR/agent/contract.sh"
+  module_require memory/learning
+  module_require plan/size-gate
+  module_require plan/cycle-gate
+  module_optional run/local-model  "local_model::embed" "local_model::classify" \
+                                   "local_model::summarize" "local_model::generate"
+  module_optional run/ingest       "ingest_trigger_if_merged" "ingest_reap_stale"
+  module_optional run/injection-screen "sanitize_with_local_model"
+  module_require  prompt/sanitize
+  module_require schema/validate
+  module_require agent/error
+  module_require run/policy
+  module_require run/manifest
+  module_require run/ci-poll
+  module_require run/routing
+  module_require run/dep-check
+  module_require run/implicit-dep
+  module_require prompt/context-pack
+  module_require agent/registry
+  module_require run/pause
+  module_require run/phase-3
+  module_require run/phase-4
+  module_require run/pipeline
 
   local config_file="$OPT_CONFIG"
   if [ ! -f "$config_file" ]; then
@@ -46,4 +73,9 @@ sub_resume_paused() {
   [ "$OPT_RESUME_ACK" = "true" ] && ack_flag="--ack"
 
   run_feature_resume "$OPT_RESUME_FEAT" $ack_flag
+  local _resume_exit=$?
+
+  [ "$AUTO_CLEANUP" = "true" ] && { local cleaned; cleaned=$(wt_cleanup); [ -n "$cleaned" ] && info "Cleaned:$cleaned"; }
+
+  return $_resume_exit
 }
