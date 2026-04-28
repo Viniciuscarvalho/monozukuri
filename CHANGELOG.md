@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.2...v1.19.3) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ui:** stub react-devtools-core to eliminate missing-package error at runtime ([#66](https://github.com/Viniciuscarvalho/monozukuri/issues/66)) ([f312c48](https://github.com/Viniciuscarvalho/monozukuri/commit/f312c48aca50a837116301f472b54980f24af534))
+
 ## [1.19.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.1...v1.19.2) (2026-04-27)
 
 
