@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --external:react-devtools-core --outfile=dist/index.js",
+    "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --define:process.env.NODE_ENV='\"production\"' --alias:react-devtools-core=./stubs/react-devtools-core.js --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=dist/index.js",
+    "test:smoke": "node -e \"import('./dist/index.js').catch(e=>{console.error(e);process.exit(1)})\" < /dev/null",
     "dev": "tsc --watch",
     "lint": "eslint src/",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
