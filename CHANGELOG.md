@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.20.0...v1.21.0) (2026-04-28)
+
+
+### Features
+
+* **qa:** Layer 4 backwards compat + fix cmd/resume.sh module loading ([#80](https://github.com/Viniciuscarvalho/monozukuri/issues/80)) ([07b0bc9](https://github.com/Viniciuscarvalho/monozukuri/commit/07b0bc9e4ca243e723d88091f2cb9e3d53e8fb68))
+
 ## [1.20.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.7...v1.20.0) (2026-04-28)
 
 
