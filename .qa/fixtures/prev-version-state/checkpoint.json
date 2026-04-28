@@ -1,0 +1,10 @@
+{
+  "phase0": {
+    "status": "complete",
+    "completed_at": "2025-10-15T08:01:00Z"
+  },
+  "phase1": {
+    "status": "complete",
+    "completed_at": "2025-10-15T08:05:00Z"
+  }
+}

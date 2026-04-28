@@ -1,0 +1,10 @@
+[
+  {
+    "id": "learn-compat-v1",
+    "pattern": "ENOENT reading package.json in worktree",
+    "fix": "Ensure package.json is committed to the base branch before creating worktrees.",
+    "tier": "feature",
+    "created_at": "2025-10-15T08:00:00Z",
+    "last_seen": "2025-10-15T08:00:00Z"
+  }
+]

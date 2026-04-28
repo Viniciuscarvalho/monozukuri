@@ -1,0 +1,36 @@
+{
+  "feature_id": "feat-compat-001",
+  "status": "paused",
+  "title": "Add QA gate backwards-compat fixture feature",
+  "pipeline": {
+    "prd": {
+      "status": "completed"
+    },
+    "techspec": {
+      "status": "completed"
+    },
+    "tasks": {
+      "status": "completed"
+    },
+    "implementation": {
+      "status": "pending"
+    },
+    "tests": {
+      "status": "pending"
+    },
+    "review": {
+      "status": "pending"
+    }
+  },
+  "context_generated": {
+    "files_created": [],
+    "files_modified": [],
+    "schema_changes": [],
+    "new_dependencies": [],
+    "breaking_changes": []
+  },
+  "pr_url": null,
+  "duration_seconds": 0,
+  "errors": [],
+  "tasks": []
+}

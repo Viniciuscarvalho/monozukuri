@@ -1,0 +1,17 @@
+[
+  {
+    "id": "learn-promo-001",
+    "pattern": "Always run npm ci before starting dev server",
+    "fix": "Run 'npm ci' in the worktree before invoking the dev server to ensure lock-file-consistent dependencies.",
+    "tier": "project",
+    "created_at": "2025-10-15T08:00:00Z",
+    "last_seen": "2025-10-15T08:00:00Z",
+    "hits": 5,
+    "archived": false,
+    "confidence": 0.9,
+    "promotion_candidate": true,
+    "success_count": 5,
+    "failure_count": 0,
+    "ttl_days": 90
+  }
+]
