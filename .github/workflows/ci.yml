@@ -41,6 +41,9 @@ jobs:
       - name: Test UI
         run: npm test --prefix ui
 
+      - name: Smoke-test UI bundle
+        run: npm run test:smoke --prefix ui
+
       - name: Lint shell scripts
         run: |
           npm install -g shellcheck 2>/dev/null || true
