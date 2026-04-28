@@ -172,6 +172,16 @@ run_backlog() {
         next_feat_id=$(echo "${item_list[$_next_i]}" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')).id")
       fi
 
+      # Check abort/pause flags set by signal trap handlers in orchestrate.sh
+      if [ "${MONOZUKURI_ABORT_REQUESTED:-0}" = "1" ]; then
+        monozukuri_emit run.completed ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" reason "aborted_by_user" succeeded "$ran_count" failed 0 skipped 0 total_cost_usd "0"
+        break
+      fi
+      while [ "${MONOZUKURI_PAUSE_REQUESTED:-0}" = "1" ]; do
+        monozukuri_emit log.line ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" feature_id "" phase "" level "info" text "paused — send SIGUSR2 to resume"
+        sleep 1
+      done
+
       local _status_before
       _status_before=$(fstate_get_status "$feat_id_check")
 
