@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --external:react-devtools-core --outfile=dist/index.js",
+    "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --define:process.env.NODE_ENV='\"production\"' --alias:react-devtools-core=./stubs/react-devtools-core.js --outfile=dist/index.js",
     "dev": "tsc --watch",
     "lint": "eslint src/",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
