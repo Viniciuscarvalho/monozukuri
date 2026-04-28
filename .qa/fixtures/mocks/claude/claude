@@ -1,0 +1,66 @@
+#!/bin/bash
+# .qa/fixtures/mocks/claude/claude — Phase-aware mock for Layer 2 loop-integrity tests.
+#
+# Handles every invocation monozukuri makes during a gate fixture run:
+#   claude --version
+#   claude auth status
+#   claude [--model M] --agent feature-marker [--permission-mode bypassPermissions] -p "<feat_id>"
+#
+# On feature-marker invocations: writes canned prd.md, techspec.md, tasks.json to
+# $MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/ and a stub source file, then exits 0.
+#
+# All other invocations (e.g. schema reprompt via --print) exit 0 silently so they
+# don't break the run if unexpectedly triggered.
+
+set -euo pipefail
+
+MOCK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CANNED_DIR="$MOCK_DIR/canned"
+
+# ── --version ────────────────────────────────────────────────────────────────
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-mock (qa-gate fixture)"
+    exit 0
+  fi
+done
+
+# ── auth status ──────────────────────────────────────────────────────────────
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as qa-gate-fixture@example.com"
+  exit 0
+fi
+
+# ── feature-marker invocation ────────────────────────────────────────────────
+has_agent=false
+for arg in "$@"; do
+  [ "$arg" = "--agent" ] && has_agent=true && break
+done
+
+if [ "$has_agent" = "true" ]; then
+  feat_id="${MONOZUKURI_FEATURE_ID:-feat-qa-001}"
+  wt_path="${MONOZUKURI_WORKTREE:-}"
+
+  if [ -z "$wt_path" ]; then
+    printf 'mock: MONOZUKURI_WORKTREE not set\n' >&2
+    exit 1
+  fi
+
+  task_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$task_dir"
+
+  cp "$CANNED_DIR/prd.md"      "$task_dir/prd.md"
+  cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
+  cp "$CANNED_DIR/tasks.json"  "$task_dir/tasks.json"
+
+  # Write a stub source file so the worktree has actual changes.
+  mkdir -p "$wt_path/src"
+  printf '# QA gate fixture implementation stub for %s\n' "$feat_id" \
+    > "$wt_path/src/feature-qa.md"
+
+  printf 'mock: wrote artifacts for %s to %s\n' "$feat_id" "$task_dir"
+  exit 0
+fi
+
+# ── everything else (reprompts, --print, etc.) ───────────────────────────────
+exit 0

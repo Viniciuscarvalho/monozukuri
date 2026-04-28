@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task-qa-001",
+    "title": "Write QA fixture marker file",
+    "description": "Create a placeholder file in the worktree to simulate code generation.",
+    "files_touched": [
+      "src/feature-qa.md"
+    ],
+    "acceptance_criteria": [
+      "src/feature-qa.md exists in the worktree"
+    ]
+  }
+]
