@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.5](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.4...v1.19.5) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ui:** three-PR sequence — build, polish, signals ([#70](https://github.com/Viniciuscarvalho/monozukuri/issues/70)) ([13fcbb2](https://github.com/Viniciuscarvalho/monozukuri/commit/13fcbb24ee18dd45673efc5d5fb7c32bfdf5db8e))
+
 ## [1.19.4](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.3...v1.19.4) (2026-04-28)
 
 
