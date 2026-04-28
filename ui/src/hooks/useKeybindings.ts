@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useInput } from 'ink';
 import type { ViewMode } from '../types.js';
 
@@ -9,28 +10,29 @@ export function useKeybindings({ setView }: UseKeybindingsOptions): void {
   const orchestratorPid = process.env['MONOZUKURI_ORCHESTRATOR_PID']
     ? Number(process.env['MONOZUKURI_ORCHESTRATOR_PID'])
     : null;
+  const [paused, setPaused] = useState(false);
+
+  function sendSignal(sig: NodeJS.Signals) {
+    if (orchestratorPid) {
+      try { process.kill(orchestratorPid, sig); } catch { /* process gone */ }
+    }
+  }
 
   useInput((input, key) => {
     // q or Ctrl+C → send SIGINT to orchestrator and exit
     if (input === 'q' || key.ctrl && input === 'c') {
-      if (orchestratorPid) {
-        try {
-          process.kill(orchestratorPid, 'SIGINT');
-        } catch {
-          // Process may already be gone
-        }
-      }
+      sendSignal('SIGINT');
       process.exit(0);
     }
 
-    // p → pause (SIGUSR1)
+    // p → toggle pause (SIGUSR1) / resume (SIGUSR2)
     if (input === 'p') {
-      if (orchestratorPid) {
-        try {
-          process.kill(orchestratorPid, 'SIGUSR1');
-        } catch {
-          // Process may already be gone
-        }
+      if (paused) {
+        sendSignal('SIGUSR2');
+        setPaused(false);
+      } else {
+        sendSignal('SIGUSR1');
+        setPaused(true);
       }
       return;
     }

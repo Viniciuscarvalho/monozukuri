@@ -42,17 +42,17 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var require_react_production_min = __commonJS({
   "node_modules/react/cjs/react.production.min.js"(exports) {
     "use strict";
-    var l = Symbol.for("react.element");
-    var n = Symbol.for("react.portal");
-    var p = Symbol.for("react.fragment");
-    var q = Symbol.for("react.strict_mode");
-    var r = Symbol.for("react.profiler");
-    var t = Symbol.for("react.provider");
-    var u = Symbol.for("react.context");
-    var v = Symbol.for("react.forward_ref");
-    var w = Symbol.for("react.suspense");
-    var x = Symbol.for("react.memo");
-    var y = Symbol.for("react.lazy");
+    var l = /* @__PURE__ */ Symbol.for("react.element");
+    var n = /* @__PURE__ */ Symbol.for("react.portal");
+    var p = /* @__PURE__ */ Symbol.for("react.fragment");
+    var q = /* @__PURE__ */ Symbol.for("react.strict_mode");
+    var r = /* @__PURE__ */ Symbol.for("react.profiler");
+    var t = /* @__PURE__ */ Symbol.for("react.provider");
+    var u = /* @__PURE__ */ Symbol.for("react.context");
+    var v = /* @__PURE__ */ Symbol.for("react.forward_ref");
+    var w = /* @__PURE__ */ Symbol.for("react.suspense");
+    var x = /* @__PURE__ */ Symbol.for("react.memo");
+    var y = /* @__PURE__ */ Symbol.for("react.lazy");
     var z = Symbol.iterator;
     function A(a) {
       if (null === a || "object" !== typeof a) return null;
@@ -326,6 +326,7 @@ var require_react = __commonJS({
 // node_modules/signal-exit/signals.js
 var require_signals = __commonJS({
   "node_modules/signal-exit/signals.js"(exports, module) {
+    "use strict";
     module.exports = [
       "SIGABRT",
       "SIGALRM",
@@ -363,6 +364,7 @@ var require_signals = __commonJS({
 // node_modules/signal-exit/index.js
 var require_signal_exit = __commonJS({
   "node_modules/signal-exit/index.js"(exports, module) {
+    "use strict";
     var process13 = global.process;
     var processOk = function(process14) {
       return process14 && typeof process14 === "object" && typeof process14.removeListener === "function" && typeof process14.emit === "function" && typeof process14.reallyExit === "function" && typeof process14.listeners === "function" && typeof process14.kill === "function" && typeof process14.pid === "number" && typeof process14.on === "function";
@@ -787,6 +789,7 @@ var require_scheduler = __commonJS({
 // node_modules/react-reconciler/cjs/react-reconciler.production.min.js
 var require_react_reconciler_production_min = __commonJS({
   "node_modules/react-reconciler/cjs/react-reconciler.production.min.js"(exports, module) {
+    "use strict";
     module.exports = function $$$reconciler($$$hostConfig) {
       var exports2 = {};
       "use strict";
@@ -795,13 +798,13 @@ var require_react_reconciler_production_min = __commonJS({
         for (var b = "https://reactjs.org/docs/error-decoder.html?invariant=" + a, c = 1; c < arguments.length; c++) b += "&args[]=" + encodeURIComponent(arguments[c]);
         return "Minified React error #" + a + "; visit " + b + " for the full message or use the non-minified dev environment for full errors and additional helpful warnings.";
       }
-      var da = aa.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED, ea = Symbol.for("react.element"), fa = Symbol.for("react.portal"), ha = Symbol.for("react.fragment"), ia = Symbol.for("react.strict_mode"), ja = Symbol.for("react.profiler"), ka = Symbol.for("react.provider"), la = Symbol.for("react.context"), ma = Symbol.for("react.forward_ref"), na = Symbol.for("react.suspense"), oa = Symbol.for("react.suspense_list"), pa = Symbol.for("react.memo"), qa = Symbol.for("react.lazy");
-      Symbol.for("react.scope");
-      Symbol.for("react.debug_trace_mode");
-      var ra = Symbol.for("react.offscreen");
-      Symbol.for("react.legacy_hidden");
-      Symbol.for("react.cache");
-      Symbol.for("react.tracing_marker");
+      var da = aa.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED, ea = /* @__PURE__ */ Symbol.for("react.element"), fa = /* @__PURE__ */ Symbol.for("react.portal"), ha = /* @__PURE__ */ Symbol.for("react.fragment"), ia = /* @__PURE__ */ Symbol.for("react.strict_mode"), ja = /* @__PURE__ */ Symbol.for("react.profiler"), ka = /* @__PURE__ */ Symbol.for("react.provider"), la = /* @__PURE__ */ Symbol.for("react.context"), ma = /* @__PURE__ */ Symbol.for("react.forward_ref"), na = /* @__PURE__ */ Symbol.for("react.suspense"), oa = /* @__PURE__ */ Symbol.for("react.suspense_list"), pa = /* @__PURE__ */ Symbol.for("react.memo"), qa = /* @__PURE__ */ Symbol.for("react.lazy");
+      /* @__PURE__ */ Symbol.for("react.scope");
+      /* @__PURE__ */ Symbol.for("react.debug_trace_mode");
+      var ra = /* @__PURE__ */ Symbol.for("react.offscreen");
+      /* @__PURE__ */ Symbol.for("react.legacy_hidden");
+      /* @__PURE__ */ Symbol.for("react.cache");
+      /* @__PURE__ */ Symbol.for("react.tracing_marker");
       var sa = Symbol.iterator;
       function ta(a) {
         if (null === a || "object" !== typeof a) return null;
@@ -5570,15 +5573,6 @@ var require_constants = __commonJS({
   }
 });
 
-// node_modules/emoji-regex/index.js
-var require_emoji_regex = __commonJS({
-  "node_modules/emoji-regex/index.js"(exports, module) {
-    module.exports = () => {
-      return /[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E-\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED8\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])))?))?|\uDD75(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3C-\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE8A\uDE8E-\uDEC2\uDEC6\uDEC8\uDECD-\uDEDC\uDEDF-\uDEEA\uDEEF]|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;
-    };
-  }
-});
-
 // node_modules/ws/lib/constants.js
 var require_constants2 = __commonJS({
   "node_modules/ws/lib/constants.js"(exports, module) {
@@ -5592,10 +5586,10 @@ var require_constants2 = __commonJS({
       EMPTY_BUFFER: Buffer.alloc(0),
       GUID: "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",
       hasBlob,
-      kForOnEventAttribute: Symbol("kIsForOnEventAttribute"),
-      kListener: Symbol("kListener"),
-      kStatusCode: Symbol("status-code"),
-      kWebSocket: Symbol("websocket"),
+      kForOnEventAttribute: /* @__PURE__ */ Symbol("kIsForOnEventAttribute"),
+      kListener: /* @__PURE__ */ Symbol("kListener"),
+      kStatusCode: /* @__PURE__ */ Symbol("status-code"),
+      kWebSocket: /* @__PURE__ */ Symbol("websocket"),
       NOOP: () => {
       }
     };
@@ -5681,8 +5675,8 @@ var require_buffer_util = __commonJS({
 var require_limiter = __commonJS({
   "node_modules/ws/lib/limiter.js"(exports, module) {
     "use strict";
-    var kDone = Symbol("kDone");
-    var kRun = Symbol("kRun");
+    var kDone = /* @__PURE__ */ Symbol("kDone");
+    var kRun = /* @__PURE__ */ Symbol("kRun");
     var Limiter = class {
       /**
        * Creates a new `Limiter`.
@@ -5737,11 +5731,11 @@ var require_permessage_deflate = __commonJS({
     var { kStatusCode } = require_constants2();
     var FastBuffer = Buffer[Symbol.species];
     var TRAILER = Buffer.from([0, 0, 255, 255]);
-    var kPerMessageDeflate = Symbol("permessage-deflate");
-    var kTotalLength = Symbol("total-length");
-    var kCallback = Symbol("callback");
-    var kBuffers = Symbol("buffers");
-    var kError = Symbol("error");
+    var kPerMessageDeflate = /* @__PURE__ */ Symbol("permessage-deflate");
+    var kTotalLength = /* @__PURE__ */ Symbol("total-length");
+    var kCallback = /* @__PURE__ */ Symbol("callback");
+    var kBuffers = /* @__PURE__ */ Symbol("buffers");
+    var kError = /* @__PURE__ */ Symbol("error");
     var zlibLimiter;
     var PerMessageDeflate2 = class {
       /**
@@ -6913,7 +6907,7 @@ var require_sender = __commonJS({
     var { EMPTY_BUFFER, kWebSocket, NOOP } = require_constants2();
     var { isBlob, isValidStatusCode } = require_validation();
     var { mask: applyMask, toBuffer } = require_buffer_util();
-    var kByteLength = Symbol("kByteLength");
+    var kByteLength = /* @__PURE__ */ Symbol("kByteLength");
     var maskBuffer = Buffer.alloc(4);
     var RANDOM_POOL_SIZE = 8 * 1024;
     var randomPool;
@@ -7396,14 +7390,14 @@ var require_event_target = __commonJS({
   "node_modules/ws/lib/event-target.js"(exports, module) {
     "use strict";
     var { kForOnEventAttribute, kListener } = require_constants2();
-    var kCode = Symbol("kCode");
-    var kData = Symbol("kData");
-    var kError = Symbol("kError");
-    var kMessage = Symbol("kMessage");
-    var kReason = Symbol("kReason");
-    var kTarget = Symbol("kTarget");
-    var kType = Symbol("kType");
-    var kWasClean = Symbol("kWasClean");
+    var kCode = /* @__PURE__ */ Symbol("kCode");
+    var kData = /* @__PURE__ */ Symbol("kData");
+    var kError = /* @__PURE__ */ Symbol("kError");
+    var kMessage = /* @__PURE__ */ Symbol("kMessage");
+    var kReason = /* @__PURE__ */ Symbol("kReason");
+    var kTarget = /* @__PURE__ */ Symbol("kTarget");
+    var kType = /* @__PURE__ */ Symbol("kType");
+    var kWasClean = /* @__PURE__ */ Symbol("kWasClean");
     var Event = class {
       /**
        * Create a new `Event`.
@@ -7805,7 +7799,7 @@ var require_websocket = __commonJS({
     } = require_event_target();
     var { format, parse } = require_extension();
     var { toBuffer } = require_buffer_util();
-    var kAborted = Symbol("kAborted");
+    var kAborted = /* @__PURE__ */ Symbol("kAborted");
     var protocolVersions = [8, 13];
     var readyStates = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
     var subprotocolRegex = /^[!#$%&'*+\-.0-9A-Z^_`|a-z~]+$/;
@@ -9199,6 +9193,7 @@ var require_websocket_server = __commonJS({
 var import_stream, import_extension, import_permessage_deflate, import_receiver, import_sender, import_subprotocol, import_websocket, import_websocket_server, wrapper_default;
 var init_wrapper = __esm({
   "node_modules/ws/wrapper.mjs"() {
+    "use strict";
     import_stream = __toESM(require_stream(), 1);
     import_extension = __toESM(require_extension(), 1);
     import_permessage_deflate = __toESM(require_permessage_deflate(), 1);
@@ -9215,6 +9210,7 @@ var init_wrapper = __esm({
 var customGlobal;
 var init_devtools_window_polyfill = __esm({
   "node_modules/ink/build/devtools-window-polyfill.js"() {
+    "use strict";
     init_wrapper();
     customGlobal = global;
     customGlobal.WebSocket ||= wrapper_default;
@@ -9288,6 +9284,7 @@ var init_react_devtools_core = __esm({
 var devtools_exports = {};
 var init_devtools = __esm({
   "node_modules/ink/build/devtools.js"() {
+    "use strict";
     init_devtools_window_polyfill();
     init_react_devtools_core();
     react_devtools_core_default.connectToDevTools();
@@ -9717,8 +9714,8 @@ var require_react_jsx_runtime_production_min = __commonJS({
   "node_modules/react/cjs/react-jsx-runtime.production.min.js"(exports) {
     "use strict";
     var f = require_react();
-    var k = Symbol.for("react.element");
-    var l = Symbol.for("react.fragment");
+    var k = /* @__PURE__ */ Symbol.for("react.element");
+    var l = /* @__PURE__ */ Symbol.for("react.fragment");
     var m = Object.prototype.hasOwnProperty;
     var n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner;
     var p = { key: true, ref: true, __self: true, __source: true };
@@ -9750,12 +9747,12 @@ var require_jsx_runtime = __commonJS({
 });
 
 // node_modules/ink/build/render.js
-import { Stream } from "node:stream";
-import process12 from "node:process";
+import { Stream } from "stream";
+import process12 from "process";
 
 // node_modules/ink/build/ink.js
 var import_react10 = __toESM(require_react(), 1);
-import process11 from "node:process";
+import process11 from "process";
 
 // node_modules/es-toolkit/dist/function/debounce.mjs
 function debounce(func, debounceMs, { signal, edges } = {}) {
@@ -9914,8 +9911,8 @@ __export(base_exports, {
   setCwd: () => setCwd,
   synchronizedOutput: () => synchronizedOutput
 });
-import process2 from "node:process";
-import os from "node:os";
+import process2 from "process";
+import os from "os";
 
 // node_modules/environment/index.js
 var isBrowser = globalThis.window?.document !== void 0;
@@ -10076,7 +10073,7 @@ var ConEmu = {
 var setCwd = (cwd2 = cwdFunction()) => iTerm.setCwd(cwd2) + ConEmu.setCwd(cwd2);
 
 // node_modules/is-in-ci/index.js
-import { env } from "node:process";
+import { env } from "process";
 var isInCi = env.CI !== "0" && env.CI !== "false" && ("CI" in env || "CONTINUOUS_INTEGRATION" in env || Object.keys(env).some((key) => key.startsWith("CI_")));
 var is_in_ci_default = isInCi;
 
@@ -10117,7 +10114,7 @@ function autoBind(self, { include, exclude } = {}) {
 var import_signal_exit2 = __toESM(require_signal_exit(), 1);
 
 // node_modules/patch-console/dist/index.js
-import { PassThrough } from "node:stream";
+import { PassThrough } from "stream";
 var consoleMethods = [
   "assert",
   "count",
@@ -10165,7 +10162,7 @@ var dist_default = patchConsole;
 // node_modules/yoga-layout/dist/binaries/yoga-wasm-base64-esm.js
 var loadYoga = (() => {
   var _scriptDir = import.meta.url;
-  return function(loadYoga2) {
+  return (function(loadYoga2) {
     loadYoga2 = loadYoga2 || {};
     var h;
     h || (h = typeof loadYoga2 !== "undefined" ? loadYoga2 : {});
@@ -11389,12 +11386,12 @@ var loadYoga = (() => {
     if (h.preInit) for ("function" == typeof h.preInit && (h.preInit = [h.preInit]); 0 < h.preInit.length; ) h.preInit.pop()();
     Mb();
     return loadYoga2.ready;
-  };
+  });
 })();
 var yoga_wasm_base64_esm_default = loadYoga;
 
 // node_modules/yoga-layout/dist/src/generated/YGEnums.js
-var Align = /* @__PURE__ */ function(Align2) {
+var Align = /* @__PURE__ */ (function(Align2) {
   Align2[Align2["Auto"] = 0] = "Auto";
   Align2[Align2["FlexStart"] = 1] = "FlexStart";
   Align2[Align2["Center"] = 2] = "Center";
@@ -11405,30 +11402,30 @@ var Align = /* @__PURE__ */ function(Align2) {
   Align2[Align2["SpaceAround"] = 7] = "SpaceAround";
   Align2[Align2["SpaceEvenly"] = 8] = "SpaceEvenly";
   return Align2;
-}({});
-var BoxSizing = /* @__PURE__ */ function(BoxSizing2) {
+})({});
+var BoxSizing = /* @__PURE__ */ (function(BoxSizing2) {
   BoxSizing2[BoxSizing2["BorderBox"] = 0] = "BorderBox";
   BoxSizing2[BoxSizing2["ContentBox"] = 1] = "ContentBox";
   return BoxSizing2;
-}({});
-var Dimension = /* @__PURE__ */ function(Dimension2) {
+})({});
+var Dimension = /* @__PURE__ */ (function(Dimension2) {
   Dimension2[Dimension2["Width"] = 0] = "Width";
   Dimension2[Dimension2["Height"] = 1] = "Height";
   return Dimension2;
-}({});
-var Direction = /* @__PURE__ */ function(Direction2) {
+})({});
+var Direction = /* @__PURE__ */ (function(Direction2) {
   Direction2[Direction2["Inherit"] = 0] = "Inherit";
   Direction2[Direction2["LTR"] = 1] = "LTR";
   Direction2[Direction2["RTL"] = 2] = "RTL";
   return Direction2;
-}({});
-var Display = /* @__PURE__ */ function(Display2) {
+})({});
+var Display = /* @__PURE__ */ (function(Display2) {
   Display2[Display2["Flex"] = 0] = "Flex";
   Display2[Display2["None"] = 1] = "None";
   Display2[Display2["Contents"] = 2] = "Contents";
   return Display2;
-}({});
-var Edge = /* @__PURE__ */ function(Edge2) {
+})({});
+var Edge = /* @__PURE__ */ (function(Edge2) {
   Edge2[Edge2["Left"] = 0] = "Left";
   Edge2[Edge2["Top"] = 1] = "Top";
   Edge2[Edge2["Right"] = 2] = "Right";
@@ -11439,8 +11436,8 @@ var Edge = /* @__PURE__ */ function(Edge2) {
   Edge2[Edge2["Vertical"] = 7] = "Vertical";
   Edge2[Edge2["All"] = 8] = "All";
   return Edge2;
-}({});
-var Errata = /* @__PURE__ */ function(Errata2) {
+})({});
+var Errata = /* @__PURE__ */ (function(Errata2) {
   Errata2[Errata2["None"] = 0] = "None";
   Errata2[Errata2["StretchFlexBasis"] = 1] = "StretchFlexBasis";
   Errata2[Errata2["AbsolutePositionWithoutInsetsExcludesPadding"] = 2] = "AbsolutePositionWithoutInsetsExcludesPadding";
@@ -11448,25 +11445,25 @@ var Errata = /* @__PURE__ */ function(Errata2) {
   Errata2[Errata2["All"] = 2147483647] = "All";
   Errata2[Errata2["Classic"] = 2147483646] = "Classic";
   return Errata2;
-}({});
-var ExperimentalFeature = /* @__PURE__ */ function(ExperimentalFeature2) {
+})({});
+var ExperimentalFeature = /* @__PURE__ */ (function(ExperimentalFeature2) {
   ExperimentalFeature2[ExperimentalFeature2["WebFlexBasis"] = 0] = "WebFlexBasis";
   return ExperimentalFeature2;
-}({});
-var FlexDirection = /* @__PURE__ */ function(FlexDirection2) {
+})({});
+var FlexDirection = /* @__PURE__ */ (function(FlexDirection2) {
   FlexDirection2[FlexDirection2["Column"] = 0] = "Column";
   FlexDirection2[FlexDirection2["ColumnReverse"] = 1] = "ColumnReverse";
   FlexDirection2[FlexDirection2["Row"] = 2] = "Row";
   FlexDirection2[FlexDirection2["RowReverse"] = 3] = "RowReverse";
   return FlexDirection2;
-}({});
-var Gutter = /* @__PURE__ */ function(Gutter2) {
+})({});
+var Gutter = /* @__PURE__ */ (function(Gutter2) {
   Gutter2[Gutter2["Column"] = 0] = "Column";
   Gutter2[Gutter2["Row"] = 1] = "Row";
   Gutter2[Gutter2["All"] = 2] = "All";
   return Gutter2;
-}({});
-var Justify = /* @__PURE__ */ function(Justify2) {
+})({});
+var Justify = /* @__PURE__ */ (function(Justify2) {
   Justify2[Justify2["FlexStart"] = 0] = "FlexStart";
   Justify2[Justify2["Center"] = 1] = "Center";
   Justify2[Justify2["FlexEnd"] = 2] = "FlexEnd";
@@ -11474,8 +11471,8 @@ var Justify = /* @__PURE__ */ function(Justify2) {
   Justify2[Justify2["SpaceAround"] = 4] = "SpaceAround";
   Justify2[Justify2["SpaceEvenly"] = 5] = "SpaceEvenly";
   return Justify2;
-}({});
-var LogLevel = /* @__PURE__ */ function(LogLevel2) {
+})({});
+var LogLevel = /* @__PURE__ */ (function(LogLevel2) {
   LogLevel2[LogLevel2["Error"] = 0] = "Error";
   LogLevel2[LogLevel2["Warn"] = 1] = "Warn";
   LogLevel2[LogLevel2["Info"] = 2] = "Info";
@@ -11483,43 +11480,43 @@ var LogLevel = /* @__PURE__ */ function(LogLevel2) {
   LogLevel2[LogLevel2["Verbose"] = 4] = "Verbose";
   LogLevel2[LogLevel2["Fatal"] = 5] = "Fatal";
   return LogLevel2;
-}({});
-var MeasureMode = /* @__PURE__ */ function(MeasureMode2) {
+})({});
+var MeasureMode = /* @__PURE__ */ (function(MeasureMode2) {
   MeasureMode2[MeasureMode2["Undefined"] = 0] = "Undefined";
   MeasureMode2[MeasureMode2["Exactly"] = 1] = "Exactly";
   MeasureMode2[MeasureMode2["AtMost"] = 2] = "AtMost";
   return MeasureMode2;
-}({});
-var NodeType = /* @__PURE__ */ function(NodeType2) {
+})({});
+var NodeType = /* @__PURE__ */ (function(NodeType2) {
   NodeType2[NodeType2["Default"] = 0] = "Default";
   NodeType2[NodeType2["Text"] = 1] = "Text";
   return NodeType2;
-}({});
-var Overflow = /* @__PURE__ */ function(Overflow2) {
+})({});
+var Overflow = /* @__PURE__ */ (function(Overflow2) {
   Overflow2[Overflow2["Visible"] = 0] = "Visible";
   Overflow2[Overflow2["Hidden"] = 1] = "Hidden";
   Overflow2[Overflow2["Scroll"] = 2] = "Scroll";
   return Overflow2;
-}({});
-var PositionType = /* @__PURE__ */ function(PositionType2) {
+})({});
+var PositionType = /* @__PURE__ */ (function(PositionType2) {
   PositionType2[PositionType2["Static"] = 0] = "Static";
   PositionType2[PositionType2["Relative"] = 1] = "Relative";
   PositionType2[PositionType2["Absolute"] = 2] = "Absolute";
   return PositionType2;
-}({});
-var Unit = /* @__PURE__ */ function(Unit2) {
+})({});
+var Unit = /* @__PURE__ */ (function(Unit2) {
   Unit2[Unit2["Undefined"] = 0] = "Undefined";
   Unit2[Unit2["Point"] = 1] = "Point";
   Unit2[Unit2["Percent"] = 2] = "Percent";
   Unit2[Unit2["Auto"] = 3] = "Auto";
   return Unit2;
-}({});
-var Wrap = /* @__PURE__ */ function(Wrap2) {
+})({});
+var Wrap = /* @__PURE__ */ (function(Wrap2) {
   Wrap2[Wrap2["NoWrap"] = 0] = "NoWrap";
   Wrap2[Wrap2["Wrap"] = 1] = "Wrap";
   Wrap2[Wrap2["WrapReverse"] = 2] = "WrapReverse";
   return Wrap2;
-}({});
+})({});
 var constants = {
   ALIGN_AUTO: Align.Auto,
   ALIGN_FLEX_START: Align.FlexStart,
@@ -11704,7 +11701,7 @@ var src_default = Yoga;
 // node_modules/ink/build/reconciler.js
 var import_react_reconciler = __toESM(require_react_reconciler(), 1);
 var import_constants = __toESM(require_constants(), 1);
-import process3 from "node:process";
+import process3 from "process";
 
 // node_modules/ansi-regex/index.js
 function ansiRegex({ onlyFirst = false } = {}) {
@@ -11817,10 +11814,14 @@ function eastAsianWidth(codePoint, { ambiguousAsWide = false } = {}) {
   return 1;
 }
 
+// node_modules/emoji-regex/index.mjs
+var emoji_regex_default = () => {
+  return /[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E-\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED8\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])))?))?|\uDD75(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3C-\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE8A\uDE8E-\uDEC2\uDEC6\uDEC8\uDECD-\uDEDC\uDEDF-\uDEEA\uDEEF]|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;
+};
+
 // node_modules/string-width/index.js
-var import_emoji_regex = __toESM(require_emoji_regex(), 1);
 var segmenter = new Intl.Segmenter();
-var defaultIgnorableCodePointRegex = /^\p{Default_Ignorable_Code_Point}$/u;
+var defaultIgnorableCodePointRegex = new RegExp("^\\p{Default_Ignorable_Code_Point}$", "u");
 function stringWidth(string, options = {}) {
   if (typeof string !== "string" || string.length === 0) {
     return 0;
@@ -11857,7 +11858,7 @@ function stringWidth(string, options = {}) {
     if (defaultIgnorableCodePointRegex.test(character)) {
       continue;
     }
-    if ((0, import_emoji_regex.default)().test(character)) {
+    if (emoji_regex_default().test(character)) {
       width += 2;
       continue;
     }
@@ -13235,9 +13236,9 @@ var ansiStyles2 = assembleStyles2();
 var ansi_styles_default2 = ansiStyles2;
 
 // node_modules/chalk/source/vendor/supports-color/index.js
-import process4 from "node:process";
-import os2 from "node:os";
-import tty from "node:tty";
+import process4 from "process";
+import os2 from "os";
+import tty from "tty";
 function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : process4.argv) {
   const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
   const position = argv.indexOf(prefix + flag);
@@ -13398,9 +13399,9 @@ function stringEncaseCRLFWithFirstIndex(string, prefix, postfix, index) {
 
 // node_modules/chalk/source/index.js
 var { stdout: stdoutColor, stderr: stderrColor } = supports_color_default;
-var GENERATOR = Symbol("GENERATOR");
-var STYLER = Symbol("STYLER");
-var IS_EMPTY = Symbol("IS_EMPTY");
+var GENERATOR = /* @__PURE__ */ Symbol("GENERATOR");
+var STYLER = /* @__PURE__ */ Symbol("STYLER");
+var IS_EMPTY = /* @__PURE__ */ Symbol("IS_EMPTY");
 var levelMapping = [
   "ansi",
   "ansi",
@@ -14204,12 +14205,12 @@ var renderer = (node) => {
 var renderer_default = renderer;
 
 // node_modules/cli-cursor/index.js
-import process6 from "node:process";
+import process6 from "process";
 
 // node_modules/restore-cursor/index.js
 var import_onetime = __toESM(require_onetime(), 1);
 var import_signal_exit = __toESM(require_signal_exit(), 1);
-import process5 from "node:process";
+import process5 from "process";
 var restoreCursor = (0, import_onetime.default)(() => {
   (0, import_signal_exit.default)(() => {
     process5.stderr.write("\x1B[?25h");
@@ -14289,8 +14290,8 @@ var instances_default = instances;
 
 // node_modules/ink/build/components/App.js
 var import_react9 = __toESM(require_react(), 1);
-import { EventEmitter as EventEmitter2 } from "node:events";
-import process10 from "node:process";
+import { EventEmitter as EventEmitter2 } from "events";
+import process10 from "process";
 
 // node_modules/ink/build/components/AppContext.js
 var import_react = __toESM(require_react(), 1);
@@ -14303,8 +14304,8 @@ var AppContext_default = AppContext;
 
 // node_modules/ink/build/components/StdinContext.js
 var import_react2 = __toESM(require_react(), 1);
-import { EventEmitter } from "node:events";
-import process7 from "node:process";
+import { EventEmitter } from "events";
+import process7 from "process";
 var StdinContext = (0, import_react2.createContext)({
   stdin: process7.stdin,
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -14320,7 +14321,7 @@ var StdinContext_default = StdinContext;
 
 // node_modules/ink/build/components/StdoutContext.js
 var import_react3 = __toESM(require_react(), 1);
-import process8 from "node:process";
+import process8 from "process";
 var StdoutContext = (0, import_react3.createContext)({
   stdout: process8.stdout,
   write() {
@@ -14331,7 +14332,7 @@ var StdoutContext_default = StdoutContext;
 
 // node_modules/ink/build/components/StderrContext.js
 var import_react4 = __toESM(require_react(), 1);
-import process9 from "node:process";
+import process9 from "process";
 var StderrContext = (0, import_react4.createContext)({
   stderr: process9.stderr,
   write() {
@@ -14369,8 +14370,8 @@ var FocusContext_default = FocusContext;
 // node_modules/ink/build/components/ErrorOverview.js
 var import_react8 = __toESM(require_react(), 1);
 var import_stack_utils = __toESM(require_stack_utils(), 1);
-import * as fs from "node:fs";
-import { cwd } from "node:process";
+import * as fs from "fs";
+import { cwd } from "process";
 
 // node_modules/convert-to-spaces/dist/index.js
 var convertToSpaces = (input, spaces = 2) => {
@@ -15108,7 +15109,7 @@ var import_react14 = __toESM(require_react(), 1);
 var import_react16 = __toESM(require_react(), 1);
 
 // node_modules/ink/build/parse-keypress.js
-import { Buffer as Buffer2 } from "node:buffer";
+import { Buffer as Buffer2 } from "buffer";
 var metaKeyCodeRe = /^(?:\x1b)([a-zA-Z0-9])$/;
 var fnKeyRe = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/;
 var keyName = {
@@ -15384,39 +15385,45 @@ var import_react20 = __toESM(require_react(), 1);
 var import_react21 = __toESM(require_react(), 1);
 
 // src/index.tsx
-import { openSync } from "node:fs";
-import { ReadStream } from "node:tty";
+import { openSync } from "fs";
+import { ReadStream } from "tty";
 
 // src/App.tsx
-var import_react24 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 
-// src/components/Header.tsx
+// src/components/CostMeter.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 function formatCost(usd) {
   return `$${usd.toFixed(2)}`;
 }
-function ProgressBar({
-  completed,
-  total,
-  costUsd,
-  budget,
-  width
-}) {
+function CostMeter({ completed, total, costUsd, budget, width }) {
   const barWidth = Math.max(10, width - 40);
   const ratio = total > 0 ? Math.min(completed / total, 1) : 0;
   const filled = Math.round(barWidth * ratio);
   const empty = barWidth - filled;
-  const filledStr = "\u2593".repeat(filled);
-  const emptyStr = "\u2591".repeat(empty);
-  const countStr = ` ${completed} / ${total}`;
-  const costStr = `  ${formatCost(costUsd)} / ${formatCost(budget)} budget`;
+  const overBudget = budget > 0 && costUsd > budget;
+  const barColor = overBudget ? "red" : "green";
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Box_default, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: "green", children: filledStr }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { dimColor: true, children: emptyStr }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: countStr }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { dimColor: true, children: costStr })
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: barColor, children: "\u2588".repeat(filled) }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { dimColor: true, children: "\u2591".repeat(empty) }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Text, { children: [
+      " ",
+      completed,
+      " / ",
+      total
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Text, { dimColor: true, children: [
+      "  ",
+      formatCost(costUsd),
+      " / ",
+      formatCost(budget),
+      " budget"
+    ] })
   ] });
 }
+
+// src/components/Header.tsx
+var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 function Header({ state, terminalWidth }) {
   const { runId, autonomy, model, agent, source, featureCount, budget, features, totals } = state;
   const completed = totals.succeeded + totals.failed + totals.skipped;
@@ -15427,30 +15434,30 @@ function Header({ state, terminalWidth }) {
   const titleLeft = " monozukuri ";
   const titleRight = ` ${runLabel} `;
   const dashes = "\u2500".repeat(Math.max(0, innerWidth - titleLeft.length - titleRight.length));
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Box_default, { flexDirection: "column", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "\u250C\u2500" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { bold: true, children: titleLeft }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { dimColor: true, children: dashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: titleRight }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "\u2500\u2500\u2510" })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u250C\u2500" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { bold: true, children: titleLeft }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { dimColor: true, children: dashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: titleRight }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u2500\u2500\u2510" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Box_default, { paddingLeft: 1, paddingRight: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "\u2502" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: " autonomy: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: "cyan", children: autonomy || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "   model: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: "yellow", children: model || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "   agent: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: "green", children: agent || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "   source: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { color: "magenta", children: sourceLabel }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: " \u2502" })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { paddingLeft: 1, paddingRight: 1, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u2502" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: " autonomy: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "cyan", children: autonomy || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   model: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "yellow", children: model || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   agent: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "green", children: agent || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   source: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "magenta", children: sourceLabel }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: " \u2502" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Box_default, { paddingLeft: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: "\u2502  " }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        ProgressBar,
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { paddingLeft: 1, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u2502  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        CostMeter,
         {
           completed,
           total: featureCount || Object.keys(features).length,
@@ -15459,13 +15466,13 @@ function Header({ state, terminalWidth }) {
           width: innerWidth
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Text, { children: " \u2502" })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: " \u2502" })
     ] })
   ] });
 }
 
 // src/components/PhaseTimeline.tsx
-var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 var PHASE_LABELS = {
   prd: "PRD",
   techspec: "TechSpec",
@@ -15478,34 +15485,34 @@ var PHASES = ["prd", "techspec", "tasks", "code", "tests", "pr"];
 function PhaseDot({ status, label }) {
   switch (status) {
     case "done":
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "green", children: "\u25CF " }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: label })
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "green", children: "\u25CF " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: label })
       ] });
     case "in_progress":
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "yellow", children: "\u25D0 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "yellow", children: label })
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: "\u25D0 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: label })
       ] });
     case "failed":
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "red", children: "\u2717 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "red", children: label })
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "red", children: "\u2717 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "red", children: label })
       ] });
     case "pending":
     default:
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { dimColor: true, children: "\u25CB " }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { dimColor: true, children: label })
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "\u25CB " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: label })
       ] });
   }
 }
 function PhaseTimeline({ phases }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Box_default, { flexDirection: "row", children: PHASES.map((phase) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(PhaseDot, { status: phases[phase], label: PHASE_LABELS[phase] }, phase)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Box_default, { flexDirection: "row", children: PHASES.map((phase) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PhaseDot, { status: phases[phase], label: PHASE_LABELS[phase] }, phase)) });
 }
 
 // src/components/FeatureCard.tsx
-var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 function formatElapsed(startedAt, now) {
   if (!startedAt) return "\u2014";
   const start = new Date(startedAt).getTime();
@@ -15524,28 +15531,28 @@ function truncate(str, maxLen) {
   return str.slice(0, maxLen - 1) + "\u2026";
 }
 function WaitingCard(_props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Box_default, { flexDirection: "column", paddingLeft: 2, paddingY: 1, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "waiting for run..." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Box_default, { flexDirection: "column", paddingLeft: 2, paddingY: 1, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "waiting for run..." }) });
 }
 function FeatureCard({ feature, spinner, now }) {
   if (!feature) {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(WaitingCard, {});
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(WaitingCard, {});
   }
   if (feature.status === "deferred") {
     const reason = feature.error ?? "no reason given";
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: "\u23F8 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { bold: true, color: "yellow", children: feature.id }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "  " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: truncate(feature.title || feature.id, 42) }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: "\u23F8 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: "yellow", children: feature.id }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "  " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: truncate(feature.title || feature.id, 42) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: "deferred: " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: truncate(reason, 50) }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: "deferred: " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: truncate(reason, 50) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
       ] })
     ] });
   }
@@ -15554,52 +15561,52 @@ function FeatureCard({ feature, spinner, now }) {
   const estTokens = feature.estimatedTokens ? formatTokens(feature.estimatedTokens) : "~?";
   const title = truncate(feature.title || feature.id, 42);
   const spinnerText = spinner ? truncate(spinner, 50) : "";
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502 " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "cyan", children: "\u25B8 " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { bold: true, color: "cyan", children: feature.id }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "  " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "  elapsed: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: elapsed }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502 " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "cyan", children: "\u25B8 " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: "cyan", children: feature.id }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "  elapsed: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: elapsed }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] }),
-    feature.currentSkill && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "skill: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.currentSkill }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: " \xB7 tier " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: feature.currentTier ?? "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: " \xB7 mem: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.compaction && feature.compaction !== "none" ? `compaction:${feature.compaction}` : "ok" }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+    feature.currentSkill && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "skill: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.currentSkill }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: " \xB7 tier " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: feature.currentTier ?? "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: " \xB7 mem: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.compaction && feature.compaction !== "none" ? `compaction:${feature.compaction}` : "ok" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PhaseTimeline, { phases: feature.phases }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PhaseTimeline, { phases: feature.phases }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: "\u2502   " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "tokens: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: tokens }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Text, { dimColor: true, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "tokens: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: tokens }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { dimColor: true, children: [
         " / ",
         estTokens,
         " est."
       ] }),
-      spinnerText ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "   " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: spinnerText })
+      spinnerText ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "   " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: spinnerText })
       ] }) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: " \u2502" })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] })
   ] });
 }
 
 // src/components/FeatureList.tsx
-var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
 function truncate2(str, maxLen) {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen - 1) + "\u2026";
@@ -15627,69 +15634,69 @@ function FeatureList({
   const queueDashes = "\u2500".repeat(Math.max(0, halfWidth - 8));
   const doneDashes = "\u2500".repeat(Math.max(0, halfWidth - 8));
   rows.push(
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u251C\u2500 queue " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: queueDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u252C\u2500 done " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: doneDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2500\u2500\u2524" })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u251C\u2500 queue " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: queueDashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u252C\u2500 done " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: doneDashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2500\u2500\u2524" })
     ] }, "header")
   );
   for (let i = 0; i < maxRows; i++) {
     const qf = queued[i];
     const df = done[i];
     rows.push(
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-        qf ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502  " }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: truncate2(qf.id, 10) }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "  " }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: truncate2(qf.title || qf.id, maxTitleLen) })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " ".repeat(halfWidth - 1) })
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+        qf ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: truncate2(qf.id, 10) }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "  " }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: truncate2(qf.title || qf.id, maxTitleLen) })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: " ".repeat(halfWidth - 1) })
         ] }),
-        df ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502  " }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { color: df.status === "done" ? "green" : df.status === "deferred" ? "yellow" : "red", children: [
+        df ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { flexDirection: "column", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: df.status === "done" ? "green" : df.status === "deferred" ? "yellow" : "red", children: [
               df.status === "done" ? "\u2713" : df.status === "deferred" ? "\u23F8" : "\u2717",
               " "
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: df.status !== "done", children: truncate2(`${df.id}  ${df.title || df.id}`, maxTitleLen + 8) })
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: df.status !== "done", children: truncate2(`${df.id}  ${df.title || df.id}`, maxTitleLen + 8) })
           ] }),
-          df.status !== "done" && df.error ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502     " }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { color: df.status === "deferred" ? "yellow" : "red", dimColor: true, children: [
+          df.status !== "done" && df.error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502     " }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: df.status === "deferred" ? "yellow" : "red", dimColor: true, children: [
               "(",
               df.status === "deferred" ? "deferred: " : "",
               truncate2(df.error, maxTitleLen),
               ")"
             ] })
           ] }) : null
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502" }) })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }) })
       ] }, `row-${i}`)
     );
   }
   if (queued.length === 0 && done.length === 0) {
     rows.push(
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "  (empty)" })
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "  (empty)" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "  (empty)" })
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "  (empty)" })
         ] })
       ] }, "empty")
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Box_default, { flexDirection: "column", children: rows });
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Box_default, { flexDirection: "column", children: rows });
 }
 
 // src/components/LogPane.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
 var PHASE_COLORS = {
   code: "blue",
   tests: "yellow",
@@ -15718,93 +15725,93 @@ function LogPane({ log, terminalWidth }) {
   const tail = log.slice(-5);
   const maxTextLen = Math.max(20, terminalWidth - 42);
   const headerDashes = "\u2500".repeat(Math.max(0, terminalWidth - 16));
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { flexDirection: "column", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u251C\u2500 log (tail) " }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: headerDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2524" })
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u251C\u2500 log (tail) " }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: headerDashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u2524" })
     ] }),
-    tail.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "(no log entries yet)" })
+    tail.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u2502  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: "(no log entries yet)" })
     ] }) : tail.map((line, i) => {
       const time = formatTime(line.ts);
       const phaseColor = PHASE_COLORS[line.phase] ?? "white";
       const text = truncate3(line.text, maxTextLen);
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { dimColor: true, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u2502  " }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Text, { dimColor: true, children: [
           time,
           " "
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: truncate3(line.featureId, 10) }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "  " }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: phaseColor, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: truncate3(line.featureId, 10) }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "  " }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Text, { color: phaseColor, children: [
           "[",
           line.phase,
           "]"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "  " }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: text })
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "  " }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: text })
       ] }, i);
     })
   ] });
 }
 
 // src/components/Footer.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
 function Footer({ terminalWidth = 70 }) {
   const keysLine = "  q quit  p pause  l learnings  f filter  / search  ?  help";
   const innerWidth = Math.max(keysLine.length, terminalWidth - 2);
   const padded = keysLine.padEnd(innerWidth);
   const bottomDashes = "\u2500".repeat(terminalWidth - 2);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { flexDirection: "column", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: "\u2502" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: padded }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: "\u2502" })
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2502" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: padded }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2502" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u2514" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { dimColor: true, children: bottomDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Text, { children: "\u2518" })
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "\u2514" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: bottomDashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "\u2518" })
     ] })
   ] });
 }
 
 // src/components/SetupPanel.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 function SetupPanel({ state }) {
   const agentEntries = Object.entries(state.setupAgents);
   const skills = state.setupSkills;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", paddingX: 2, paddingY: 1, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, children: "monozukuri setup" }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " }),
-    agentEntries.length === 0 && skills.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "waiting for install events..." }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-      agentEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, dimColor: true, children: "Agents" }),
-        agentEntries.map(([agent, status]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { color: status === "ok" ? "green" : "yellow", children: status === "ok" ? "\u2713" : "\u2192" }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", paddingX: 2, paddingY: 1, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "monozukuri setup" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " }),
+    agentEntries.length === 0 && skills.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "waiting for install events..." }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+      agentEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, dimColor: true, children: "Agents" }),
+        agentEntries.map(([agent, status]) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { color: status === "ok" ? "green" : "yellow", children: status === "ok" ? "\u2713" : "\u2192" }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Text, { children: [
             "  ",
             agent
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { dimColor: true, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Text, { dimColor: true, children: [
             "  ",
             status
           ] })
         ] }, agent)),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: " " })
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " })
       ] }),
-      skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { bold: true, dimColor: true, children: "Skills installed" }),
-        skills.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { color: "green", children: "\u2713" }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { children: [
+      skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, dimColor: true, children: "Skills installed" }),
+        skills.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { color: "green", children: "\u2713" }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Text, { children: [
             "  ",
             s.skill
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Text, { dimColor: true, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Text, { dimColor: true, children: [
             "  \u2192 ",
             s.agent
           ] })
@@ -16178,24 +16185,30 @@ function useEventStream() {
 }
 
 // src/hooks/useKeybindings.ts
+var import_react23 = __toESM(require_react(), 1);
 function useKeybindings({ setView }) {
   const orchestratorPid = process.env["MONOZUKURI_ORCHESTRATOR_PID"] ? Number(process.env["MONOZUKURI_ORCHESTRATOR_PID"]) : null;
+  const [paused, setPaused] = (0, import_react23.useState)(false);
+  function sendSignal(sig) {
+    if (orchestratorPid) {
+      try {
+        process.kill(orchestratorPid, sig);
+      } catch {
+      }
+    }
+  }
   use_input_default((input, key) => {
     if (input === "q" || key.ctrl && input === "c") {
-      if (orchestratorPid) {
-        try {
-          process.kill(orchestratorPid, "SIGINT");
-        } catch {
-        }
-      }
+      sendSignal("SIGINT");
       process.exit(0);
     }
     if (input === "p") {
-      if (orchestratorPid) {
-        try {
-          process.kill(orchestratorPid, "SIGUSR1");
-        } catch {
-        }
+      if (paused) {
+        sendSignal("SIGUSR2");
+        setPaused(false);
+      } else {
+        sendSignal("SIGUSR1");
+        setPaused(true);
       }
       return;
     }
@@ -16223,10 +16236,10 @@ function useKeybindings({ setView }) {
 }
 
 // src/hooks/useTicker.ts
-var import_react23 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 function useTicker() {
-  const [now, setNow] = (0, import_react23.useState)(() => /* @__PURE__ */ new Date());
-  (0, import_react23.useEffect)(() => {
+  const [now, setNow] = (0, import_react24.useState)(() => /* @__PURE__ */ new Date());
+  (0, import_react24.useEffect)(() => {
     const id = setInterval(() => setNow(/* @__PURE__ */ new Date()), 1e3);
     return () => clearInterval(id);
   }, []);
@@ -16234,13 +16247,13 @@ function useTicker() {
 }
 
 // src/App.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 function Separator({ width }) {
   const dashes = "\u2500".repeat(Math.max(0, width - 2));
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "\u251C" + dashes + "\u2524" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "\u251C" + dashes + "\u2524" }) });
 }
 function App2() {
-  const [view, setView] = (0, import_react24.useState)("main");
+  const [view, setView] = (0, import_react25.useState)("main");
   const state = useEventStream();
   const now = useTicker();
   const { stdout } = use_stdout_default();
@@ -16248,46 +16261,46 @@ function App2() {
   useKeybindings({ setView });
   const currentFeature = state.current ? state.features[state.current] ?? null : null;
   if (view === "help") {
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Monozukuri \u2014 Keyboard Shortcuts" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  q         Quit (sends SIGINT to orchestrator)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  p         Pause / resume orchestrator (SIGUSR1)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  l         View learnings" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  f         Filter features" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  /         Search" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  ?         This help screen" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: "  Escape    Return to main view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { children: " " }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "Press Escape to return." })
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, children: "Monozukuri \u2014 Keyboard Shortcuts" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: " " }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  q         Quit (sends SIGINT to orchestrator)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  p         Pause / resume orchestrator (SIGUSR1)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  l         View learnings" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  f         Filter features" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  /         Search" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  ?         This help screen" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: "  Escape    Return to main view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { children: " " }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { dimColor: true, children: "Press Escape to return." })
     ] });
   }
   if (view === "learnings") {
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Learnings view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, children: "Learnings view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
   if (view === "filter") {
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Filter view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, children: "Filter view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
   if (view === "search") {
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, children: "Search view" }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, children: "Search view" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { dimColor: true, children: "(not yet implemented \u2014 press Escape to return)" })
     ] });
   }
   if (state.setupMode) {
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SetupPanel, { state });
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(SetupPanel, { state });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { flexDirection: "column", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Header, { state, terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Separator, { width: terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(FeatureCard, { feature: currentFeature, spinner: state.spinner, now }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Header, { state, terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Separator, { width: terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(FeatureCard, { feature: currentFeature, spinner: state.spinner, now }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       FeatureList,
       {
         features: state.features,
@@ -16295,13 +16308,13 @@ function App2() {
         terminalWidth
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(LogPane, { log: state.log, terminalWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Footer, { terminalWidth })
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(LogPane, { log: state.log, terminalWidth }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Footer, { terminalWidth })
   ] });
 }
 
 // src/index.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
 if (!process.stdout.isTTY) {
   process.stdin.pipe(process.stdout);
 } else {
@@ -16314,7 +16327,7 @@ if (!process.stdout.isTTY) {
   if (!ttyStdin) {
     process.stdin.pipe(process.stdout);
   } else {
-    render_default(/* @__PURE__ */ (0, import_jsx_runtime9.jsx)(App2, {}), { stdin: ttyStdin });
+    render_default(/* @__PURE__ */ (0, import_jsx_runtime10.jsx)(App2, {}), { stdin: ttyStdin });
   }
 }
 /*! Bundled license information:

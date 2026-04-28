@@ -1,48 +1,11 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { CostMeter } from './CostMeter.js';
 import type { AppState } from '../types.js';
 
 interface HeaderProps {
   state: AppState;
   terminalWidth: number;
-}
-
-function formatCost(usd: number): string {
-  return `$${usd.toFixed(2)}`;
-}
-
-function ProgressBar({
-  completed,
-  total,
-  costUsd,
-  budget,
-  width,
-}: {
-  completed: number;
-  total: number;
-  costUsd: number;
-  budget: number;
-  width: number;
-}) {
-  // Bar occupies width minus surrounding decoration
-  const barWidth = Math.max(10, width - 40);
-  const ratio = total > 0 ? Math.min(completed / total, 1) : 0;
-  const filled = Math.round(barWidth * ratio);
-  const empty = barWidth - filled;
-
-  const filledStr = '▓'.repeat(filled);
-  const emptyStr = '░'.repeat(empty);
-  const countStr = ` ${completed} / ${total}`;
-  const costStr = `  ${formatCost(costUsd)} / ${formatCost(budget)} budget`;
-
-  return (
-    <Box>
-      <Text color="green">{filledStr}</Text>
-      <Text dimColor>{emptyStr}</Text>
-      <Text>{countStr}</Text>
-      <Text dimColor>{costStr}</Text>
-    </Box>
-  );
 }
 
 export function Header({ state, terminalWidth }: HeaderProps): React.ReactElement {
@@ -90,7 +53,7 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
       {/* Progress bar row */}
       <Box paddingLeft={1}>
         <Text>│  </Text>
-        <ProgressBar
+        <CostMeter
           completed={completed}
           total={featureCount || Object.keys(features).length}
           costUsd={totalCost}

@@ -32,10 +32,15 @@ const uiDist =
 const UI_COMMANDS = new Set(['run', 'setup']);
 // Both stdout and stdin must be a real TTY: stdout so we can render, stdin so
 // Ink (or /dev/tty fallback) can set raw mode for keyboard input.
+// full_auto runs are always headless — they may run unattended for hours.
+const isFullAuto =
+  args.includes('--autonomy=full_auto') ||
+  (args.includes('--autonomy') && args[args.indexOf('--autonomy') + 1] === 'full_auto');
 const wantsUI =
   process.stdout.isTTY &&
   process.stdin.isTTY &&
   UI_COMMANDS.has(cmd) &&
+  !isFullAuto &&
   !args.includes('--no-ui') &&
   !args.includes('--json') &&
   !args.includes('--dry-run') &&
@@ -59,7 +64,13 @@ if (wantsUI) {
     },
   });
   orchestrator.stdout?.pipe(ui.stdin);
-  ui.on('exit', () => orchestrator.kill('SIGINT'));
+  ui.on('exit', (code) => {
+    if (code === 0) {
+      // Clean quit via 'q' — propagate to orchestrator
+      orchestrator.kill('SIGINT');
+    }
+    // Non-zero exit (crash, terminal close, SIGKILL) — orchestrator continues headless
+  });
 }
 
 orchestrator.on('exit', (code) => process.exit(code ?? 0));

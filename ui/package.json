@@ -4,25 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --define:process.env.NODE_ENV='\"production\"' --alias:react-devtools-core=./stubs/react-devtools-core.js --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=dist/index.js",
+    "build": "tsup",
     "test:smoke": "node -e \"import('./dist/index.js').catch(e=>{console.error(e);process.exit(1)})\" < /dev/null",
-    "dev": "tsc --watch",
+    "dev": "tsup --watch",
     "lint": "eslint src/",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
-  },
-  "dependencies": {
-    "ink": "^5.0.0",
-    "ink-spinner": "^5.0.0",
-    "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
-    "esbuild": "^0.21.5",
+    "ink": "^5.0.0",
+    "ink-spinner": "^5.0.0",
     "ink-testing-library": "^3.0.0",
     "jest": "^29.0.0",
+    "react": "^18.2.0",
     "ts-jest": "^29.0.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   }
 }

@@ -336,6 +336,20 @@ if [ "$SUBCOMMAND" != "doctor" ] && [ "$SUBCOMMAND" != "agent" ] && [ "$SUBCOMMA
   exit 1
 fi
 
+# ── Signal handling (for TUI keybindings and clean shutdown) ─────────
+
+MONOZUKURI_PAUSE_REQUESTED=0
+MONOZUKURI_ABORT_REQUESTED=0
+export MONOZUKURI_ORCHESTRATOR_PID=$$
+
+_on_sigint()  { MONOZUKURI_ABORT_REQUESTED=1; }
+_on_sigusr1() { MONOZUKURI_PAUSE_REQUESTED=1; }
+_on_sigusr2() { MONOZUKURI_PAUSE_REQUESTED=0; }
+
+trap _on_sigint  INT
+trap _on_sigusr1 USR1
+trap _on_sigusr2 USR2
+
 # ── Dispatch ──────────────────────────────────────────────────────────
 
 case "$SUBCOMMAND" in
