@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.0...v1.21.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **homebrew:** remove missing ui/dist/package.json from install step ([#82](https://github.com/Viniciuscarvalho/monozukuri/issues/82)) ([8d06c6a](https://github.com/Viniciuscarvalho/monozukuri/commit/8d06c6ac32a448db5a0d996d2e9cb9f6e4e3e786))
+
 ## [1.21.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.20.0...v1.21.0) (2026-04-28)
 
 
