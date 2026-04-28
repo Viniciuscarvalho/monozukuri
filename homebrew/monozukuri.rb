@@ -43,7 +43,6 @@ class Monozukuri < Formula
     ui_dist = libexec_dir/"ui/dist"
     ui_dist.mkpath
     ui_dist.install "ui/dist/index.js"
-    ui_dist.install "ui/dist/package.json"
 
     libexec_dir.glob("**/*.sh").each { |f| f.chmod 0755 }
 
