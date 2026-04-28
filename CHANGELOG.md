@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.7](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.6...v1.19.7) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ci:** pass --repo to gh pr merge to avoid missing git context ([#74](https://github.com/Viniciuscarvalho/monozukuri/issues/74)) ([6e3e325](https://github.com/Viniciuscarvalho/monozukuri/commit/6e3e3251717359442b7fb799c7dab3f3df33e3f8))
+
 ## [1.19.6](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.5...v1.19.6) (2026-04-28)
 
 
