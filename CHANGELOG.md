@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.4](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.3...v1.19.4) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ui:** inject createRequire banner to fix CJS dynamic-require failure in ESM bundle ([#68](https://github.com/Viniciuscarvalho/monozukuri/issues/68)) ([59a5985](https://github.com/Viniciuscarvalho/monozukuri/commit/59a59856943207866c8221e41417e915e3a46d73))
+
 ## [1.19.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.2...v1.19.3) (2026-04-28)
 
 
