@@ -1,0 +1,39 @@
+[
+  {
+    "id": "task-001",
+    "title": "Add GET /health route handler",
+    "description": "Create src/routes/health.ts with a handler that calls db.ping() with a 100ms timeout and returns 200 or 503.",
+    "files_touched": [
+      "src/routes/health.ts",
+      "src/app.ts"
+    ],
+    "acceptance_criteria": [
+      "GET /health returns 200 and {\"status\":\"ok\"} when db.ping() resolves",
+      "GET /health returns 503 and {\"status\":\"degraded\"} when db.ping() rejects or times out"
+    ]
+  },
+  {
+    "id": "task-002",
+    "title": "Exclude /health from auth middleware",
+    "description": "Update src/app.ts to register the health route before the auth middleware so unauthenticated probes are not rejected.",
+    "files_touched": [
+      "src/app.ts"
+    ],
+    "acceptance_criteria": [
+      "Requests to GET /health succeed without an Authorization header",
+      "Requests to all other routes still require valid auth"
+    ]
+  },
+  {
+    "id": "task-003",
+    "title": "Write integration tests for health endpoint",
+    "description": "Add test/routes/health.test.ts covering the happy path, degraded state, and no-auth scenarios using supertest.",
+    "files_touched": [
+      "test/routes/health.test.ts"
+    ],
+    "acceptance_criteria": [
+      "Test suite passes with npm test",
+      "Coverage for health.ts >= 90%"
+    ]
+  }
+]
