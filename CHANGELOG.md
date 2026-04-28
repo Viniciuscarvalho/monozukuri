@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.7...v1.20.0) (2026-04-28)
+
+
+### Features
+
+* **qa:** release gate harness — layers 1, 2 & 3 (PR 0→2) ([#78](https://github.com/Viniciuscarvalho/monozukuri/issues/78)) ([baac069](https://github.com/Viniciuscarvalho/monozukuri/commit/baac06929919eb7de747d1df8cc2a57009b30c2d))
+
 ## [1.19.7](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.19.6...v1.19.7) (2026-04-28)
 
 
