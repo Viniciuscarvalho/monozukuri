@@ -39,6 +39,10 @@ Read and satisfy `skills/mz-create-tasks/references/tasks-validation.md` before 
 4. Do not shrink the artifact below its word budget to fix a validation error.
 5. After rewriting, re-verify against all rules before resubmitting.
 
+## Autonomous mode
+
+When `MONOZUKURI_INTERACTIVE=0`, never ask the user a clarifying question. If validation fails and the correct fix is ambiguous, apply the most conservative rewrite (full artifact, all required sections present, within word budget) and document any assumption under `## Open Questions` in the artifact itself.
+
 ## Hard rule
 
 Never claim a phase is complete if the artifact has not been validated. "I checked it mentally" is not evidence. The validator must run and exit 0.
