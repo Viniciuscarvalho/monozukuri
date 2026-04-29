@@ -255,6 +255,11 @@ schema_validate_with_reprompt() {
     done
 
     if [ "$validated" = "false" ]; then
+      if declare -f learning_write &>/dev/null; then
+        local learn_sig="${artifact_type}:${error_msg#*: }"
+        learning_write "$feat_id" "schema-reprompt-exhausted: $learn_sig" \
+          "Extend heading aliases in skills/mz-create-${artifact_type}/references/${artifact_type}-validation.md or ensure the artifact uses a recognized section heading"
+      fi
       if [ "${MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN:-false}" = "true" ]; then
         if declare -f fstate_transition &>/dev/null && declare -f fstate_record_pause &>/dev/null; then
           fstate_transition "$feat_id" "paused" "schema-needs-review"

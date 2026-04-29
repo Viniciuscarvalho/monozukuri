@@ -378,7 +378,7 @@ EOPRD
   if [ -f "$task_dir/prd.md" ] && [ -f "$task_dir/techspec.md" ] && [ -f "$task_dir/tasks.md" ]; then
     info "Phase 0: artifacts exist, skipping generation (cost: 0)"
   else
-    info "Phase 0: artifacts missing — Claude will generate them (cost: $COST_PHASE_1_PLANNING)"
+    info "Phase 0: artifacts missing — planning phase will generate PRD+TechSpec+Tasks (~${COST_PHASE_1_PLANNING} tokens estimated)"
     phase0_cost="$COST_PHASE_1_PLANNING"
   fi
   cost_record "$feat_id" "phase0" "$phase0_cost"
@@ -555,6 +555,7 @@ EOPRD
     fi
   fi
 
+  export MONOZUKURI_PHASE="implementation"
   agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
