@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.2...v1.21.3) (2026-04-29)
+
+
+### Bug Fixes
+
+* MONOZUKURI_PHASE export, Phase 0 log label, learning store schema capture ([#86](https://github.com/Viniciuscarvalho/monozukuri/issues/86)) ([9b07df5](https://github.com/Viniciuscarvalho/monozukuri/commit/9b07df58839f16888e6bc4ed522d9133273d51cc))
+
 ## [1.21.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.1...v1.21.2) (2026-04-29)
 
 
