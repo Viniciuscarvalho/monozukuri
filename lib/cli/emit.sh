@@ -11,7 +11,11 @@ monozukuri_emit() {
   local type="$1"; shift
   local jq_args=()
   while [ $# -ge 2 ]; do
-    jq_args+=(--arg "$1" "$2")
+    if [[ "$2" =~ ^-?[0-9]+$ ]]; then
+      jq_args+=(--argjson "$1" "$2")
+    else
+      jq_args+=(--arg "$1" "$2")
+    fi
     shift 2
   done
   jq -nc \

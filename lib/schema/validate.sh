@@ -112,7 +112,7 @@ _schema_validate_techspec() {
 
   local files_pattern
   files_pattern=$(_validation_aliases "$vfile" "Files likely touched")
-  [ -z "$files_pattern" ] && files_pattern="files likely touched|file change map|files touched|files to modify"
+  [ -z "$files_pattern" ] && files_pattern="files likely touched|file change map|files touched|files to modify|file layout|files affected|implementation files"
 
   if ! grep -qiE "^#{2,3}[[:space:]]+(${approach_pattern})" "$file"; then
     SCHEMA_VALIDATE_ERROR="techspec.md: missing a technical approach section heading (e.g. '## Technical Approach')"

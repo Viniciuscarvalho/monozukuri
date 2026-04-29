@@ -292,6 +292,27 @@ run_feature() {
   fi
   [ "$current" != "none" ] && info "Resuming $feat_id (status: $current)"
 
+  # Cross-run budget guard: auto-pause when lifetime token spend exceeds ceiling.
+  # cumulative_tokens in cost.json now persists across runs (see lib/core/cost.sh cost_init).
+  # Override ceiling with: MONOZUKURI_MAX_FEATURE_TOKENS=<n> mcs resume <feat> --ack
+  local _budget_limit="${MONOZUKURI_MAX_FEATURE_TOKENS:-80000}"
+  local _cost_file="$STATE_DIR/$feat_id/cost.json"
+  if [ -f "$_cost_file" ]; then
+    local _lifetime_tokens
+    _lifetime_tokens=$(node -p \
+      "try{JSON.parse(require('fs').readFileSync('$_cost_file','utf-8')).cumulative_tokens||0}catch(e){0}" \
+      2>/dev/null || echo 0)
+    if (( _lifetime_tokens > _budget_limit )); then
+      warn "$feat_id: lifetime spend ${_lifetime_tokens} tokens exceeds MONOZUKURI_MAX_FEATURE_TOKENS=${_budget_limit} — pausing"
+      fstate_transition "$feat_id" "paused" "budget-exceeded"
+      fstate_record_pause "$feat_id" "budget-exceeded" \
+        "lifetime_tokens=${_lifetime_tokens} exceeds limit=${_budget_limit}; raise MONOZUKURI_MAX_FEATURE_TOKENS to override"
+      monozukuri_emit feature.paused feature_id "$feat_id" reason "budget-exceeded" \
+        tokens_used "$_lifetime_tokens" limit "$_budget_limit"
+      return 0
+    fi
+  fi
+
   monozukuri_emit feature.started feature_id "$feat_id" title "$title" priority "$priority"
 
   fstate_transition "$feat_id" "in-progress" "analysis"
