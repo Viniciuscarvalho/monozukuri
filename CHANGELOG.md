@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.1...v1.21.2) (2026-04-29)
+
+
+### Bug Fixes
+
+* bleed-stop bundle ([#84](https://github.com/Viniciuscarvalho/monozukuri/issues/84)) ([f2b90ff](https://github.com/Viniciuscarvalho/monozukuri/commit/f2b90ff415108a03767e578308c5e8362a290ffd))
+
 ## [1.21.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.0...v1.21.1) (2026-04-28)
 
 
