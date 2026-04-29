@@ -42,11 +42,17 @@ cost_init() {
   mkdir -p "$cost_dir"
 
   node -e "
-    require('fs').writeFileSync('$cost_dir/cost.json', JSON.stringify({
+    const fs = require('fs');
+    const file = '$cost_dir/cost.json';
+    const prior = fs.existsSync(file)
+      ? (JSON.parse(fs.readFileSync(file, 'utf-8')).cumulative_tokens || 0)
+      : 0;
+    fs.writeFileSync(file, JSON.stringify({
       feature_id: '$feat_id',
       created_at: new Date().toISOString(),
       phases: [],
-      cumulative_tokens: 0
+      prior_tokens: prior,
+      cumulative_tokens: prior
     }, null, 2));
   "
 }
@@ -136,7 +142,7 @@ cost_record() {
       estimated_usd: $estimated_usd,
       recorded_at: new Date().toISOString()
     });
-    data.cumulative_tokens = data.phases.reduce((sum, p) => sum + p.estimated_tokens, 0);
+    data.cumulative_tokens = (data.prior_tokens || 0) + data.phases.reduce((sum, p) => sum + p.estimated_tokens, 0);
     data.cumulative_usd = data.phases.reduce((sum, p) => sum + (p.estimated_usd || 0), 0);
     data.updated_at = new Date().toISOString();
     fs.writeFileSync('$cost_file', JSON.stringify(data, null, 2));

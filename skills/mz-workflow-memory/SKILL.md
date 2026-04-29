@@ -5,6 +5,10 @@ description: Maintain feature-scoped workflow memory (MEMORY.md and task_NN.md) 
 
 You are managing workflow memory for a single feature run in monozukuri.
 
+## Autonomous mode
+
+When `MONOZUKURI_INTERACTIVE=0`, never pause to ask a question. Make the most defensible choice and continue. Memory operations are housekeeping — they must never block feature progress.
+
 ## Overview
 
 Workflow memory is feature-scoped and consists of two file types:

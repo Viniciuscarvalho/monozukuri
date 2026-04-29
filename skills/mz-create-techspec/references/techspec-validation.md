@@ -59,7 +59,7 @@ The body of `techspec.md` MUST NOT exceed **1200 words**.
 
 ## Heading aliases
 
-| Canonical section    | Accepted aliases                                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Technical approach   | Approach · Technical Approach · Implementation · Implementation Approach · Architecture · Design · Solution |
-| Files likely touched | Files likely touched · File change map · Files Touched · Files to Modify · files_likely_touched (YAML key)  |
+| Canonical section    | Accepted aliases                                                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Technical approach   | Approach · Technical Approach · Implementation · Implementation Approach · Architecture · Design · Solution                                                      |
+| Files likely touched | Files likely touched · File change map · Files Touched · Files to Modify · File Layout · Files Affected · Implementation Files · files_likely_touched (YAML key) |

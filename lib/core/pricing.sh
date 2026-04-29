@@ -11,10 +11,6 @@
 
 set -euo pipefail
 
-# Helper functions (if not already defined)
-warn() { echo "⚠ [pricing] $*" >&2; }
-info() { echo "  [pricing] $*"; }
-log() { echo "▶ [pricing] $*"; }
 
 # Cache for parsed pricing data (avoid re-reading YAML on every call)
 _PRICING_LOADED=false
@@ -36,14 +32,14 @@ pricing_load() {
     pricing_file="$SCRIPT_DIR/config/pricing.yaml"
   else
     # Pricing file missing — warn and use defaults
-    warn "pricing.yaml not found — using default calibration (1.0)"
+    printf "⚠ [pricing] pricing.yaml not found — using default calibration (1.0)\n" >&2
     _PRICING_LOADED=true
     return 0
   fi
 
   # Check yq availability
   if ! command -v yq &>/dev/null; then
-    warn "yq not installed — USD cost calculation disabled"
+    printf "⚠ [pricing] yq not installed — USD cost calculation disabled\n" >&2
     _PRICING_LOADED=true
     return 0
   fi

@@ -91,6 +91,8 @@ _emit_settings() {
     "Read(**)"
     "Write(tasks/prd-*/**)"
     "Edit(tasks/prd-*/**)"
+    "Write(.claude/logs/**)"
+    "Edit(.claude/logs/**)"
   )
 
   # Stack-specific write/edit allowances
