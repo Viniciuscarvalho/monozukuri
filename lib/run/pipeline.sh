@@ -555,7 +555,7 @@ EOPRD
     fi
   fi
 
-  export MONOZUKURI_PHASE="implementation"
+  export MONOZUKURI_PHASE="code"
   agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"

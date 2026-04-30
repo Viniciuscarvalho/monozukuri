@@ -173,14 +173,38 @@ agent_run_phase() {
   fi
 
   # Tier 1: native skill invocation (skill installed in worktree or globally)
+  # If route-tasks.sh resolved a specialist for this phase, it wins over the
+  # generic phase-mapped skill. On specialist failure, fall back to the
+  # phase-mapped skill and emit skill.fallback.
   local skill=""
   [[ -n "$phase" ]] && declare -f phase_to_skill &>/dev/null && \
     skill="$(phase_to_skill "$phase")"
 
-  if [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
+  local specialist="${ROUTED_AGENT:-}"
+  local default_agent="${MONOZUKURI_AGENT:-claude-code}"
+  [[ "$specialist" == "$default_agent" ]] && specialist=""
+
+  # Prefer installed specialist; fall back to phase-mapped skill if it fails
+  local tier1_skill=""
+  if [[ -n "$specialist" ]] && declare -f skill_installed &>/dev/null && \
+     skill_installed "claude-code" "$specialist" "$wt_path"; then
+    tier1_skill="$specialist"
+  elif [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
      skill_installed "claude-code" "$skill" "$wt_path"; then
-    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "1" skill "$skill"
-    _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+    tier1_skill="$skill"
+  fi
+
+  if [[ -n "$tier1_skill" ]]; then
+    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "1" skill "$tier1_skill"
+    _cc_run_phase_skill "$tier1_skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+    # If specialist failed, retry with the generic phase-mapped skill
+    if [[ "$exit_code" -ne 0 ]] && [[ "$tier1_skill" == "$specialist" ]] && [[ -n "$skill" ]] && \
+       declare -f skill_installed &>/dev/null && skill_installed "claude-code" "$skill" "$wt_path"; then
+      monozukuri_emit skill.fallback feature_id "$feat_id" phase "$phase" from_skill "$tier1_skill" to_skill "$skill" exit_code "$exit_code"
+      exit_code=0
+      _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+      tier1_skill="$skill"
+    fi
     if [ "$exit_code" -eq 0 ]; then
       monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "1"
     else
@@ -197,7 +221,7 @@ agent_run_phase() {
       monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "2" exit_code "$exit_code"
     fi
 
-  # Tier 3: legacy feature-marker path
+  # Tier 3: legacy feature-marker path (unknown phase or no skill/template available)
   else
     local skill_arg="${SKILL_COMMAND:-feature-marker}"
     local effective_model="${MONOZUKURI_MODEL:-}"
@@ -209,6 +233,7 @@ agent_run_phase() {
     local interactive_flag=""
     [ "${MONOZUKURI_AUTONOMY:-}" = "supervised" ] && interactive_flag="--interactive"
 
+    warn "Tier-3 fallback: no skill registered for phase '${phase:-<none>}' — using legacy:feature-marker"
     monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "3" skill "legacy:feature-marker"
     (
       set -o pipefail

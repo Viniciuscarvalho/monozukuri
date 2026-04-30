@@ -105,6 +105,13 @@ router_agent_installed() {
   [ -f "$AGENTS_DIR/${agent_name}.md"   ] && return 0
   [ -f "$AGENTS_DIR/${agent_name}.yaml" ] && return 0
   [ -f "$AGENTS_DIR/${agent_name}.yml"  ] && return 0
+
+  # Also accept agents declared in the discovery manifest (from AGENTS.md)
+  local manifest="${CONFIG_DIR:-$ROOT_DIR/.monozukuri}/agents-manifest.json"
+  if [ -f "$manifest" ]; then
+    jq -e --arg n "$agent_name" '.agents[] | select(.name == $n)' "$manifest" &>/dev/null && return 0
+  fi
+
   return 1
 }
 
