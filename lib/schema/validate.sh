@@ -256,7 +256,11 @@ schema_validate_with_reprompt() {
 
     if [ "$validated" = "false" ]; then
       if declare -f learning_write &>/dev/null; then
-        local learn_sig="${artifact_type}:${error_msg#*: }"
+        local _raw_msg="${error_msg#*: }"
+        # Strip the absolute file path from "file not found: /abs/path" errors so
+        # the signature stays stable across runs (different tmp dirs would otherwise
+        # produce different signatures for the same logical failure, breaking dedup).
+        local learn_sig="${artifact_type}:${_raw_msg%%: /*}"
         learning_write "$feat_id" "schema-reprompt-exhausted: $learn_sig" \
           "Extend heading aliases in skills/mz-create-${artifact_type}/references/${artifact_type}-validation.md or ensure the artifact uses a recognized section heading"
       fi
