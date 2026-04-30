@@ -43,6 +43,7 @@ display_backlog() {
 # display_backlog_table [active_feat_id]
 # Prints a live table of all features in STATE_DIR with status, phase, and token cost.
 display_backlog_table() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   local active_feat="${1:-}"
   [ ! -d "$STATE_DIR" ] && return
   local _g="${C_GREEN:-}" _r="${C_RED:-}" _y="${C_YELLOW:-}" \
@@ -106,6 +107,7 @@ draw_progress_bar() {
 }
 
 display_summary() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   local done_n="$1" pr_n="$2" ready_n="$3" failed_n="$4" total_time="$5" processed="$6" ran_n="${7:-$6}" paused_n="${8:-0}"
 
   echo ""
@@ -131,6 +133,7 @@ display_summary() {
 # Prints a plain-text guidance block when Phase 3 is exhausted.
 # PR B upgrades this to a boxed ANSI variant.
 display_paused_handoff() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   local feat_id="$1" attempts="$2" pause_reason_path="${3:-}"
 
   local resume_cmd="monozukuri --resume-paused $feat_id --ack"
@@ -154,6 +157,7 @@ display_paused_handoff() {
 }
 
 display_routing() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   local routing_file="$1"
 
   [ ! -f "$routing_file" ] && return
@@ -208,6 +212,7 @@ display_next_steps() {
 # Reads $STATE_DIR/$feat_id/status.json and cost.json to emit a one-line
 # live status during a Claude run. Gracefully omits missing segments.
 display_live_phase() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   local feat_id="$1" start_epoch="${2:-0}"
   local status_file="$STATE_DIR/$feat_id/status.json"
   local cost_file="$STATE_DIR/$feat_id/cost.json"

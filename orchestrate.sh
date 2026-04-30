@@ -59,11 +59,36 @@ source "$LIB_DIR/cli/colors.sh"
 
 # ── Helpers (available before modules load) ───────────────────────────
 
-log()    { printf "${C_CYAN}▶${C_NC} [orchestrate] %s\n" "$*"; }
-info()   { printf "${C_DIM}  [orchestrate] %s${C_NC}\n" "$*"; }
-warn()   { printf "${C_YELLOW}⚠${C_NC}  [orchestrate] %s\n" "$*" >&2; }
-err()    { printf "${C_RED}✗${C_NC} [orchestrate] %s\n" "$*" >&2; }
+log()    {
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    declare -f monozukuri_emit &>/dev/null && monozukuri_emit log.line text "$*" level "log" || true
+  else
+    printf "${C_CYAN}▶${C_NC} [orchestrate] %s\n" "$*"
+  fi
+}
+info()   {
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    declare -f monozukuri_emit &>/dev/null && monozukuri_emit log.line text "$*" level "info" || true
+  else
+    printf "${C_DIM}  [orchestrate] %s${C_NC}\n" "$*"
+  fi
+}
+warn()   {
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    declare -f monozukuri_emit &>/dev/null && monozukuri_emit log.line text "$*" level "warn" || true
+  else
+    printf "${C_YELLOW}⚠${C_NC}  [orchestrate] %s\n" "$*" >&2
+  fi
+}
+err()    {
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    declare -f monozukuri_emit &>/dev/null && monozukuri_emit log.line text "$*" level "error" || true
+  else
+    printf "${C_RED}✗${C_NC} [orchestrate] %s\n" "$*" >&2
+  fi
+}
 banner() {
+  [ -n "${MONOZUKURI_RUN_ID:-}" ] && return 0
   printf "\n${C_BOLD}${C_CYAN}%s${C_NC}\n" "═══════════════════════════════════════════════════"
   printf "${C_BOLD}  %s${C_NC}\n" "$*"
   printf "${C_BOLD}${C_CYAN}%s${C_NC}\n" "═══════════════════════════════════════════════════"

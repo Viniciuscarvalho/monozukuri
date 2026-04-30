@@ -26,20 +26,38 @@ _orchestrator_watcher_start() {
       sleep "$interval"
       [ -f "$sentinel" ] || break
       touch "$ref"
-      if [ -n "$feat_id" ] && declare -f display_live_phase &>/dev/null; then
-        display_live_phase "$feat_id" "$start_ts"
+      local elapsed
+      elapsed=$(( $(date +%s) - start_ts ))
+      if [ -n "$feat_id" ]; then
+        # Emit phase.progress event for TUI heartbeat
+        if declare -f monozukuri_emit &>/dev/null && [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+          local _tokens=0
+          local _cost_file="${STATE_DIR:-}/$feat_id/cost.json"
+          if [ -f "$_cost_file" ]; then
+            _tokens=$(node -p "try{JSON.parse(require('fs').readFileSync('$_cost_file','utf-8')).cumulative_tokens||0}catch(e){0}" 2>/dev/null || echo 0)
+          fi
+          monozukuri_emit phase.progress \
+            feature_id "$feat_id" \
+            phase "${MONOZUKURI_PHASE:-unknown}" \
+            elapsed_ms $(( elapsed * 1000 )) \
+            tokens_used "$_tokens"
+        fi
+        # Scroll-mode fallback (no RUN_ID)
+        if [ -z "${MONOZUKURI_RUN_ID:-}" ] && declare -f display_live_phase &>/dev/null; then
+          display_live_phase "$feat_id" "$start_ts"
+        fi
       else
-        local elapsed
-        elapsed=$(( $(date +%s) - start_ts ))
         # ADR-010: process substitution avoids pipe-subshell mutation loss
-        local changed=""
-        while IFS= read -r f; do
-          changed="${changed}$(basename "$f") "
-        done < <(find "$watch_dir" -newer "$ref" -type f 2>/dev/null | sort)
-        if [ -n "$changed" ]; then
-          printf '  [progress] %ds elapsed — files written: %s\n' "$elapsed" "$changed"
-        else
-          printf '  [progress] %ds elapsed — Claude working (no new files in last %ds)\n' "$elapsed" "$interval"
+        if [ -z "${MONOZUKURI_RUN_ID:-}" ]; then
+          local changed=""
+          while IFS= read -r f; do
+            changed="${changed}$(basename "$f") "
+          done < <(find "$watch_dir" -newer "$ref" -type f 2>/dev/null | sort)
+          if [ -n "$changed" ]; then
+            printf '  [progress] %ds elapsed — files written: %s\n' "$elapsed" "$changed"
+          else
+            printf '  [progress] %ds elapsed — Claude working (no new files in last %ds)\n' "$elapsed" "$interval"
+          fi
         fi
       fi
     done
@@ -517,10 +535,12 @@ EOPRD
   info "Autonomy=$AUTONOMY — invoking ${MONOZUKURI_AGENT:-claude-code} adapter (model: ${MODEL_DEFAULT:-default}, skill: ${SKILL_COMMAND:-feature-marker})..."
 
   if [ "$AUTONOMY" = "full_auto" ]; then
-    echo "  [progress] Agent runs in batch mode — output buffered until completion."
-    echo "             Monitor artifacts : $wt_path/tasks/prd-$feat_id/"
-    echo "             Monitor run log   : $log_file  (populates when agent exits)"
-    echo ""
+    if [ -z "${MONOZUKURI_RUN_ID:-}" ]; then
+      echo "  [progress] Agent runs in batch mode — output buffered until completion."
+      echo "             Monitor artifacts : $wt_path/tasks/prd-$feat_id/"
+      echo "             Monitor run log   : $log_file  (populates when agent exits)"
+      echo ""
+    fi
     _orchestrator_watcher_start \
       "$STATE_DIR/$feat_id/.watcher-active" \
       "$wt_path/tasks/prd-$feat_id" \
