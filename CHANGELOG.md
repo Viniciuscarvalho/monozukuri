@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.4...v1.22.0) (2026-04-30)
+
+
+### Features
+
+* **orchestrator:** fix skill selection and add AGENTS.md discovery ([#90](https://github.com/Viniciuscarvalho/monozukuri/issues/90)) ([f3dd99e](https://github.com/Viniciuscarvalho/monozukuri/commit/f3dd99e42459b2b6493525d066a27b905c4b599c))
+
 ## [1.21.4](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.3...v1.21.4) (2026-04-30)
 
 
