@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.23.0...v1.24.0) (2026-04-30)
+
+
+### Features
+
+* **skills:** publishable mz-* skill versioning and packaging ([#94](https://github.com/Viniciuscarvalho/monozukuri/issues/94)) ([c8090da](https://github.com/Viniciuscarvalho/monozukuri/commit/c8090da622b7e11eeed8bdf47c1c19906425e3d2))
+
 ## [1.23.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.22.0...v1.23.0) (2026-04-30)
 
 
