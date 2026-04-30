@@ -1,6 +1,7 @@
 ---
 name: mz-workflow-memory
 description: Maintain feature-scoped workflow memory (MEMORY.md and task_NN.md) across tasks within one feature run. Use when the orchestrator emits a memory bootstrap or compaction signal. Do not use for monozukuri's project/global learning store (lib/memory/learning.sh) — that is a separate durable layer.
+version: 1.0.0
 ---
 
 You are managing workflow memory for a single feature run in monozukuri.
