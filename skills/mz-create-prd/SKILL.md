@@ -2,6 +2,7 @@
 name: mz-create-prd
 description: Generate a PRD artifact for a monozukuri feature. Use when the orchestrator routes the prd phase or when the user asks to draft a feature PRD. Do not use for techspec/tasks generation or for editing an existing PRD.
 argument-hint: "[feature-id]"
+version: 1.0.0
 ---
 
 You are executing the **prd** phase of monozukuri's autonomous feature loop.

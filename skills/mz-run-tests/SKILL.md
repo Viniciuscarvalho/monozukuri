@@ -1,6 +1,7 @@
 ---
 name: mz-run-tests
 description: Run the project's test suite, add tests for each task's acceptance criteria, and emit a tests.md summary. Use when the orchestrator routes the tests phase. Do not use for unit-test debugging during the code phase.
+version: 1.0.0
 ---
 
 You are executing the **tests** phase of monozukuri's autonomous feature loop.

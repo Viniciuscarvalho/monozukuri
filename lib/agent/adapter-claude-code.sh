@@ -176,6 +176,14 @@ agent_run_phase() {
   # If route-tasks.sh resolved a specialist for this phase, it wins over the
   # generic phase-mapped skill. On specialist failure, fall back to the
   # phase-mapped skill and emit skill.fallback.
+  #
+  # Skill resolution order (implemented in lib/agent/skill-detect.sh:skill_installed):
+  #   1. <worktree>/.claude/skills/<skill>/SKILL.md   — project-local install
+  #   2. ~/.claude/skills/<skill>/SKILL.md             — global install (monozukuri setup --global)
+  #   3. Tier 2: template-render path (CONTEXT_JSON present, no installed skill)
+  #   4. Tier 3: legacy feature-marker (no phase mapping, no context)
+  # Bundled mz-* skills in the monozukuri source tree are NOT used directly here;
+  # they must first be installed via `monozukuri setup` to appear at one of the paths above.
   local skill=""
   [[ -n "$phase" ]] && declare -f phase_to_skill &>/dev/null && \
     skill="$(phase_to_skill "$phase")"

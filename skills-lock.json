@@ -10,6 +10,54 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "computedHash": "8351452ad372ea4f839d3f7b951927b417851ffa49e7e6af28ea0f0ae111dca8"
+    },
+    "mz-create-prd": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "43ad9d320af690242b15ddfa0bb101476da05717299b8cddbfa823f15de505c5"
+    },
+    "mz-create-techspec": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "6034a1c9f45e8c09b0a37734f23226ed3e186e1ddfe3d9afc32d97948b1a4f03"
+    },
+    "mz-create-tasks": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "e9bdcdcc52f28c7685fa78dbcb5a1400b94875af3edc7af92310f45e84973b45"
+    },
+    "mz-execute-task": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "02ac6fc59b7b196b9d56b947fd5527bc9d1e1d577ee3a76966537dcd33c29cc9"
+    },
+    "mz-open-pr": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "14b3a75402ef7b92e957aa20f6d6d41745eb599698ec648793f0cef97f671c98"
+    },
+    "mz-run-tests": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "e8ebfeecd98b5ff1392d98c10801ca29e503a09815de0eb5d7198f4271de7006"
+    },
+    "mz-validate-artifact": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "0950f65ed7d82867b75b0f928e54773ab1cad0ed8721284136970f717b886140"
+    },
+    "mz-workflow-memory": {
+      "source": "bundled",
+      "sourceType": "local",
+      "version": "1.0.0",
+      "computedHash": "b7c4c1f316ca506c775508b07b74ee4765571271d9680c2fdf4a1cb05c1b8797"
     }
   }
 }

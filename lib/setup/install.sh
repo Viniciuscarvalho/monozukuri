@@ -410,8 +410,18 @@ setup_uninstall() {
   done
 }
 
+# _skill_version_from <skill_md_path>
+# Extracts the version: value from a SKILL.md frontmatter without yq or jq.
+# Prints the version string, or empty string if not found.
+_skill_version_from() {
+  local path="$1"
+  [ -f "$path" ] || return 0
+  grep '^version:' "$path" | head -1 | sed 's/^version:[[:space:]]*//'
+}
+
 # setup_status <agent_list> <skill_list> --global?
 # Prints a table of install status for each agent × skill combination.
+# Columns: AGENT  SKILL  AVAIL  INSTALLED  STATUS
 setup_status() {
   local agents_arg="$1" skills_arg="$2"
   shift 2
@@ -431,10 +441,10 @@ setup_status() {
     skills="$skills_arg"
   fi
 
-  printf "%-22s  %-30s  %s\n" "AGENT" "SKILL" "STATUS"
-  printf "%-22s  %-30s  %s\n" "------" "-----" "------"
+  printf "%-22s  %-30s  %-7s  %-9s  %s\n" "AGENT" "SKILL" "AVAIL" "INSTALLED" "STATUS"
+  printf "%-22s  %-30s  %-7s  %-9s  %s\n" "------" "-----" "-----" "---------" "------"
 
-  local ag skill src dst status
+  local ag skill src dst status avail_ver inst_ver
   for ag in $agents_arg; do
     for skill in $skills; do
       src="$src_dir/$skill"
@@ -446,6 +456,8 @@ setup_status() {
 
       if [ ! -d "$src" ]; then
         status="no-source"
+        avail_ver="—"
+        inst_ver="—"
       else
         # For project-local universal agents, check canonical
         if [ "$global" = "false" ] && [ "$(setup_agent_type "$ag")" = "universal" ]; then
@@ -454,9 +466,15 @@ setup_status() {
         status="$(setup_skill_status "$src" "$dst")"
         # Annotate symlinks
         [ -L "$dst" ] && [ "$status" = "current" ] && status="current (symlink)"
+
+        avail_ver="$(_skill_version_from "$src/SKILL.md")"
+        [ -z "$avail_ver" ] && avail_ver="—"
+
+        inst_ver="$(_skill_version_from "$dst/SKILL.md")"
+        [ -z "$inst_ver" ] && inst_ver="—"
       fi
 
-      printf "%-22s  %-30s  %s\n" "$ag" "$skill" "$status"
+      printf "%-22s  %-30s  %-7s  %-9s  %s\n" "$ag" "$skill" "$avail_ver" "$inst_ver" "$status"
     done
   done
 }
