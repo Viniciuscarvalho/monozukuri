@@ -107,17 +107,18 @@ agent_report_cost()
 
 These are set by `lib/run/pipeline.sh` before calling `agent_run_phase`.
 
-| Variable                | Required | Description                                                      |
-| ----------------------- | -------- | ---------------------------------------------------------------- |
-| `MONOZUKURI_FEATURE_ID` | ✅       | Feature identifier (e.g. `feat-login`)                           |
-| `MONOZUKURI_WORKTREE`   | ✅       | Absolute path to the isolated git worktree                       |
-| `MONOZUKURI_AUTONOMY`   | ✅       | `supervised` \| `checkpoint` \| `full_auto`                      |
-| `MONOZUKURI_MODEL`      | —        | Model alias (empty = adapter default)                            |
-| `MONOZUKURI_LOG_FILE`   | —        | File path for agent output tee                                   |
-| `MONOZUKURI_RUN_DIR`    | —        | `$CONFIG_DIR/runs/<run-id>` for artifact writes                  |
-| `MONOZUKURI_ERROR_FILE` | —        | Path where adapter MUST write error envelope on failure (see §3) |
-| `SKILL_COMMAND`         | —        | Override for Claude Code skill name (back-compat)                |
-| `SKILL_TIMEOUT_SECONDS` | —        | Wall-clock budget for the invocation (default: 1800)             |
+| Variable                 | Required | Description                                                                                                   |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------- |
+| `MONOZUKURI_FEATURE_ID`  | ✅       | Feature identifier (e.g. `feat-login`)                                                                        |
+| `MONOZUKURI_WORKTREE`    | ✅       | Absolute path to the isolated git worktree                                                                    |
+| `MONOZUKURI_AUTONOMY`    | ✅       | `supervised` \| `checkpoint` \| `full_auto`                                                                   |
+| `MONOZUKURI_INTERACTIVE` | ✅       | `0` when `AUTONOMY=full_auto`; `1` otherwise. Skills MUST NOT block waiting for human input when this is `0`. |
+| `MONOZUKURI_MODEL`       | —        | Model alias (empty = adapter default)                                                                         |
+| `MONOZUKURI_LOG_FILE`    | —        | File path for agent output tee                                                                                |
+| `MONOZUKURI_RUN_DIR`     | —        | `$CONFIG_DIR/runs/<run-id>` for artifact writes                                                               |
+| `MONOZUKURI_ERROR_FILE`  | —        | Path where adapter MUST write error envelope on failure (see §3)                                              |
+| `SKILL_COMMAND`          | —        | Override for Claude Code skill name (back-compat)                                                             |
+| `SKILL_TIMEOUT_SECONDS`  | —        | Wall-clock budget for the invocation (default: 1800)                                                          |
 
 ---
 
@@ -161,6 +162,40 @@ a known retry window (e.g. a `Retry-After` header from a rate-limit response).
 
 The fallback classifier in `lib/agent/error.sh` covers these patterns automatically.
 Adapters that write a valid envelope take priority over the fallback.
+
+### 3.1 Human-input blocker (`class:"human"`, exit 21)
+
+When an agent pauses to wait for human input it is not a failure — it is a
+**blocker**. The adapter MUST signal this by:
+
+1. Writing a `class:"human"` envelope to `MONOZUKURI_ERROR_FILE`:
+
+   ```json
+   {
+     "class": "human",
+     "code": "agent-blocker",
+     "message": "<first matching line from the agent log>"
+   }
+   ```
+
+2. Exiting with `EXIT_AGENT_BLOCKED = 21`.
+
+The orchestrator treats exit 21 as "paused — awaiting human input" and does
+**not** retry the feature. In `full_auto` mode (`MONOZUKURI_INTERACTIVE=0`)
+skills must never emit this pattern; doing so stalls the batch.
+
+### 3.2 Default blocker scanner
+
+Adapters that do not implement `agent_blocker_marker()` fall back to
+`agent_scan_for_blocker()` in `lib/agent/error.sh`. It greps the tail of the
+agent log for the following ERE pattern (case-insensitive):
+
+```
+Blocker[[:space:]]*[-—][[:space:]]*(Need|Wait|Require)|Need[[:space:]]+Your[[:space:]]+Input|human[[:space:]]+intervention[[:space:]]+required
+```
+
+Adapters may override this by implementing `agent_blocker_marker()` to return
+a custom ERE regex. The override is checked before the default scanner.
 
 ---
 
