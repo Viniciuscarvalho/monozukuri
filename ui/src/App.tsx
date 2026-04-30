@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { writeFileSync } from 'node:fs';
 import { Box, Text, useStdout } from 'ink';
 import { Header } from './components/Header.js';
 import { FeatureCard } from './components/FeatureCard.js';
@@ -22,12 +23,51 @@ function Separator({ width }: { width: number }): React.ReactElement {
 
 export default function App(): React.ReactElement {
   const [view, setView] = useState<ViewMode>('main');
+  const [done, setDone] = useState(false);
   const state = useEventStream();
   const now = useTicker();
   const { stdout } = useStdout();
   const terminalWidth = stdout?.columns ?? 80;
 
   useKeybindings({ setView });
+
+  // When run.completed arrives, surface the summary frame briefly then exit
+  useEffect(() => {
+    if (state.current === null && state.totals.succeeded + state.totals.failed > 0) {
+      setDone(true);
+      // Write plain-text summary to /dev/tty so it persists in scrollback after Ink unmounts
+      try {
+        const summary = [
+          '',
+          `  Monozukuri run complete`,
+          `  ✓ done: ${state.totals.succeeded}   ✗ failed: ${state.totals.failed}   ~ skipped: ${state.totals.skipped}`,
+          `  cost: $${(state.totals.costUsd ?? 0).toFixed(4)}`,
+          '',
+        ].join('\n');
+        writeFileSync('/dev/tty', summary);
+      } catch {
+        // /dev/tty may not be writable in some environments
+      }
+      setTimeout(() => process.exit(0), 200);
+    }
+  }, [state.current, state.totals]);
+
+  if (done) {
+    return (
+      <Box flexDirection="column" paddingY={1}>
+        <Text bold color="green">Run complete</Text>
+        <Text>
+          {'  '}
+          <Text color="green">✓ {state.totals.succeeded} done</Text>
+          {'  '}
+          <Text color="red">✗ {state.totals.failed} failed</Text>
+          {'  '}
+          <Text dimColor>~ {state.totals.skipped} skipped</Text>
+        </Text>
+        <Text dimColor>  cost: ${(state.totals.costUsd ?? 0).toFixed(4)}</Text>
+      </Box>
+    );
+  }
 
   const currentFeature = state.current ? (state.features[state.current] ?? null) : null;
 

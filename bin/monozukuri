@@ -30,17 +30,14 @@ const uiDist =
   resolve(__dirname, '..', 'ui', 'dist', 'index.js');
 
 const UI_COMMANDS = new Set(['run', 'setup']);
-// Both stdout and stdin must be a real TTY: stdout so we can render, stdin so
-// Ink (or /dev/tty fallback) can set raw mode for keyboard input.
-// full_auto runs are always headless — they may run unattended for hours.
-const isFullAuto =
-  args.includes('--autonomy=full_auto') ||
-  (args.includes('--autonomy') && args[args.indexOf('--autonomy') + 1] === 'full_auto');
+// TUI activates for any interactive (TTY) terminal session — including full_auto.
+// The bash render layer is silenced when MONOZUKURI_RUN_ID is set, so only
+// the Ink TUI produces output in TTY mode.
+// Non-TTY (CI, pipes): emit clean JSONL event stream, no UI, no bash prints.
 const wantsUI =
   process.stdout.isTTY &&
   process.stdin.isTTY &&
   UI_COMMANDS.has(cmd) &&
-  !isFullAuto &&
   !args.includes('--no-ui') &&
   !args.includes('--json') &&
   !args.includes('--dry-run') &&

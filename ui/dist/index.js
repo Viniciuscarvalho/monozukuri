@@ -15390,6 +15390,7 @@ import { ReadStream } from "tty";
 
 // src/App.tsx
 var import_react25 = __toESM(require_react(), 1);
+import { writeFileSync } from "fs";
 
 // src/components/CostMeter.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -16254,11 +16255,58 @@ function Separator({ width }) {
 }
 function App2() {
   const [view, setView] = (0, import_react25.useState)("main");
+  const [done, setDone] = (0, import_react25.useState)(false);
   const state = useEventStream();
   const now = useTicker();
   const { stdout } = use_stdout_default();
   const terminalWidth = stdout?.columns ?? 80;
   useKeybindings({ setView });
+  (0, import_react25.useEffect)(() => {
+    if (state.current === null && state.totals.succeeded + state.totals.failed > 0) {
+      setDone(true);
+      try {
+        const summary = [
+          "",
+          `  Monozukuri run complete`,
+          `  \u2713 done: ${state.totals.succeeded}   \u2717 failed: ${state.totals.failed}   ~ skipped: ${state.totals.skipped}`,
+          `  cost: $${(state.totals.costUsd ?? 0).toFixed(4)}`,
+          ""
+        ].join("\n");
+        writeFileSync("/dev/tty", summary);
+      } catch {
+      }
+      setTimeout(() => process.exit(0), 200);
+    }
+  }, [state.current, state.totals]);
+  if (done) {
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", paddingY: 1, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, color: "green", children: "Run complete" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { children: [
+        "  ",
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: "green", children: [
+          "\u2713 ",
+          state.totals.succeeded,
+          " done"
+        ] }),
+        "  ",
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: "red", children: [
+          "\u2717 ",
+          state.totals.failed,
+          " failed"
+        ] }),
+        "  ",
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { dimColor: true, children: [
+          "~ ",
+          state.totals.skipped,
+          " skipped"
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { dimColor: true, children: [
+        "  cost: $",
+        (state.totals.costUsd ?? 0).toFixed(4)
+      ] })
+    ] });
+  }
   const currentFeature = state.current ? state.features[state.current] ?? null : null;
   if (view === "help") {
     return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", children: [
