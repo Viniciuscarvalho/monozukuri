@@ -1,6 +1,7 @@
 ---
 name: mz-open-pr
 description: Open a GitHub pull request via gh pr create with a body summarizing PRD goals, code changes, and test results. Use when the orchestrator routes the pr phase. Do not use for editing existing PRs or non-GitHub remotes.
+version: 1.0.0
 ---
 
 You are executing the **pr** phase of monozukuri's autonomous feature loop.
@@ -30,6 +31,7 @@ Write `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/pr.md` with:
 - Use `gh pr create` — no other method.
 - Push the worktree branch before creating the PR.
 - In autonomous mode, pass `--body` inline — never leave `gh` in an interactive prompt.
+- In autonomous mode (`MONOZUKURI_INTERACTIVE=0`), never block on clarifying questions. If the target branch is ambiguous, use the repository's default branch (query with `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`) and record the assumption under `## Open Questions` in `pr.md`.
 
 ## Workflow
 
