@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.24.0...v1.24.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* **resume,learning:** close determinism gaps ([#96](https://github.com/Viniciuscarvalho/monozukuri/issues/96)) ([5c38d56](https://github.com/Viniciuscarvalho/monozukuri/commit/5c38d56a221a87db709d1825b618ba935d66fb0e))
+
 ## [1.24.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.23.0...v1.24.0) (2026-04-30)
 
 
