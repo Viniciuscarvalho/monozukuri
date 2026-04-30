@@ -225,7 +225,19 @@ Skills are not required — the pipeline falls back to Tier 2 (rendered prompt) 
 | `--resume`   | `false`         | Skip already-completed features                                      |
 | `--model`    | _(from config)_ | Override model: `opus`, `sonnet`, `haiku`, `opusplan`                |
 | `--agent`    | _(from config)_ | Override agent: `claude-code`, `codex`, `gemini`, `kiro`             |
+| `--no-ui`    | `false`         | Disable the Ink TUI; fall back to plain terminal output              |
 | `--skill`    | _(deprecated)_  | Deprecated — use `--agent` and `agents.claude-code.skills` in config |
+
+### TUI (terminal UI)
+
+The Ink TUI activates automatically when running `monozukuri run` or `monozukuri setup` in an interactive terminal (TTY). It shows live feature cards, phase progress, cost meter, and log pane — consuming the JSONL event stream emitted by the orchestrator.
+
+```bash
+monozukuri run             # TUI on by default in a TTY terminal
+monozukuri run --no-ui    # disable TUI, use plain terminal output
+```
+
+In non-TTY environments (CI, pipes, `--json`, `--dry-run`) the TUI is skipped automatically and the orchestrator emits a clean JSONL event stream instead.
 
 ### `monozukuri status`
 
@@ -454,6 +466,53 @@ make lint      # shellcheck on every script
 make fmt       # shfmt -w on every script
 make test      # bats integration tests
 make release   # tag + publish to npm + bump Homebrew formula
+```
+
+### Working on the TUI
+
+The terminal UI lives in `ui/` and is built with [Ink](https://github.com/vadimdemedes/ink) — a React renderer for the terminal. The source is TypeScript (`ui/src/`) and compiles to `ui/dist/index.js`, which is what `monozukuri run` loads at runtime.
+
+**Components** (`ui/src/components/`):
+
+| File                | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `FeatureCard.tsx`   | Per-feature status card (phase, status, cost)                              |
+| `FeatureList.tsx`   | Scrollable list of all feature cards                                       |
+| `PhaseTimeline.tsx` | Horizontal phase progress bar (prd → techspec → tasks → code → tests → pr) |
+| `CostMeter.tsx`     | Live token cost display                                                    |
+| `LogPane.tsx`       | Scrollable log output from the orchestrator                                |
+| `Header.tsx`        | Run summary bar (agent, autonomy, model)                                   |
+| `Footer.tsx`        | Keyboard shortcut hints                                                    |
+| `SetupPanel.tsx`    | Progress view for `monozukuri setup`                                       |
+
+**Install dependencies** (first time only):
+
+```bash
+cd ui
+npm install
+```
+
+**Watch mode** — rebuilds `dist/index.js` on every save:
+
+```bash
+cd ui
+npm run dev
+```
+
+**One-off build:**
+
+```bash
+cd ui
+npm run build
+```
+
+**See your changes live:** run `npm run dev` in one terminal, then `monozukuri run` in another. The orchestrator pipes its JSONL event stream into the UI process, so every rebuild is picked up on the next run.
+
+**Run UI tests:**
+
+```bash
+cd ui
+npm test
 ```
 
 ---
