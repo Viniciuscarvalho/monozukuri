@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.22.0...v1.23.0) (2026-04-30)
+
+
+### Features
+
+* **tui:** TUI by default, silence bash render layer ([#92](https://github.com/Viniciuscarvalho/monozukuri/issues/92)) ([e79a683](https://github.com/Viniciuscarvalho/monozukuri/commit/e79a683042d614111e98eee2b1fea8039e99067b))
+
 ## [1.22.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.21.4...v1.22.0) (2026-04-30)
 
 
