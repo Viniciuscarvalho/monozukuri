@@ -195,6 +195,15 @@ export interface SkillFailedEvent extends BaseEvent {
   exit_code: string;
 }
 
+export interface SkillFallbackEvent extends BaseEvent {
+  type: 'skill.fallback';
+  feature_id: string;
+  phase: Phase;
+  from_skill: string;
+  to_skill: string;
+  exit_code: string;
+}
+
 export interface MemoryBootstrapEvent extends BaseEvent {
   type: 'memory.bootstrap';
   feature_id: string;
@@ -251,6 +260,7 @@ export type MonozukuriEvent =
   | SkillInvokedEvent
   | SkillCompletedEvent
   | SkillFailedEvent
+  | SkillFallbackEvent
   | MemoryBootstrapEvent
   | MemoryNoteEvent
   | SetupStartedEvent

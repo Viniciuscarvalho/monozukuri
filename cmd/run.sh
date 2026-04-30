@@ -121,6 +121,20 @@ sub_run() {
   fi
 
   # Agent discovery (ADR-006)
+  # Scaffold AGENTS.md when neither it nor .claude/agents/ exist, so new projects
+  # don't silently fall into the Tier-3 legacy-feature-marker trap.
+  local agents_md="$ROOT_DIR/AGENTS.md"
+  local agents_dir="$ROOT_DIR/.claude/agents"
+  if [ "${MONOZUKURI_NO_SCAFFOLD:-}" != "1" ] \
+     && [ ! -f "$agents_md" ] \
+     && { [ ! -d "$agents_dir" ] || [ -z "$(ls -A "$agents_dir" 2>/dev/null)" ]; }; then
+    local tmpl="$TEMPLATES_DIR/AGENTS.md"
+    if [ -f "$tmpl" ]; then
+      cp "$tmpl" "$agents_md"
+      info "[scaffold] wrote $agents_md — declare project agents in this file"
+    fi
+  fi
+
   local manifest_file="$CONFIG_DIR/agents-manifest.json"
   if [ "$AGENT_DISCOVERY" = "true" ] && [ -f "$SCRIPTS_DIR/agent-discovery.sh" ]; then
     bash "$SCRIPTS_DIR/agent-discovery.sh" "$ROOT_DIR" "$manifest_file" 2>&1
