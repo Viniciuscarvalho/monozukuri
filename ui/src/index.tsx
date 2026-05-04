@@ -6,7 +6,8 @@ import App from './App.js';
 
 // process.stdin is always a pipe (orchestrator JSONL), never a real TTY.
 // Ink needs a TTY for raw-mode keyboard input, so we open /dev/tty directly.
-// If /dev/tty is unavailable (CI, Docker, piped invocation), fall back to
+// If /dev/tty is unavailable (CI, Docker, sub-shell invocation) or if
+// setRawMode fails (e.g. running inside Claude Code's session), fall back to
 // passthrough so the caller sees plain JSONL on stdout.
 if (!process.stdout.isTTY) {
   process.stdin.pipe(process.stdout);
@@ -14,9 +15,14 @@ if (!process.stdout.isTTY) {
   let ttyStdin: ReadStream | undefined;
   try {
     const fd = openSync('/dev/tty', 'r+');
-    ttyStdin = new ReadStream(fd);
+    const stream = new ReadStream(fd);
+    // Probe raw mode before handing to Ink — setRawMode throws EIO when the
+    // controlling terminal is owned by a parent process (e.g. Claude Code).
+    stream.setRawMode(true);
+    stream.setRawMode(false);
+    ttyStdin = stream;
   } catch {
-    // /dev/tty not available
+    // /dev/tty not available or raw mode not supported
   }
 
   if (!ttyStdin) {

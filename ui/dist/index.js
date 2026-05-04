@@ -16369,7 +16369,10 @@ if (!process.stdout.isTTY) {
   let ttyStdin;
   try {
     const fd = openSync("/dev/tty", "r+");
-    ttyStdin = new ReadStream(fd);
+    const stream = new ReadStream(fd);
+    stream.setRawMode(true);
+    stream.setRawMode(false);
+    ttyStdin = stream;
   } catch {
   }
   if (!ttyStdin) {
