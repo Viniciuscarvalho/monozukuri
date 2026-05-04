@@ -7,7 +7,7 @@
 #   MONOZUKURI_AUTONOMY     supervised | checkpoint | full_auto
 #   MONOZUKURI_LOG_FILE     where to tee codex output (optional)
 #
-# Auth: OPENAI_API_KEY must be set in environment.
+# Auth: codex CLI must be logged in (run: codex login).
 
 agent_name() { echo "codex"; }
 
@@ -32,8 +32,8 @@ agent_capabilities() {
     "default": "gpt-5"
   },
   "auth": {
-    "methods": ["api_key:OPENAI_API_KEY"],
-    "verify":  "codex --version"
+    "methods": ["oauth:openai-account"],
+    "verify":  "codex --version && codex login status"
   }
 }'
 }
@@ -43,12 +43,14 @@ agent_doctor() {
     printf 'codex CLI not found. Install: npm install -g @openai/codex\n' >&2
     return 1
   fi
-  if [ -z "${OPENAI_API_KEY:-}" ]; then
-    printf 'OPENAI_API_KEY not set. Add it to .env\n' >&2
+  if ! codex login status >/dev/null 2>&1; then
+    printf 'codex not authenticated. Run: codex login\n' >&2
     return 1
   fi
   return 0
 }
+
+agent_login_hint() { printf 'codex login\n'; }
 
 agent_estimate_tokens() {
   local prompt; prompt=$(cat)

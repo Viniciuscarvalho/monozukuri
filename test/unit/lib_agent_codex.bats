@@ -53,29 +53,28 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
-@test "codex agent_doctor: fails when OPENAI_API_KEY missing (codex found but no key)" {
+@test "codex agent_doctor: fails when codex found but not logged in" {
   local mock_dir
   mock_dir="$(mktemp -d)"
-  printf '#!/bin/bash\necho "codex 1.0"\nexit 0\n' > "$mock_dir/codex"
+  printf '#!/bin/bash\nif [ "$1" = "login" ] && [ "$2" = "status" ]; then exit 1; fi\nexit 0\n' > "$mock_dir/codex"
   chmod +x "$mock_dir/codex"
   run bash -c "
     source '$LIB_DIR/agent/adapter-codex.sh'
-    unset OPENAI_API_KEY
     PATH='$mock_dir' agent_doctor 2>&1
   "
   rm -rf "$mock_dir"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"OPENAI_API_KEY"* ]]
+  [[ "$output" == *"codex login"* ]]
 }
 
-@test "codex agent_doctor: succeeds when codex found and OPENAI_API_KEY set" {
+@test "codex agent_doctor: succeeds when codex found and logged in" {
   local mock_dir
   mock_dir="$(mktemp -d)"
   printf '#!/bin/bash\nexit 0\n' > "$mock_dir/codex"
   chmod +x "$mock_dir/codex"
   run bash -c "
     source '$LIB_DIR/agent/adapter-codex.sh'
-    OPENAI_API_KEY='test-key' PATH='$mock_dir' agent_doctor
+    PATH='$mock_dir' agent_doctor
   "
   rm -rf "$mock_dir"
   [ "$status" -eq 0 ]

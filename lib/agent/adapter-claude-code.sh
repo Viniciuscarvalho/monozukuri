@@ -59,6 +59,8 @@ agent_doctor() {
   return 0
 }
 
+agent_login_hint() { printf 'claude login\n'; }
+
 agent_estimate_tokens() {
   local prompt; prompt=$(cat)
   if declare -f cost_estimate_tokens &>/dev/null; then

@@ -53,6 +53,8 @@ agent_doctor() {
   return 0
 }
 
+agent_login_hint() { printf 'set ANTHROPIC_API_KEY or OPENAI_API_KEY\n'; }
+
 agent_estimate_tokens() {
   local prompt; prompt=$(cat)
   printf '%d\n' $(( ${#prompt} / 4 ))

@@ -69,10 +69,10 @@ Monozukuri drives any major coding-agent CLI through a single adapter contract. 
 
 ```yaml
 # .monozukuri/config.yaml
-agent: claude-code # default — needs the `claude` CLI
-# agent: codex       # OpenAI Codex CLI  (needs OPENAI_API_KEY)
-# agent: gemini      # Google Gemini CLI (needs GEMINI_API_KEY or gcloud ADC)
-# agent: kiro        # AWS Kiro          (needs AWS credentials)
+agent: claude-code # default — needs the `claude` CLI (run: claude login)
+# agent: codex       # OpenAI Codex CLI  (run: codex login)
+# agent: gemini      # Google Gemini CLI (run: gemini auth login)
+# agent: kiro        # AWS Kiro          (needs AWS credentials — run: aws configure)
 ```
 
 Switch at any time with `monozukuri agent enable <name>`, or detect what's available with `monozukuri agent list`.

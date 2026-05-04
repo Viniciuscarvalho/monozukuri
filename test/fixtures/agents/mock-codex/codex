@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # test/fixtures/agents/mock-codex/codex — mock OpenAI Codex CLI for integration tests.
+if [ "$1" = "login" ] && [ "$2" = "status" ]; then
+  [ "${MOCK_AUTHED:-1}" = "0" ] && { printf 'not logged in\n' >&2; exit 1; }
+  printf 'Logged in\n'
+  exit 0
+fi
 echo "mock-codex: invoked with args: $*"
 echo "Implementing feature..."
 echo "Done."
