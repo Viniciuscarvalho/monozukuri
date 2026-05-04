@@ -9,6 +9,7 @@ setup() {
   export REPO_ROOT LIB_DIR MOCK_CLAUDE_DIR FIXTURE_CTX
 
   source "$LIB_DIR/agent/contract.sh"
+  source "$LIB_DIR/cli/emit.sh"
   source "$LIB_DIR/prompt/render.sh"
   source "$LIB_DIR/agent/adapter-claude-code.sh"
 
