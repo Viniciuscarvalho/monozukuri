@@ -214,6 +214,14 @@ run_backlog() {
         paused_count=$((paused_count + 1))
       fi
 
+      # EXIT_AUTH_EXPIRED (15): stop the entire run — remaining features would hit the same error.
+      if [ "$_pi_exit" -eq 15 ]; then
+        monozukuri_emit run.aborted ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          run_id "${MONOZUKURI_RUN_ID:-}" reason "agent_auth_expired"
+        err "Run aborted: agent authentication expired. Re-authenticate and run 'monozukuri resume'."
+        break
+      fi
+
       # ADR-008 PR-D: cycle gate
       if [ "${OPT_SKIP_CYCLE_CHECK:-false}" != "true" ]; then
         if ! cycle_gate_check "$feat_id_check"; then
@@ -594,6 +602,15 @@ EOPRD
     fstate_record_pause "$feat_id" "human" "agent-blocker"
     info "Paused: $feat_id — agent requested human input (see run log: $log_file)"
     return 0
+  fi
+
+  # EXIT_AUTH_EXPIRED (15): adapter session expired mid-run.
+  # Abort the feature and bubble up to stop the entire run — retrying auth errors wastes budget.
+  if [ "$exit_code" -eq 15 ]; then
+    fstate_transition "$feat_id" "failed" "auth-expired"
+    monozukuri_emit agent.auth_expired feature_id "$feat_id" phase "${MONOZUKURI_PHASE:-unknown}"
+    err "$feat_id: agent authentication expired. Re-authenticate with 'monozukuri doctor', then resume."
+    return 15
   fi
 
   # ADR-011 PR-E: spec reference validation

@@ -9,6 +9,12 @@
 #
 # Auth: gemini CLI must be logged in (run: gemini auth login).
 
+# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
+# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
+if ! declare -f op_timeout &>/dev/null; then
+  op_timeout() { local _secs="$1"; shift; "$@"; }
+fi
+
 agent_name() { echo "gemini"; }
 
 agent_capabilities() {
@@ -78,11 +84,13 @@ agent_run_phase() {
     (
       set -o pipefail
       cd "$wt_path" && printf '%s\n' "$fix_context" | \
-        gemini \
-          --yolo "$yolo_flag" \
-          ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          - 2>&1 | tee "$log_file"
+        op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+          gemini \
+            --yolo "$yolo_flag" \
+            ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+            - 2>&1 | tee "$log_file"
     ) || exit_code=$?
+    _gemini_auth_expired "$log_file" && return 15
     return "$exit_code"
   fi
 
@@ -93,11 +101,24 @@ agent_run_phase() {
     rendered_prompt="Implement feature ${feat_id}."
   fi
 
+  local exit_code=0
   (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
-    gemini \
-      --yolo "$yolo_flag" \
-      ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-      -) 2>&1 | tee "$log_file"
+    op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+      gemini \
+        --yolo "$yolo_flag" \
+        ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+        -) 2>&1 | tee "$log_file" || exit_code=$?
+  _gemini_auth_expired "$log_file" && return 15
+  return "$exit_code"
+}
+
+# _gemini_auth_expired <log_file>
+# Returns 0 (true) if the log contains a gemini auth-failure marker.
+# Used to distinguish auth expiry (exit 15) from ordinary phase failures.
+_gemini_auth_expired() {
+  grep -qiE \
+    "oauth token expired|unable to refresh credentials|authentication failed|invalid credentials|please authenticate|token.*revoked|access denied|401" \
+    "${1:-}" 2>/dev/null
 }
 
 agent_report_cost() {
