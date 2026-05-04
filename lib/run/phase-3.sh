@@ -68,6 +68,7 @@ run_phase3_tests() {
   fi
 
   local trail_file="$STATE_DIR/$feat_id/phase3-attempts.log"
+  local _consecutive_same_error=0
 
   while [ "$fix_attempts" -lt "$max_fix_attempts" ]; do
     fix_attempts=$((fix_attempts + 1))
@@ -114,12 +115,14 @@ run_phase3_tests() {
       _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.fix-watcher-active"
     fi
 
-    # ADR-011 PR-E: verify build compiles after each fix attempt
-    if [ -f "${SCRIPTS_DIR}/verify_build.sh" ]; then
+    # ADR-011 PR-E: verify build compiles after each fix attempt.
+    # A4: treat ANY non-zero exit as "broken" — exit codes 2/127/etc. are not "ok".
+    # Set MONOZUKURI_VERIFY_BUILD_REQUIRED=0 to skip on projects without a build step.
+    if [ "${MONOZUKURI_VERIFY_BUILD_REQUIRED:-1}" != "0" ] && [ -f "${SCRIPTS_DIR}/verify_build.sh" ]; then
       local _build_exit=0
       bash "${SCRIPTS_DIR}/verify_build.sh" "$wt_path" 2>/dev/null || _build_exit=$?
-      if [ "$_build_exit" -eq 1 ]; then
-        info "Phase 3: build broken after fix attempt $fix_attempts — continuing"
+      if [ "$_build_exit" -ne 0 ]; then
+        info "Phase 3: build broken after fix attempt $fix_attempts (exit $_build_exit) — continuing"
         test_exit=1
         continue
       fi
@@ -169,6 +172,40 @@ run_phase3_tests() {
     fix_desc_short=$(printf '%b' "$fix_prompt" | head -1 | cut -c1-120)
     post_error_sig=$(echo "$test_output" | head -3 | tr '\n' ' ' | sed 's/  */ /g')
     learning_write "$feat_id" "$error_sig" "FAILED[attempt $fix_attempts]: $fix_desc_short | result: $post_error_sig"
+
+    # A3: divergence detection — if the fix produced no change in the error signature,
+    # track consecutive same-error count. Abort after 2 consecutive identical signatures
+    # rather than burning the full max_fix_attempts budget on a stuck loop.
+    if [ "$post_error_sig" = "$error_sig" ]; then
+      _consecutive_same_error=$((_consecutive_same_error + 1))
+    else
+      _consecutive_same_error=0
+    fi
+
+    if [ "$_consecutive_same_error" -ge 2 ]; then
+      info "Phase 3: loop diverged — same error signature for $_consecutive_same_error consecutive attempts (aborting early)"
+      fstate_transition "$feat_id" "paused" "phase3-loop-diverged"
+      fstate_record_pause "$feat_id" "human" "phase3-loop-diverged"
+      local last_sig_js
+      last_sig_js=$(node -p "JSON.stringify('$error_sig')" 2>/dev/null || echo '""')
+      node - "$feat_id" "$fix_attempts" "$trail_file" \
+           "$STATE_DIR/$feat_id/pause-reason.json" <<JSEOF 2>/dev/null || true
+const [,, feat_id, attempts, trail_path, out_path] = process.argv;
+const fs = require('fs');
+fs.writeFileSync(out_path, JSON.stringify({
+  reason: 'phase3-loop-diverged',
+  attempts: parseInt(attempts, 10),
+  divergence_detected: true,
+  last_error_sig: ${last_sig_js},
+  trail_path,
+  paused_at: new Date().toISOString()
+}, null, 2));
+JSEOF
+      if declare -f display_paused_handoff &>/dev/null; then
+        display_paused_handoff "$feat_id" "$fix_attempts" "$STATE_DIR/$feat_id/pause-reason.json"
+      fi
+      return 2
+    fi
 
     {
       echo "=== Attempt $fix_attempts/$max_fix_attempts ==="
