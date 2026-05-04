@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.24.1...v1.25.0) (2026-05-04)
+
+
+### Features
+
+* **phase3,adapters:** generalize Ralph Loop to all adapters via agent_run_phase ([#101](https://github.com/Viniciuscarvalho/monozukuri/issues/101)) ([462fd06](https://github.com/Viniciuscarvalho/monozukuri/commit/462fd0647e7c6e98a37120124a0078273b92be9e))
+
 ## [1.24.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.24.0...v1.24.1) (2026-04-30)
 
 
