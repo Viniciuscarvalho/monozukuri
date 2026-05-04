@@ -47,46 +47,31 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
-@test "gemini agent_doctor: fails when no auth (no key, no ADC file)" {
-  local mock_dir
-  mock_dir="$(mktemp -d)"
-  printf '#!/bin/bash\nexit 0\n' > "$mock_dir/gemini"
-  chmod +x "$mock_dir/gemini"
-  run bash -c "
-    source '$LIB_DIR/agent/adapter-gemini.sh'
-    unset GEMINI_API_KEY
-    HOME='$mock_dir'
-    PATH='$mock_dir' agent_doctor 2>&1
-  "
-  rm -rf "$mock_dir"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"GEMINI_API_KEY"* ]] || [[ "$output" == *"auth"* ]]
-}
-
-@test "gemini agent_doctor: succeeds with GEMINI_API_KEY set" {
-  local mock_dir
-  mock_dir="$(mktemp -d)"
-  printf '#!/bin/bash\nexit 0\n' > "$mock_dir/gemini"
-  chmod +x "$mock_dir/gemini"
-  run bash -c "
-    source '$LIB_DIR/agent/adapter-gemini.sh'
-    GEMINI_API_KEY='test-key' PATH='$mock_dir' agent_doctor
-  "
-  rm -rf "$mock_dir"
-  [ "$status" -eq 0 ]
-}
-
-@test "gemini agent_doctor: succeeds with ADC credentials file" {
+@test "gemini agent_doctor: fails when no oauth_creds.json present" {
   local mock_dir home_dir
   mock_dir="$(mktemp -d)"
   home_dir="$(mktemp -d)"
-  mkdir -p "$home_dir/.config/gcloud"
-  echo '{"type":"authorized_user"}' > "$home_dir/.config/gcloud/application_default_credentials.json"
   printf '#!/bin/bash\nexit 0\n' > "$mock_dir/gemini"
   chmod +x "$mock_dir/gemini"
   run bash -c "
     source '$LIB_DIR/agent/adapter-gemini.sh'
-    unset GEMINI_API_KEY
+    HOME='$home_dir' PATH='$mock_dir' agent_doctor 2>&1
+  "
+  rm -rf "$mock_dir" "$home_dir"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"gemini auth login"* ]]
+}
+
+@test "gemini agent_doctor: succeeds with oauth_creds.json present" {
+  local mock_dir home_dir
+  mock_dir="$(mktemp -d)"
+  home_dir="$(mktemp -d)"
+  mkdir -p "$home_dir/.gemini"
+  echo '{"access_token":"tok"}' > "$home_dir/.gemini/oauth_creds.json"
+  printf '#!/bin/bash\nexit 0\n' > "$mock_dir/gemini"
+  chmod +x "$mock_dir/gemini"
+  run bash -c "
+    source '$LIB_DIR/agent/adapter-gemini.sh'
     HOME='$home_dir' PATH='$mock_dir' agent_doctor
   "
   rm -rf "$mock_dir" "$home_dir"

@@ -95,11 +95,11 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "codex: agent_doctor exits 0 with mock binary and OPENAI_API_KEY" {
+@test "codex: agent_doctor exits 0 with mock binary logged in" {
   local mock_dir="$REPO_ROOT/test/fixtures/agents/mock-codex"
   run /bin/bash -c "
     export PATH='$mock_dir:$STUB_DIR:/usr/bin:/bin'
-    export OPENAI_API_KEY='mock-key'
+    export MOCK_AUTHED=1
     source '$LIB_DIR/agent/contract.sh'
     source '$LIB_DIR/agent/adapter-codex.sh'
     agent_doctor 2>&1
@@ -107,15 +107,20 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "gemini: agent_doctor exits 0 with mock binary and GEMINI_API_KEY" {
+@test "gemini: agent_doctor exits 0 with mock binary and oauth_creds.json" {
   local mock_dir="$REPO_ROOT/test/fixtures/agents/mock-gemini"
+  local home_dir
+  home_dir="$(mktemp -d)"
+  mkdir -p "$home_dir/.gemini"
+  echo '{"access_token":"mock"}' > "$home_dir/.gemini/oauth_creds.json"
   run /bin/bash -c "
     export PATH='$mock_dir:$STUB_DIR:/usr/bin:/bin'
-    export GEMINI_API_KEY='mock-key'
+    export HOME='$home_dir'
     source '$LIB_DIR/agent/contract.sh'
     source '$LIB_DIR/agent/adapter-gemini.sh'
     agent_doctor 2>&1
   "
+  rm -rf "$home_dir"
   [ "$status" -eq 0 ]
 }
 
@@ -146,33 +151,32 @@ teardown() {
 
 # ── auth-missing checks (binary present, no credentials) ──────────────────────
 
-@test "codex: agent_doctor exits non-zero when OPENAI_API_KEY is unset" {
+@test "codex: agent_doctor exits non-zero when mock binary reports not logged in" {
   local mock_dir="$REPO_ROOT/test/fixtures/agents/mock-codex"
   run /bin/bash -c "
     export PATH='$mock_dir:$STUB_DIR:/usr/bin:/bin'
-    unset OPENAI_API_KEY
+    export MOCK_AUTHED=0
     source '$LIB_DIR/agent/contract.sh'
     source '$LIB_DIR/agent/adapter-codex.sh'
     agent_doctor 2>&1
   "
   [ "$status" -ne 0 ]
-  [[ "$output" == *"OPENAI_API_KEY"* ]]
+  [[ "$output" == *"codex login"* ]]
 }
 
-@test "gemini: agent_doctor exits non-zero when no auth method is available" {
+@test "gemini: agent_doctor exits non-zero when oauth_creds.json is absent" {
   local mock_dir="$REPO_ROOT/test/fixtures/agents/mock-gemini"
-  local no_adc_home
-  no_adc_home="$(mktemp -d)"
+  local empty_home
+  empty_home="$(mktemp -d)"
   run /bin/bash -c "
     export PATH='$mock_dir:$STUB_DIR:/usr/bin:/bin'
-    export HOME='$no_adc_home'
-    unset GEMINI_API_KEY
+    export HOME='$empty_home'
     source '$LIB_DIR/agent/contract.sh'
     source '$LIB_DIR/agent/adapter-gemini.sh'
     agent_doctor 2>&1
   "
   [ "$status" -ne 0 ]
-  rm -rf "$no_adc_home"
+  rm -rf "$empty_home"
 }
 
 @test "aider: agent_doctor exits non-zero when no API key is set" {

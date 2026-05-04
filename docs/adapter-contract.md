@@ -73,6 +73,15 @@ agent_report_cost()
 # → stdout: USD cost float (e.g. "0.42")
 ```
 
+### `agent_login_hint` _(optional)_
+
+```bash
+agent_login_hint()
+# → stdout: one-line login command shown in auth-failure error messages
+# Example: "claude login" / "codex login" / "gemini auth login"
+# When absent, the error classifier falls back to "$MONOZUKURI_AGENT login".
+```
+
 ### 1.1 Capability declaration schema
 
 ```json
@@ -93,11 +102,17 @@ agent_report_cost()
     "default": "<alias-or-id>"
   },
   "auth": {
-    "methods": ["api_key:ENV_VAR_NAME"],
+    "methods": ["oauth:<provider>-account"],
     "verify": "<command to run for auth check>"
   }
 }
 ```
+
+`auth.methods` values:
+
+- `"oauth:<provider>-account"` — CLI-session OAuth (no env var required); e.g. `oauth:openai-account`, `oauth:google-account`, `oauth:claude.ai`
+- `"api_key:ENV_VAR_NAME"` — environment-variable key (aider, legacy adapters)
+- `"aws:credentials"` — AWS SDK credential chain (kiro)
 
 `additionalProperties` is allowed; Monozukuri reads only the fields above.
 

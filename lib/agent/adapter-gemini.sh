@@ -7,7 +7,7 @@
 #   MONOZUKURI_AUTONOMY     supervised | checkpoint | full_auto
 #   MONOZUKURI_LOG_FILE     where to tee gemini output (optional)
 #
-# Auth: GEMINI_API_KEY or gcloud ADC (~/.config/gcloud/application_default_credentials.json).
+# Auth: gemini CLI must be logged in (run: gemini auth login).
 
 agent_name() { echo "gemini"; }
 
@@ -32,7 +32,7 @@ agent_capabilities() {
     "default": "gemini-2.5-pro"
   },
   "auth": {
-    "methods": ["api_key:GEMINI_API_KEY", "gcloud:ADC"],
+    "methods": ["oauth:google-account"],
     "verify":  "gemini --version"
   }
 }'
@@ -43,13 +43,15 @@ agent_doctor() {
     printf 'gemini CLI not found. Install: npm install -g @google/gemini-cli\n' >&2
     return 1
   fi
-  local adc_file="${HOME}/.config/gcloud/application_default_credentials.json"
-  if [ -z "${GEMINI_API_KEY:-}" ] && [ ! -f "$adc_file" ]; then
-    printf 'gemini auth missing. Set GEMINI_API_KEY or run: gcloud auth application-default login\n' >&2
+  local creds_file="${HOME}/.gemini/oauth_creds.json"
+  if [ ! -s "$creds_file" ]; then
+    printf 'gemini not authenticated. Run: gemini auth login\n' >&2
     return 1
   fi
   return 0
 }
+
+agent_login_hint() { printf 'gemini auth login\n'; }
 
 agent_estimate_tokens() {
   local prompt; prompt=$(cat)

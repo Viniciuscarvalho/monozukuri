@@ -59,7 +59,13 @@ agent_error_classify() {
 
   # Auth failure
   if echo "$log_tail" | grep -qiE "unauthorized|authentication|401|invalid.api.key|not authenticated"; then
-    printf '{"class":"fatal","code":"auth-failure","message":"Authentication failed — run: claude auth login"}\n'
+    local hint
+    if declare -f agent_login_hint &>/dev/null; then
+      hint=$(agent_login_hint)
+    else
+      hint="${MONOZUKURI_AGENT:-claude} login"
+    fi
+    printf '{"class":"fatal","code":"auth-failure","message":"Authentication failed — run: %s"}\n' "$hint"
     return 0
   fi
 
