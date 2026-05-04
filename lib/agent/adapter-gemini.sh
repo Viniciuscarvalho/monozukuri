@@ -9,6 +9,12 @@
 #
 # Auth: gemini CLI must be logged in (run: gemini auth login).
 
+# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
+# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
+if ! declare -f op_timeout &>/dev/null; then
+  op_timeout() { local _secs="$1"; shift; "$@"; }
+fi
+
 agent_name() { echo "gemini"; }
 
 agent_capabilities() {
