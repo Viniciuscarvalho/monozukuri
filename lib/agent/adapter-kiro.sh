@@ -72,6 +72,21 @@ agent_run_phase() {
 
   local use_native_specs="${KIRO_USE_NATIVE_SPECS:-false}"
 
+  # fix-retry: Phase 3 Ralph Loop — feed MONOZUKURI_FIX_CONTEXT directly to kiro.
+  if [[ "$phase" == "fix-retry" ]]; then
+    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
+    local exit_code=0
+    (
+      set -o pipefail
+      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+        kiro agent run \
+          --feature "$feat_id" \
+          ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+          - 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+    return "$exit_code"
+  fi
+
   # For prd/techspec phases, optionally use kiro's native spec workflow
   if [ "$use_native_specs" = "true" ] && { [ "$phase" = "prd" ] || [ "$phase" = "techspec" ]; }; then
     (cd "$wt_path" && kiro spec create \

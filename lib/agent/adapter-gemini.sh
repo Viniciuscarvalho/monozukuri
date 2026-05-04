@@ -69,6 +69,21 @@ agent_run_phase() {
   local yolo_flag="false"
   [ "${MONOZUKURI_AUTONOMY:-checkpoint}" = "full_auto" ] && yolo_flag="true"
 
+  # fix-retry: Phase 3 Ralph Loop — feed MONOZUKURI_FIX_CONTEXT directly to gemini.
+  if [[ "${MONOZUKURI_PHASE:-}" == "fix-retry" ]]; then
+    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
+    local exit_code=0
+    (
+      set -o pipefail
+      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+        gemini \
+          --yolo "$yolo_flag" \
+          ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+          - 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+    return "$exit_code"
+  fi
+
   local rendered_prompt
   if declare -f render_phase_prompt &>/dev/null; then
     rendered_prompt=$(render_phase_prompt "${MONOZUKURI_PHASE:-prd}")
