@@ -12,7 +12,7 @@
 # Requires: lib/core/util.sh        (op_timeout)
 #           lib/memory/learning.sh  (learning_read, learning_write, learning_verify_entry)
 #           lib/core/feature-state.sh (fstate_transition, fstate_record_pause)
-#           lib/core/platform.sh    (platform_claude)
+#           lib/agent/contract.sh   (agent_run_phase, loaded by pipeline.sh before this runs)
 # Calls _orchestrator_watcher_start/stop defined in pipeline.sh (looked up at runtime).
 
 # run_phase3_tests <feat_id> <wt_path>
@@ -97,14 +97,6 @@ run_phase3_tests() {
       fi
     fi
 
-    local model_flag=""
-    local _fix_model="${MODEL_DEFAULT:-}"
-    [ "$_fix_model" = "opusplan" ] && _fix_model="opus"
-    [ -n "$_fix_model" ] && model_flag="--model $_fix_model"
-
-    local fix_perm_flag=""
-    [ "$AUTONOMY" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
-
     local fix_exit=0
     if declare -f _orchestrator_watcher_start &>/dev/null && [ "$AUTONOMY" = "full_auto" ]; then
       _orchestrator_watcher_start \
@@ -114,9 +106,9 @@ run_phase3_tests() {
         "$feat_id"
     fi
 
-    (cd "$wt_path" && printf '%b' "$fix_prompt" | \
-      platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" $model_flag $fix_perm_flag --print) \
-      2>/dev/null || fix_exit=$?
+    MONOZUKURI_PHASE="fix-retry" \
+    MONOZUKURI_FIX_CONTEXT="$(printf '%b' "$fix_prompt")" \
+      agent_run_phase 2>/dev/null || fix_exit=$?
 
     if declare -f _orchestrator_watcher_stop &>/dev/null; then
       _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.fix-watcher-active"

@@ -134,6 +134,27 @@ agent_run_phase() {
   # ADR-012: inject schemas before invoking the agent
   _aider_inject_schemas "$wt_path"
 
+  # fix-retry: Phase 3 Ralph Loop — use MONOZUKURI_FIX_CONTEXT as the aider message.
+  if [[ "${MONOZUKURI_PHASE:-}" == "fix-retry" ]]; then
+    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
+    local exit_code=0
+    (
+      set -o pipefail
+      cd "$wt_path" && op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        aider \
+        --model "$model" \
+        --no-git \
+        $yes_flag \
+        --read ".monozukuri-schemas" \
+        --message "$fix_context" 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+    if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
+      printf '{"class":"phase","code":"fix-retry-failed","message":"aider fix-retry exited with code %d"}\n' \
+        "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
+    fi
+    return "$exit_code"
+  fi
+
   local prompt
   prompt=$(_aider_build_prompt "$feat_id" "$run_dir" "$wt_path")
 

@@ -9,6 +9,17 @@
 #   agent_run_phase()       → execute the current phase; reads MONOZUKURI_* env vars
 #   agent_report_cost()     → stdin: trace JSON → stdout: USD float
 #
+# agent_run_phase() MONOZUKURI_PHASE values:
+#   prd, techspec, tasks, code, tests, pr  — standard feature pipeline phases
+#   fix-retry                              — Phase 3 Ralph Loop: re-run agent on failing
+#                                            tests. Prompt is in MONOZUKURI_FIX_CONTEXT.
+#                                            Adapter reads that var and invokes its CLI
+#                                            with appropriate permission/model flags.
+#
+# Additional env vars for fix-retry phase:
+#   MONOZUKURI_FIX_CONTEXT  — prompt string built by phase-3.sh: test output +
+#                              learning-store hint. Adapter feeds this to its CLI.
+#
 # Optional functions (not checked by agent_verify):
 #   agent_native_context_files() → echo JSON array of repo-relative paths this
 #                                   agent reads on its own (e.g. AGENTS.md, CLAUDE.md).

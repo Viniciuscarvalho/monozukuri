@@ -165,6 +165,30 @@ agent_run_phase() {
   local exit_code=0
   local phase="${MONOZUKURI_PHASE:-}"
 
+  # fix-retry: Phase 3 Ralph Loop dispatched here instead of calling platform_claude
+  # directly. MONOZUKURI_FIX_CONTEXT carries the prompt built by phase-3.sh.
+  if [[ "$phase" == "fix-retry" ]]; then
+    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
+    local fix_model="${MONOZUKURI_MODEL:-}"
+    [ "$fix_model" = "opusplan" ] && fix_model="opus"
+    local fix_perm_flag=""
+    [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
+    local exit_code=0
+    (
+      set -o pipefail
+      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+        platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+          ${fix_model:+--model "$fix_model"} \
+          $fix_perm_flag \
+          --print 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+    if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
+      printf '{"class":"phase","code":"fix-retry-failed","message":"fix-retry exited with code %d"}\n' \
+        "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
+    fi
+    return "$exit_code"
+  fi
+
   # Lazy-load skill detection helpers
   if ! declare -f phase_to_skill &>/dev/null; then
     local _detect_sh
