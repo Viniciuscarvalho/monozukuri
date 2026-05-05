@@ -14,17 +14,19 @@ _PLATFORM_GIT_HOST=""
 
 platform_detect() {
   [ -n "$_PLATFORM_GIT_HOST" ] && return 0
-  case "${ADAPTER:-markdown}" in
-    github|linear) _PLATFORM_GIT_HOST="github" ;;
-    gitlab)        _PLATFORM_GIT_HOST="gitlab" ;;
-    azure)         _PLATFORM_GIT_HOST="azure"  ;;
-    *)             _PLATFORM_GIT_HOST="github" ;;
+  # Explicit ADAPTER takes precedence over installed CLI detection.
+  case "${ADAPTER:-}" in
+    github|linear) _PLATFORM_GIT_HOST="github"; return 0 ;;
+    gitlab)        _PLATFORM_GIT_HOST="gitlab"; return 0 ;;
+    azure)         _PLATFORM_GIT_HOST="azure";  return 0 ;;
   esac
-  # Installed CLI presence overrides adapter-derived default
+  # No explicit ADAPTER: infer from installed CLIs, default to github.
   if command -v glab &>/dev/null; then
     _PLATFORM_GIT_HOST="gitlab"
   elif command -v az &>/dev/null; then
     _PLATFORM_GIT_HOST="azure"
+  else
+    _PLATFORM_GIT_HOST="github"
   fi
 }
 

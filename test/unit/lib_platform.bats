@@ -16,16 +16,20 @@ setup() {
 }
 
 @test "platform_detect defaults to github" {
-  # Unset ADAPTER and clear cached host to get default.
-  # Restrict PATH so platform CLIs (az, glab) on the runner don't override the default.
-  run env PATH=/usr/bin:/bin bash -c "
+  # Source scripts with normal PATH first, then call platform_detect with a restricted
+  # PATH (empty tmpdir) so command -v finds neither az nor glab regardless of what
+  # is installed on the CI host (e.g. azure-cli pre-installed on ubuntu-latest).
+  local mock_dir
+  mock_dir="$(mktemp -d)"
+  run bash -c "
     source '$LIB_DIR/core/util.sh'
     source '$LIB_DIR/core/platform.sh'
     _PLATFORM_GIT_HOST=''
     unset ADAPTER
-    platform_detect
+    PATH='$mock_dir' platform_detect
     platform_host
   "
+  rm -rf "$mock_dir"
   [ "$status" -eq 0 ]
   [[ "$output" == "github" ]]
 }
