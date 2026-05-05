@@ -123,3 +123,75 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"feat-001"* ]]
 }
+
+# ── F1: Schema inlining for codex/gemini adapters ────────────────────────────
+
+@test "F1: codex adapter inlines prd schema in rendered prompt" {
+  unset CONTEXT_JSON
+  ADAPTER=codex run render_phase_prompt prd
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: codex adapter inlines techspec schema in rendered prompt" {
+  unset CONTEXT_JSON
+  ADAPTER=codex run render_phase_prompt techspec
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: codex adapter inlines tasks schema in rendered prompt" {
+  unset CONTEXT_JSON
+  ADAPTER=codex run render_phase_prompt tasks
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: gemini adapter inlines prd schema in rendered prompt" {
+  unset CONTEXT_JSON
+  ADAPTER=gemini run render_phase_prompt prd
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: gemini adapter inlines techspec schema in rendered prompt" {
+  unset CONTEXT_JSON
+  ADAPTER=gemini run render_phase_prompt techspec
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: MONOZUKURI_INLINE_SCHEMAS=1 inlines schema regardless of adapter" {
+  unset CONTEXT_JSON
+  ADAPTER=kiro MONOZUKURI_INLINE_SCHEMAS=1 run render_phase_prompt prd
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"json-schema.org"* ]]
+}
+
+@test "F1: claude-code adapter does NOT inline schema (injects via worktree file)" {
+  unset CONTEXT_JSON
+  ADAPTER=claude-code run render_phase_prompt prd
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"json-schema.org"* ]]
+}
+
+@test "F1: code phase has no schema block for codex (no artifact schema)" {
+  unset CONTEXT_JSON
+  ADAPTER=codex run render_phase_prompt code
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"json-schema.org"* ]]
+}
+
+@test "F1: inlined schema block contains required fields list" {
+  unset CONTEXT_JSON
+  ADAPTER=codex run render_phase_prompt prd
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"required"'* ]]
+}
+
+@test "F1: inlined schema block carries Output schema heading" {
+  unset CONTEXT_JSON
+  ADAPTER=gemini run render_phase_prompt tasks
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Output schema"* ]]
+}

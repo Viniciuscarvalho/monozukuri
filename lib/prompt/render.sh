@@ -253,25 +253,64 @@ render_phase_prompt() {
     return 1
   fi
 
+  local _rendered
   # Rich rendering path: jq-based when CONTEXT_JSON is set
   if [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
-    monozukuri_render "$tmpl" "$CONTEXT_JSON"
-    return $?
+    _rendered=$(monozukuri_render "$tmpl" "$CONTEXT_JSON") || return $?
+  else
+    # Legacy sed rendering path (backward compat — no context pack)
+    _rendered=$(sed \
+      -e "s|{{MONOZUKURI_FEATURE_ID}}|$(_render_sed_escape "${MONOZUKURI_FEATURE_ID:-}")|g" \
+      -e "s|{{FEATURE_ID}}|$(_render_sed_escape "${MONOZUKURI_FEATURE_ID:-}")|g" \
+      -e "s|{{MONOZUKURI_PHASE}}|$(_render_sed_escape "${phase}")|g" \
+      -e "s|{{MONOZUKURI_AUTONOMY}}|$(_render_sed_escape "${MONOZUKURI_AUTONOMY:-supervised}")|g" \
+      -e "s|{{MONOZUKURI_WORKTREE}}|$(_render_sed_escape "${MONOZUKURI_WORKTREE:-}")|g" \
+      -e "s|{{MONOZUKURI_RUN_DIR}}|$(_render_sed_escape "${MONOZUKURI_RUN_DIR:-}")|g" \
+      -e "s|{{MONOZUKURI_MODEL}}|$(_render_sed_escape "${MONOZUKURI_MODEL:-}")|g" \
+      -e "s|{{FEATURE_TITLE}}|$(_render_sed_escape "${FEATURE_TITLE:-}")|g" \
+      -e "s|{{FEATURE_DESCRIPTION}}|$(_render_sed_escape "${FEATURE_DESCRIPTION:-}")|g" \
+      -e "s|{{LEARNINGS_BLOCK}}|$(_render_sed_escape "${LEARNINGS_BLOCK:-No prior learnings.}")|g" \
+      "$tmpl")
   fi
 
-  # Legacy sed rendering path (backward compat — no context pack)
-  sed \
-    -e "s|{{MONOZUKURI_FEATURE_ID}}|$(_render_sed_escape "${MONOZUKURI_FEATURE_ID:-}")|g" \
-    -e "s|{{FEATURE_ID}}|$(_render_sed_escape "${MONOZUKURI_FEATURE_ID:-}")|g" \
-    -e "s|{{MONOZUKURI_PHASE}}|$(_render_sed_escape "${phase}")|g" \
-    -e "s|{{MONOZUKURI_AUTONOMY}}|$(_render_sed_escape "${MONOZUKURI_AUTONOMY:-supervised}")|g" \
-    -e "s|{{MONOZUKURI_WORKTREE}}|$(_render_sed_escape "${MONOZUKURI_WORKTREE:-}")|g" \
-    -e "s|{{MONOZUKURI_RUN_DIR}}|$(_render_sed_escape "${MONOZUKURI_RUN_DIR:-}")|g" \
-    -e "s|{{MONOZUKURI_MODEL}}|$(_render_sed_escape "${MONOZUKURI_MODEL:-}")|g" \
-    -e "s|{{FEATURE_TITLE}}|$(_render_sed_escape "${FEATURE_TITLE:-}")|g" \
-    -e "s|{{FEATURE_DESCRIPTION}}|$(_render_sed_escape "${FEATURE_DESCRIPTION:-}")|g" \
-    -e "s|{{LEARNINGS_BLOCK}}|$(_render_sed_escape "${LEARNINGS_BLOCK:-No prior learnings.}")|g" \
-    "$tmpl"
+  # F1: Inline artifact schema for adapters that don't inject schemas natively.
+  # claude-code and aider copy schemas into the worktree via _cc_inject_schemas /
+  # _aider_inject_schemas; codex and gemini receive only the rendered prompt and
+  # would otherwise be judged against schemas they never saw.
+  if _render_should_inline_schema; then
+    local _schema_block
+    _schema_block=$(_render_schema_block "$phase")
+    [[ -n "$_schema_block" ]] && _rendered+=$'\n\n'"$_schema_block"
+  fi
+
+  printf '%s\n' "$_rendered"
+}
+
+# Returns 0 when schema content should be appended to the rendered prompt.
+# Opt-in explicitly via MONOZUKURI_INLINE_SCHEMAS=1, or automatically for
+# adapters whose agent_run_phase uses render_phase_prompt without file injection.
+_render_should_inline_schema() {
+  [[ "${MONOZUKURI_INLINE_SCHEMAS:-0}" == "1" ]] || \
+  [[ "${ADAPTER:-}" == "codex" ]] || \
+  [[ "${ADAPTER:-}" == "gemini" ]]
+}
+
+# Emits a fenced schema block for phases that produce validated artifacts.
+# Silently returns nothing for phases with no schema (code, tests, pr, fix-retry).
+_render_schema_block() {
+  local phase="$1"
+  local schemas_dir
+  schemas_dir="$(cd "${_RENDER_SH_DIR}/../../schemas" 2>/dev/null && pwd)" || return 0
+  local schema_file=""
+  case "$phase" in
+    prd)      schema_file="${schemas_dir}/prd.schema.json" ;;
+    techspec) schema_file="${schemas_dir}/techspec.schema.json" ;;
+    tasks)    schema_file="${schemas_dir}/tasks.schema.json" ;;
+    *)        return 0 ;;
+  esac
+  [[ -f "$schema_file" ]] || return 0
+  printf -- '---\n\n## Output schema\n\nYour output **must** conform to the following JSON Schema. Fields listed under `required` are mandatory.\n\n```json\n%s\n```\n' \
+    "$(cat "$schema_file")"
 }
 
 # ---------------------------------------------------------------------------

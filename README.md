@@ -79,6 +79,25 @@ Switch at any time with `monozukuri agent enable <name>`, or detect what's avail
 
 ---
 
+## Agent capabilities
+
+Not all agents support the same feature set. Here is what differs:
+
+| Capability                               | claude-code | codex  | gemini |  kiro  |
+| ---------------------------------------- | :---------: | :----: | :----: | :----: |
+| `mz-*` skills (dedicated phase personas) |     ✅      |   —    |   —    |   —    |
+| Schema injection via worktree file       |     ✅      |   —    |   —    |   ✅   |
+| Schema inlined in rendered prompt        |      —      |   ✅   |   ✅   |   —    |
+| Native file editing                      |     ✅      |   ✅   |   ✅   |   ✅   |
+| MCP server support                       |     ✅      |   —    |   —    |   —    |
+| Structured cost reporting                |     ✅      | approx | approx | approx |
+
+**Skills (`mz-*`) are a Claude Code feature.** `mz-create-prd`, `mz-create-techspec`, `mz-execute-task`, and the rest are native Claude Code skills — they are not available for Codex or Gemini. Those adapters use the rendered-prompt path (Tier 2), where Monozukuri inlines the artifact schema directly into the prompt so the agent knows exactly what structure it must produce.
+
+Output quality on Codex and Gemini is comparable to Claude Code for straightforward features. For complex projects with many learnings, the skill-based persona (Claude Code) tends to produce more consistent artifacts. Skill parity for additional agents is planned for v1.2.
+
+---
+
 ## Highlights
 
 - **One command, whole backlog.** `monozukuri run` walks every feature in your source — Linear, GitHub Issues, or a plain `features.md` — without further input.
