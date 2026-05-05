@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.32.0...v1.33.0) (2026-05-05)
+
+
+### Features
+
+* **phase-g:** plan-doc reconciliation — env-var cleanup, CLAUDE.md, archive Path B ([#118](https://github.com/Viniciuscarvalho/monozukuri/issues/118)) ([f413fba](https://github.com/Viniciuscarvalho/monozukuri/commit/f413fba5049548d1337574d449da50274ebc641a))
+
 ## [1.32.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.31.0...v1.32.0) (2026-05-05)
 
 
