@@ -1,10 +1,15 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+
+# Cancel in-progress runs for the same PR when a new commit is pushed.
+# Keeps one active run per PR; post-merge re-runs are eliminated by
+# removing the push trigger (PR CI is sufficient — green PR = green main).
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   test:

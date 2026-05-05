@@ -9,6 +9,11 @@ permissions:
   contents: read
   pull-requests: read
 
+# Cancel stale gate runs when release PR is force-pushed or rebased.
+concurrency:
+  group: release-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   release-gate:
     name: Release gate
