@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.27.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.26.0...v1.27.0) (2026-05-04)
+
+
+### Features
+
+* **phase-a:** loop safety for unattended runs on codex/gemini ([#105](https://github.com/Viniciuscarvalho/monozukuri/issues/105)) ([2d27ddd](https://github.com/Viniciuscarvalho/monozukuri/commit/2d27ddd4b97a2838f5dcc740c4da7a8ebfa60251))
+
+## [1.26.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.25.0...v1.26.0) (2026-05-04)
+
+
+### Features
+
+* **adapters:** use CLI session auth for codex and gemini (drop API key requirement) ([#103](https://github.com/Viniciuscarvalho/monozukuri/issues/103)) ([9f88467](https://github.com/Viniciuscarvalho/monozukuri/commit/9f884676d28609779255687e1d3077857dd90d7d))
+
 ## [1.25.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.24.1...v1.25.0) (2026-05-04)
 
 
