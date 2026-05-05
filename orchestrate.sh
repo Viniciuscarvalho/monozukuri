@@ -395,4 +395,6 @@ case "$SUBCOMMAND" in
   review)          source "$CMD_DIR/review.sh"; sub_review "${@:2}" ;;
   conventions)     source "$CMD_DIR/conventions.sh"; sub_conventions ;;
   setup)           source "$CMD_DIR/setup.sh"; sub_setup ;;
+  stop)            source "$CMD_DIR/stop.sh"; sub_stop "${@:2}" ;;
+  summary)         source "$CMD_DIR/summary.sh"; sub_summary "${@:2}" ;;
 esac

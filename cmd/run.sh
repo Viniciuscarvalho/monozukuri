@@ -108,6 +108,12 @@ sub_run() {
 
   mkdir -p "$STATE_DIR" "$RESULTS_DIR"
 
+  # C1/C3: Init global budget and register this project in the cross-project registry.
+  source "$LIB_DIR/ops/budget.sh"   2>/dev/null || true
+  source "$LIB_DIR/ops/projects.sh" 2>/dev/null || true
+  declare -f budget_init        &>/dev/null && budget_init
+  declare -f projects_register  &>/dev/null && projects_register "$ROOT_DIR" "${ADAPTER:-unknown}"
+
   banner "Orchestrate — $ADAPTER / $AUTONOMY / $BASE_BRANCH / model:$MODEL_DEFAULT"
 
   # ADR-010: reap any finished background ingest jobs from prior sessions

@@ -195,6 +195,23 @@ run_backlog() {
         monozukuri_emit run.completed ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" reason "aborted_by_user" succeeded "$ran_count" failed 0 skipped 0 total_cost_usd "0"
         break
       fi
+
+      # C2: Kill switch sentinel — stop after current feature without corrupting worktree.
+      if [ -f "${HOME}/.monozukuri/STOP" ]; then
+        monozukuri_emit run.aborted ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          run_id "${MONOZUKURI_RUN_ID:-}" reason "kill_switch"
+        err "Kill switch active (~/.monozukuri/STOP). Run aborted. Clear with: monozukuri stop --clear"
+        break
+      fi
+
+      # C1: Global daily budget ceiling — abort if already exceeded before starting next feature.
+      if declare -f budget_check &>/dev/null && budget_check 0; then
+        monozukuri_emit run.aborted ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          run_id "${MONOZUKURI_RUN_ID:-}" reason "daily_budget_exceeded"
+        err "Daily budget ceiling reached (\$${MONOZUKURI_DAILY_CEILING_USD:-50}). Stopping run."
+        err "Budget resets at midnight. Override: MONOZUKURI_DAILY_CEILING_USD=<n> monozukuri run"
+        break
+      fi
       while [ "${MONOZUKURI_PAUSE_REQUESTED:-0}" = "1" ]; do
         monozukuri_emit log.line ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" feature_id "" phase "" level "info" text "paused — send SIGUSR2 to resume"
         sleep 1
@@ -212,6 +229,19 @@ run_backlog() {
 
       if [ "$_pi_exit" -eq 2 ]; then
         paused_count=$((paused_count + 1))
+      fi
+
+      # C1: Record actual feature cost into the global daily budget.
+      if declare -f budget_record &>/dev/null; then
+        local _feat_cost_usd
+        _feat_cost_usd=$(node -p "
+          try {
+            const d = JSON.parse(require('fs').readFileSync(
+              '${STATE_DIR}/${feat_id_check}/cost.json','utf-8'));
+            d.cost_usd || 0;
+          } catch(e) { 0; }
+        " 2>/dev/null || echo 0)
+        budget_record "$_feat_cost_usd"
       fi
 
       # EXIT_AUTH_EXPIRED (15): stop the entire run — remaining features would hit the same error.
