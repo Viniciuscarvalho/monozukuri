@@ -199,7 +199,7 @@ schema_humanize_error() {
 
 # schema_validate_with_reprompt <feat_id> <wt_path> <task_dir>
 # Validates prd.md, techspec.md, tasks.json in order. On the first failure,
-# reprompts the agent up to MONOZUKURI_SCHEMA_MAX_REPROMPTS times (default 1,
+# reprompts the agent up to MONOZUKURI_SCHEMA_MAX_REPROMPTS times (default 3,
 # ADR-012 §3). Returns:
 #   0 — all artifacts valid
 #   1 — still invalid; caller should transition the feature to error state
@@ -210,7 +210,7 @@ schema_validate_with_reprompt() {
   local wt_path="$2"
   local task_dir="$3"
 
-  local max_reprompts="${MONOZUKURI_SCHEMA_MAX_REPROMPTS:-1}"
+  local max_reprompts="${MONOZUKURI_SCHEMA_MAX_REPROMPTS:-3}"
 
   local model_flag=""
   local _fix_model="${MODEL_DEFAULT:-}"
