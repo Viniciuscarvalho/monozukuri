@@ -1,7 +1,6 @@
 ---
 name: mz-execute-task
 description: Execute one PRD task end-to-end inside a git worktree — implement, verify acceptance criteria, and commit. Use when the orchestrator routes the code phase. Do not use for the tests, pr, or planning phases.
-version: 1.0.0
 ---
 
 You are executing the **code** phase of monozukuri's autonomous feature loop.

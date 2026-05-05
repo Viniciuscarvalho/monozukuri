@@ -16,8 +16,9 @@ setup() {
 }
 
 @test "platform_detect defaults to github" {
-  # Unset ADAPTER and clear cached host to get default
-  run bash -c "
+  # Unset ADAPTER and clear cached host to get default.
+  # Restrict PATH so platform CLIs (az, glab) on the runner don't override the default.
+  run env PATH=/usr/bin:/bin bash -c "
     source '$LIB_DIR/core/util.sh'
     source '$LIB_DIR/core/platform.sh'
     _PLATFORM_GIT_HOST=''

@@ -1,6 +1,27 @@
 #!/usr/bin/env bats
 # test/unit/conventions_promote.bats — conventions_promote unit tests
 
+# Create the .claude/feature-state/learned.json fixture that cannot be
+# committed because .claude is globally gitignored.
+setup_file() {
+  local _repo_root
+  _repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+  local _fixture="$_repo_root/test/fixtures/projects/no-agents-md"
+  mkdir -p "$_fixture/.claude/feature-state"
+  cat > "$_fixture/.claude/feature-state/learned.json" <<'LEARNEOF'
+[
+  {"id":"learn-a1b2c3","pattern":"kysely migration fails to add nullable columns without .defaultTo(null)","fix":"Always call .defaultTo(null) on nullable columns in kysely migrations","archived":false,"confidence":0.8,"hits":5,"success_count":4,"failure_count":1,"ttl_days":90,"promotion_candidate":true,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"},
+  {"id":"learn-archived","pattern":"archived entry should be skipped","fix":"should not appear","archived":true,"confidence":0.5,"hits":1,"success_count":0,"failure_count":1,"ttl_days":90,"promotion_candidate":false,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"}
+]
+LEARNEOF
+}
+
+teardown_file() {
+  local _repo_root
+  _repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+  rm -rf "$_repo_root/test/fixtures/projects/no-agents-md/.claude"
+}
+
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   LIB_DIR="$REPO_ROOT/lib"
@@ -136,7 +157,7 @@ EOF
 
 @test "creates AGENTS.md when it does not exist" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   result=false
   [ -f "$tmpdir/AGENTS.md" ] && result=true
@@ -146,7 +167,7 @@ EOF
 
 @test "AGENTS.md contains the pattern heading after promote" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   content=$(cat "$tmpdir/AGENTS.md")
   rm -rf "$tmpdir"
@@ -155,7 +176,7 @@ EOF
 
 @test "AGENTS.md contains the fix text after promote" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   content=$(cat "$tmpdir/AGENTS.md")
   rm -rf "$tmpdir"
@@ -164,7 +185,7 @@ EOF
 
 @test "AGENTS.md contains promoted marker comment" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   content=$(cat "$tmpdir/AGENTS.md")
   rm -rf "$tmpdir"
@@ -173,7 +194,7 @@ EOF
 
 @test "backup file created in .monozukuri/conventions-backups/" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   count=$(ls "$tmpdir/.monozukuri/conventions-backups"/AGENTS.md.* 2>/dev/null | wc -l | tr -d ' ')
   rm -rf "$tmpdir"
@@ -182,7 +203,7 @@ EOF
 
 @test "marks entry promotion_candidate=false after write" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   conventions_write_promoted "$tmpdir" "learn-a1b2c3"
   still_candidate=$(jq '[.[] | select(.id == "learn-a1b2c3")] | .[0].promotion_candidate' \
     "$tmpdir/.claude/feature-state/learned.json")
@@ -192,7 +213,7 @@ EOF
 
 @test "promoted section inserted before generated marker block" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   # Pre-create AGENTS.md with a generated block
   cat > "$tmpdir/AGENTS.md" <<'EOF'
 # Existing content
@@ -213,7 +234,7 @@ EOF
 
 @test "existing content outside markers is preserved after promote" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   cat > "$tmpdir/AGENTS.md" <<'EOF'
 # Existing content
 
