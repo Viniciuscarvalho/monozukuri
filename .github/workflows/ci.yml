@@ -9,25 +9,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test
+  # ── Lint + UI build/test ─────────────────────────────────────────────────────
+  lint-ui:
+    name: Lint + UI
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y jq bats
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
 
       - name: Install UI dependencies
-        run: npm install --prefix ui
+        run: npm ci --prefix ui
 
       - name: Build UI
         run: npm run build --prefix ui
@@ -39,17 +35,55 @@ jobs:
         run: npm run test:smoke --prefix ui
 
       - name: Lint shell scripts
-        run: |
-          npm install -g shellcheck 2>/dev/null || true
-          if command -v shellcheck >/dev/null 2>&1; then
-            shellcheck scripts/lib/*.sh scripts/*.sh || true
-          fi
+        run: find scripts -name "*.sh" | sort | xargs shellcheck
+
+  # ── Unit tests (parallel bats workers) ──────────────────────────────────────
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install bats
+        run: npm install -g bats
 
       - name: Run unit tests
-        run: bats test/unit || true
+        run: bats --jobs 4 test/unit/
+
+  # ── Integration tests ────────────────────────────────────────────────────────
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install bats
+        run: npm install -g bats
 
       - name: Run integration tests
-        run: bats test/integration || true
+        run: bats test/integration/
+
+  # ── Conformance tests ────────────────────────────────────────────────────────
+  conformance:
+    name: Conformance tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install bats
+        run: npm install -g bats
 
       - name: Run conformance tests
-        run: bats test/conformance || true
+        run: bats test/conformance/
