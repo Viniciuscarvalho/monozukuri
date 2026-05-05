@@ -131,10 +131,11 @@ OPT_SETUP_GLOBAL=false
 OPT_SETUP_COPY=false
 OPT_SETUP_FORCE=false
 OPT_SETUP_YES=false
+OPT_TELEMETRY_ACTION=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|stop|summary)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -222,7 +223,14 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=uninstall
       ;;
     --status)
-      [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=status
+      [ "$SUBCOMMAND" = "setup" ]      && OPT_SETUP_ACTION=status
+      [ "$SUBCOMMAND" = "telemetry" ]  && OPT_TELEMETRY_ACTION=--status
+      ;;
+    --opt-in)
+      [ "$SUBCOMMAND" = "telemetry" ]  && OPT_TELEMETRY_ACTION=--opt-in
+      ;;
+    --opt-out)
+      [ "$SUBCOMMAND" = "telemetry" ]  && OPT_TELEMETRY_ACTION=--opt-out
       ;;
     --list)
       [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=list
@@ -349,7 +357,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_CONVENTIONS_ACTION OPT_CONVENTIONS_ID OPT_CONVENTIONS_SOURCE \
        OPT_CONVENTIONS_WRITE OPT_CONVENTIONS_YES \
        OPT_SETUP_AGENT OPT_SETUP_ACTION OPT_SETUP_ALL OPT_SETUP_GLOBAL \
-       OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES
+       OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES \
+       OPT_TELEMETRY_ACTION
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -397,4 +406,5 @@ case "$SUBCOMMAND" in
   setup)           source "$CMD_DIR/setup.sh"; sub_setup ;;
   stop)            source "$CMD_DIR/stop.sh"; sub_stop "${@:2}" ;;
   summary)         source "$CMD_DIR/summary.sh"; sub_summary "${@:2}" ;;
+  telemetry)       source "$CMD_DIR/telemetry.sh"; sub_telemetry "${OPT_TELEMETRY_ACTION:-}" ;;
 esac

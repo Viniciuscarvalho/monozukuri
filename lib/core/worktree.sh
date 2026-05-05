@@ -29,6 +29,7 @@ wt_create() {
 
   cat > "$STATE_DIR/$feat_id/status.json" <<EOJSON
 {
+  "state_version": 1,
   "feature_id": "$feat_id",
   "status": "created",
   "worktree": "$wt_path",
@@ -82,6 +83,21 @@ wt_get_status() {
   if [ ! -f "$status_file" ]; then
     echo "none"
     return
+  fi
+
+  local supported="${MONOZUKURI_STATE_VERSION_SUPPORTED:-1}"
+  local file_ver
+  file_ver=$(node -p "
+    try { JSON.parse(require('fs').readFileSync('$status_file','utf-8')).state_version || 0; }
+    catch(e) { 0; }
+  " 2>/dev/null || echo "0")
+
+  if [ "$file_ver" -gt "$supported" ] 2>/dev/null; then
+    printf 'error: %s was written by a newer monozukuri (state_version=%s, supported=%s).\n' \
+      "$status_file" "$file_ver" "$supported" >&2
+    printf 'Upgrade monozukuri or delete the state directory to reset.\n' >&2
+    echo "state-version-unsupported"
+    return 1
   fi
 
   node -p "JSON.parse(require('fs').readFileSync('$status_file','utf-8')).status"

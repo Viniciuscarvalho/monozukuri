@@ -83,6 +83,7 @@ if (!existing.pipeline) {
   const code = parseInt(ec, 10);
   const status = code === 0 ? 'completed' : (code === 2 || code === 10 ? 'paused' : 'failed');
   Object.assign(existing, {
+    state_version: 1,
     feature_id: feat_id,
     status,
     title: JSON.parse(title_json),

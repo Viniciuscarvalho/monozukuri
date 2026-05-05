@@ -1,7 +1,9 @@
 #!/bin/bash
 # lib/util.sh — Portable utility helpers (ADR-010)
-#
-# op_timeout: single cross-platform timeout wrapper for all external calls
+
+# State schema version written to every status.json / results.json.
+# On load: refuse if state_version > this value (written by a newer install).
+MONOZUKURI_STATE_VERSION_SUPPORTED=1
 
 # op_timeout <seconds> <command...>
 # Wraps command in a timeout. Tries: timeout (Linux) → gtimeout (Homebrew coreutils) → perl alarm.
