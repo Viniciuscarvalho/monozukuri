@@ -362,6 +362,81 @@ _layer2_phase_a_safety() {
   return "$failures"
 }
 
+# ── 2k–2m. Phase F: schema render parity for codex/gemini ───────────────────
+#
+# k: ADAPTER=codex  → render_phase_prompt inlines schema for prd/techspec/tasks
+# l: ADAPTER=gemini → same
+# m: ADAPTER=claude-code → schema NOT inlined (injected separately by _cc_inject_schemas)
+
+_layer2_schema_render_parity() {
+  local failures=0
+  local render_sh="$REPO_ROOT/lib/prompt/render.sh"
+
+  assert_file_exists "render.sh exists" "$render_sh" \
+    || return 1
+
+  # Helper: render a phase prompt under a given adapter context
+  _rp_render() {
+    local adapter="$1" phase="$2"
+    (
+      export ADAPTER="$adapter"
+      export MONOZUKURI_FEATURE_ID="feat-qa-render"
+      export MONOZUKURI_PHASE="$phase"
+      unset CONTEXT_JSON 2>/dev/null || true
+      source "$render_sh"
+      render_phase_prompt "$phase"
+    )
+  }
+
+  # codex and gemini must see schemas in their rendered prompts
+  for adapter in codex gemini; do
+    for phase in prd techspec tasks; do
+      local rendered
+      rendered=$(_rp_render "$adapter" "$phase") || {
+        _qa_fail "${adapter}/${phase}: render_phase_prompt returned non-zero" \
+          || failures=$((failures + 1))
+        continue
+      }
+
+      if [[ "$rendered" == *'json-schema.org'* ]]; then
+        _qa_pass "${adapter}/${phase}: schema block present in rendered prompt"
+      else
+        _qa_fail "${adapter}/${phase}: schema block MISSING from rendered prompt (codex/gemini must see schemas)" \
+          || failures=$((failures + 1))
+      fi
+    done
+
+    # Phases without a schema (code, pr) must not get a spurious schema block
+    local rendered_code
+    rendered_code=$(_rp_render "$adapter" "code") || true
+    if [[ "$rendered_code" == *'json-schema.org'* ]]; then
+      _qa_fail "${adapter}/code: unexpected schema block injected for code phase" \
+        || failures=$((failures + 1))
+    else
+      _qa_pass "${adapter}/code: no schema block for code phase (correct)"
+    fi
+  done
+
+  # claude-code must NOT get inlined schemas — it injects via _cc_inject_schemas
+  for phase in prd techspec tasks; do
+    local rendered
+    rendered=$(_rp_render "claude-code" "$phase") || {
+      _qa_fail "claude-code/${phase}: render_phase_prompt returned non-zero" \
+        || failures=$((failures + 1))
+      continue
+    }
+
+    if [[ "$rendered" == *'json-schema.org'* ]]; then
+      _qa_fail "claude-code/${phase}: schema unexpectedly inlined — claude-code uses file injection" \
+        || failures=$((failures + 1))
+    else
+      _qa_pass "claude-code/${phase}: schema NOT inlined (correct — injected via worktree file)"
+    fi
+  done
+
+  return "$failures"
+}
+
 # ── entry point ───────────────────────────────────────────────────────────────
 
 run_layer2() {
@@ -369,10 +444,11 @@ run_layer2() {
 
   echo "Layer 2: Loop integrity"
 
-  _layer2_adapter_conformance  || failures=$((failures + 1))
-  _layer2_adapter_syntax        || failures=$((failures + 1))
-  _layer2_loop_run              || failures=$((failures + 1))
-  _layer2_phase_a_safety        || failures=$((failures + 1))
+  _layer2_adapter_conformance       || failures=$((failures + 1))
+  _layer2_adapter_syntax             || failures=$((failures + 1))
+  _layer2_loop_run                   || failures=$((failures + 1))
+  _layer2_phase_a_safety             || failures=$((failures + 1))
+  _layer2_schema_render_parity       || failures=$((failures + 1))
 
   return "$failures"
 }
