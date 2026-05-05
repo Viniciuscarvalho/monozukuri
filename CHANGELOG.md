@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.27.0...v1.28.0) (2026-05-05)
+
+
+### Features
+
+* **phase-b:** seed per-adapter context files on monozukuri init ([#106](https://github.com/Viniciuscarvalho/monozukuri/issues/106)) ([b92a614](https://github.com/Viniciuscarvalho/monozukuri/commit/b92a614e61c3cd6f7284c330816f93c7b7291c9a))
+
 ## [1.27.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.26.0...v1.27.0) (2026-05-04)
 
 
