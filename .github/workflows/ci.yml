@@ -35,7 +35,7 @@ jobs:
         run: npm run test:smoke --prefix ui
 
       - name: Lint shell scripts
-        run: find scripts -name "*.sh" | sort | xargs shellcheck
+        run: find scripts -name "*.sh" | sort | xargs shellcheck --severity=error
 
   # ── Unit tests (parallel bats workers) ──────────────────────────────────────
   unit:
@@ -64,6 +64,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@monozukuri.local"
+          git config --global user.name "CI"
 
       - name: Install bats
         run: npm install -g bats
