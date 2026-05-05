@@ -1,10 +1,20 @@
 #!/usr/bin/env bats
 # test/unit/conventions_generate.bats — conventions_generate_content unit tests
 
+setup_file() {
+  mkdir -p "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state"
+  cat > "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state/learned.json" <<'LEARNEOF'
+[
+  {"id":"learn-a1b2c3","pattern":"kysely migration fails to add nullable columns without .defaultTo(null)","fix":"Always call .defaultTo(null) on nullable columns in kysely migrations","archived":false,"confidence":0.8,"hits":5,"success_count":4,"failure_count":1,"ttl_days":90,"promotion_candidate":true,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"},
+  {"id":"learn-archived","pattern":"archived entry should be skipped","fix":"should not appear","archived":true,"confidence":0.5,"hits":1,"success_count":0,"failure_count":1,"ttl_days":90,"promotion_candidate":false,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"}
+]
+LEARNEOF
+}
+
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   LIB_DIR="$REPO_ROOT/lib"
-  FIXTURES="$REPO_ROOT/test/fixtures/projects"
+  FIXTURES="$BATS_FILE_TMPDIR"
   export LIB_DIR REPO_ROOT FIXTURES
   source "$LIB_DIR/agent/conventions-generate.sh"
   unset PROJECT_BUILD_CMD PROJECT_TEST_CMD

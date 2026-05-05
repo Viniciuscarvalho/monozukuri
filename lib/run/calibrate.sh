@@ -53,7 +53,7 @@ calibrate_run() {
   local -a cost_files=()
   while IFS= read -r file; do
     cost_files+=("$file")
-  done < <(find "$STATE_DIR" -name "cost.json" -type f 2>/dev/null | xargs ls -t 2>/dev/null | head -n "$sample_size")
+  done < <(find "$STATE_DIR" -name "cost.json" -type f 2>/dev/null -exec ls -t {} + | head -n "$sample_size")
 
   local feature_count=${#cost_files[@]}
   if [ "$feature_count" -lt 5 ]; then

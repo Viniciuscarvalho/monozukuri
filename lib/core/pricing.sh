@@ -89,7 +89,7 @@ pricing_load() {
       for phase in prd techspec tasks code tests pr; do
         local coeff phase_norm
         coeff=$(yq eval ".calibration.$provider.$model.$phase" "$pricing_file" 2>/dev/null || echo "1.0")
-        phase_norm=$(echo "$phase" | tr '[:lower:]' '[:upper:]')
+        phase_norm=$(echo "$phase" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
         export "CALIBRATION_${provider_norm}_${model_norm}_${phase_norm}=$coeff"
       done
     done <<< "$models"
@@ -161,7 +161,7 @@ pricing_calibration_factor() {
   local agent_norm model_norm phase_norm
   agent_norm=$(echo "$agent" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
   model_norm=$(echo "$model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
-  phase_norm=$(echo "$phase" | tr '[:lower:]' '[:upper:]')
+  phase_norm=$(echo "$phase" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
 
   # Lookup calibration coefficient
   local key="CALIBRATION_${agent_norm}_${model_norm}_${phase_norm}"

@@ -1,10 +1,20 @@
 #!/usr/bin/env bats
 # test/unit/conventions_sync.bats — conventions_auto_sync unit tests
 
+setup_file() {
+  mkdir -p "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state"
+  cat > "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state/learned.json" <<'LEARNEOF'
+[
+  {"id":"learn-a1b2c3","pattern":"kysely migration fails to add nullable columns without .defaultTo(null)","fix":"Always call .defaultTo(null) on nullable columns in kysely migrations","archived":false,"confidence":0.8,"hits":5,"success_count":4,"failure_count":1,"ttl_days":90,"promotion_candidate":true,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"},
+  {"id":"learn-archived","pattern":"archived entry should be skipped","fix":"should not appear","archived":true,"confidence":0.5,"hits":1,"success_count":0,"failure_count":1,"ttl_days":90,"promotion_candidate":false,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"}
+]
+LEARNEOF
+}
+
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   LIB_DIR="$REPO_ROOT/lib"
-  FIXTURES="$REPO_ROOT/test/fixtures/projects"
+  FIXTURES="$BATS_FILE_TMPDIR"
   export LIB_DIR REPO_ROOT FIXTURES
   source "$LIB_DIR/run/conventions-sync.sh"
   unset CONVENTIONS_AUTO_SYNC
@@ -21,7 +31,7 @@ setup() {
 
 @test "returns 0 and does not write when CONVENTIONS_AUTO_SYNC=false" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=false
   conventions_auto_sync "$tmpdir"
   rm -rf "$tmpdir"
@@ -30,7 +40,7 @@ setup() {
 
 @test "AGENTS.md not created when CONVENTIONS_AUTO_SYNC is false" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=false
   conventions_auto_sync "$tmpdir"
   result=false
@@ -78,7 +88,7 @@ EOF
 
 @test "creates AGENTS.md when store has active learnings" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=true
   conventions_auto_sync "$tmpdir"
   result=false
@@ -89,7 +99,7 @@ EOF
 
 @test "AGENTS.md contains learning pattern after sync" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=true
   conventions_auto_sync "$tmpdir"
   content=$(cat "$tmpdir/AGENTS.md" 2>/dev/null || echo "")
@@ -99,7 +109,7 @@ EOF
 
 @test "AGENTS.md contains monozukuri markers after sync" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=true
   conventions_auto_sync "$tmpdir"
   content=$(cat "$tmpdir/AGENTS.md" 2>/dev/null || echo "")
@@ -109,7 +119,7 @@ EOF
 
 @test "backup created in .monozukuri/conventions-backups/ on sync" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   CONVENTIONS_AUTO_SYNC=true
   conventions_auto_sync "$tmpdir"
   count=$(ls "$tmpdir/.monozukuri/conventions-backups"/AGENTS.md.* 2>/dev/null | wc -l | tr -d ' ')
@@ -121,7 +131,7 @@ EOF
 
 @test "returns 0 even when lib files are absent" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.clone"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.clone" || true
   CONVENTIONS_AUTO_SYNC=true
   # Point LIB_DIR somewhere that doesn't have conventions-generate.sh
   LIB_DIR="/nonexistent-path"
@@ -133,7 +143,7 @@ EOF
 
 @test "returns 0 even when repo_root is unwritable" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   chmod 555 "$tmpdir"
   CONVENTIONS_AUTO_SYNC=true
   run conventions_auto_sync "$tmpdir"

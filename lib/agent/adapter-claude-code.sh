@@ -16,6 +16,12 @@
 #   MONOZUKURI_ERROR_FILE   path for structured error envelope on failure (optional)
 #   SKILL_COMMAND           which Claude Code skill to invoke (default: feature-marker)
 
+# monozukuri_emit is sourced from lib/cli/emit.sh by cmd/run.sh.
+# Provide a no-op stub for tests that source this adapter in isolation.
+if ! declare -f monozukuri_emit &>/dev/null; then
+  monozukuri_emit() { :; }
+fi
+
 agent_name() { echo "claude-code"; }
 
 agent_capabilities() {

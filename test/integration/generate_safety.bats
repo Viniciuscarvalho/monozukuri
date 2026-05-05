@@ -22,7 +22,7 @@ setup() {
 @test "[safety-1] lines before markers are byte-identical after write" {
   tmpdir=$(mktemp -d)
   cp "$FIXTURES/with-markers/AGENTS.md" "$tmpdir/AGENTS.md"
-  cp -r "$FIXTURES/with-markers/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/with-markers/.claude" ] && cp -r "$FIXTURES/with-markers/.claude" "$tmpdir/.claude" || true
 
   start_line=$(grep -n "generated-start" "$tmpdir/AGENTS.md" | cut -d: -f1)
   prefix_before=$(head -n "$(( start_line - 1 ))" "$tmpdir/AGENTS.md")
@@ -42,7 +42,7 @@ setup() {
 @test "[safety-1] lines after markers are byte-identical after write" {
   tmpdir=$(mktemp -d)
   cp "$FIXTURES/with-markers/AGENTS.md" "$tmpdir/AGENTS.md"
-  cp -r "$FIXTURES/with-markers/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/with-markers/.claude" ] && cp -r "$FIXTURES/with-markers/.claude" "$tmpdir/.claude" || true
 
   end_line=$(grep -n "generated-end" "$tmpdir/AGENTS.md" | cut -d: -f1)
   suffix_before=$(tail -n "+$(( end_line + 1 ))" "$tmpdir/AGENTS.md")
@@ -93,7 +93,7 @@ setup() {
 
 @test "[safety-3] conventions_generate_content produces stdout only (no AGENTS.md)" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
 
   conventions_generate_content "$tmpdir" > /dev/null
 
@@ -121,7 +121,7 @@ setup() {
 @test "[safety-4] backup file created in .monozukuri/conventions-backups/" {
   tmpdir=$(mktemp -d)
   cp "$FIXTURES/with-existing-agents-md/AGENTS.md" "$tmpdir/AGENTS.md"
-  cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/with-existing-agents-md/.claude" ] && cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude" || true
 
   block=$(mktemp)
   conventions_generate_content "$tmpdir" > "$block"
@@ -136,7 +136,7 @@ setup() {
 @test "[safety-4] backup matches pre-write AGENTS.md content exactly" {
   tmpdir=$(mktemp -d)
   cp "$FIXTURES/with-existing-agents-md/AGENTS.md" "$tmpdir/AGENTS.md"
-  cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/with-existing-agents-md/.claude" ] && cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude" || true
   original=$(cat "$tmpdir/AGENTS.md")
 
   block=$(mktemp)
@@ -155,7 +155,7 @@ setup() {
 @test "[safety-5] restore after write yields byte-identical AGENTS.md" {
   tmpdir=$(mktemp -d)
   cp "$FIXTURES/with-existing-agents-md/AGENTS.md" "$tmpdir/AGENTS.md"
-  cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/with-existing-agents-md/.claude" ] && cp -r "$FIXTURES/with-existing-agents-md/.claude" "$tmpdir/.claude" || true
   original=$(cat "$tmpdir/AGENTS.md")
 
   block=$(mktemp)
@@ -171,7 +171,7 @@ setup() {
 
 @test "[safety-5] restore after write on new project removes AGENTS.md" {
   tmpdir=$(mktemp -d)
-  cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude"
+  [ -d "$FIXTURES/no-agents-md/.claude" ] && cp -r "$FIXTURES/no-agents-md/.claude" "$tmpdir/.claude" || true
   # No AGENTS.md initially
 
   block=$(mktemp)

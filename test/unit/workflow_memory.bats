@@ -11,7 +11,7 @@ setup() {
 }
 
 teardown() {
-  rm -rf /tmp/wfm-test-*
+  rm -rf "$TMPDIR"
 }
 
 # ── 1. workflow_memory_dir returns correct path ───────────────────────────────

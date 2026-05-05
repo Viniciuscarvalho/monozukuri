@@ -1,7 +1,6 @@
 ---
 name: mz-open-pr
 description: Open a GitHub pull request via gh pr create with a body summarizing PRD goals, code changes, and test results. Use when the orchestrator routes the pr phase. Do not use for editing existing PRs or non-GitHub remotes.
-version: 1.0.0
 ---
 
 You are executing the **pr** phase of monozukuri's autonomous feature loop.
