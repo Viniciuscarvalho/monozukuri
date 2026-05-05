@@ -1,0 +1,63 @@
+#!/bin/bash
+# .qa/fixtures/mocks/gemini/gemini — Mock gemini CLI for gate tests.
+#
+# Behaviour controlled by MOCK_GEMINI_MODE env var:
+#   (unset)       normal: writes canned artifacts, exits 0
+#   auth-expired  emits OAuth token expired text, exits 1 → adapter returns 15
+#   hang          sleeps indefinitely (expect op_timeout to kill it)
+#   diverge       emits a fixed error signature every call (Phase A3 test)
+#   build-fail    exits 0 but writes no artifacts
+#
+# Handles:
+#   gemini --version
+#   gemini --yolo <bool> [--model <m>] -    (stdin prompt)
+
+set -euo pipefail
+
+MOCK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CANNED_DIR="$(dirname "$MOCK_DIR")/claude/canned"
+
+# --version
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "gemini 1.0.0-mock (qa-gate fixture)"
+    exit 0
+  fi
+done
+
+mode="${MOCK_GEMINI_MODE:-}"
+
+case "$mode" in
+  auth-expired)
+    echo "OAuth token expired. Please authenticate with: gemini auth login"
+    exit 1
+    ;;
+  hang)
+    sleep 3600
+    exit 0
+    ;;
+  diverge)
+    echo "Error: SyntaxError: Unexpected token at line 42"
+    exit 1
+    ;;
+  build-fail)
+    exit 0
+    ;;
+esac
+
+# Normal: write canned artifacts
+feat_id="${MONOZUKURI_FEATURE_ID:-feat-qa-001}"
+wt_path="${MONOZUKURI_WORKTREE:-}"
+
+if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then
+  task_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$task_dir"
+  [ -f "$CANNED_DIR/prd.md" ]      && cp "$CANNED_DIR/prd.md"      "$task_dir/prd.md"
+  [ -f "$CANNED_DIR/techspec.md" ] && cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
+  [ -f "$CANNED_DIR/tasks.json" ]  && cp "$CANNED_DIR/tasks.json"  "$task_dir/tasks.json"
+  mkdir -p "$wt_path/src"
+  printf '# gemini mock stub for %s\n' "$feat_id" > "$wt_path/src/feature-gemini.md"
+fi
+
+printf 'mock gemini: wrote artifacts for %s\n' "$feat_id"
+exit 0

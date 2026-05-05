@@ -1,0 +1,36 @@
+agent: claude-code
+
+source:
+  adapter: markdown
+  output: orchestration-backlog.json
+  markdown:
+    file: features.md
+
+autonomy: full_auto
+
+execution:
+  base_branch: main
+  skip_done: true
+  skip_blocked: true
+
+worktrees:
+  base_path: .worktrees
+  branch_prefix: feat
+  auto_cleanup: true
+
+pr_creation:
+  strategy: none
+
+safety:
+  breaking_change_pause: false
+  schema_migration_review: false
+  max_file_changes: 50
+
+local_model:
+  enabled: false
+
+discovery:
+  enabled: false
+
+routing:
+  prefer_agents: false

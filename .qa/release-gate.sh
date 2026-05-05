@@ -1,8 +1,11 @@
 #!/bin/bash
 # .qa/release-gate.sh — Monozukuri release gate
 #
-# Usage: .qa/release-gate.sh <version>
+# Usage: .qa/release-gate.sh [--hotfix] <version>
 #   version: semver string with optional leading v (e.g. "v1.20.0" or "1.20.0")
+#
+#   --hotfix  Run only Layers 1 + 3 (build + schema). For critical patches.
+#             Target: gate passes in < 3 min. See docs/release-process.md.
 #
 # Exit codes:
 #   0  all layers passed — artifact cleared for release
@@ -11,9 +14,18 @@
 # Layers run in sequence; report written to .qa/reports/<YYYY-MM-DD>-release-gate.json.
 set -euo pipefail
 
-VERSION="${1:-}"
+HOTFIX=false
+VERSION=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --hotfix) HOTFIX=true ;;
+    *) VERSION="$arg" ;;
+  esac
+done
+
 if [ -z "$VERSION" ]; then
-  echo "Usage: $0 <version>" >&2
+  echo "Usage: $0 [--hotfix] <version>" >&2
   exit 1
 fi
 
@@ -29,6 +41,7 @@ source "$QA_DIR/layers/02-loop-integrity.sh"
 source "$QA_DIR/layers/03-schema-integrity.sh"
 source "$QA_DIR/layers/04-backwards-compat.sh"
 source "$QA_DIR/layers/05-live-canary.sh"
+source "$QA_DIR/layers/06-scale-soak.sh"
 
 cd "$REPO_ROOT"
 GATE_START=$(date +%s)
@@ -52,14 +65,20 @@ _run_layer() {
 }
 
 echo ""
-echo "Release gate: $VERSION"
+echo "Release gate: $VERSION${HOTFIX:+ (hotfix mode — layers 1+3 only)}"
 echo "────────────────────────────────────────"
 
-_run_layer 1 "build-integrity"   run_layer1 "$VERSION"
-_run_layer 2 "loop-integrity"    run_layer2
-_run_layer 3 "schema-integrity"  run_layer3 "$QA_DIR/fixtures"
-_run_layer 4 "backwards-compat"  run_layer4
-_run_layer 5 "live-canary"       run_layer5 "$VERSION"
+if [ "$HOTFIX" = "true" ]; then
+  _run_layer 1 "build-integrity"  run_layer1 "$VERSION"
+  _run_layer 3 "schema-integrity" run_layer3 "$QA_DIR/fixtures"
+else
+  _run_layer 1 "build-integrity"   run_layer1 "$VERSION"
+  _run_layer 2 "loop-integrity"    run_layer2
+  _run_layer 3 "schema-integrity"  run_layer3 "$QA_DIR/fixtures"
+  _run_layer 4 "backwards-compat"  run_layer4
+  _run_layer 5 "live-canary"       run_layer5 "$VERSION"
+  _run_layer 6 "scale-soak"        run_layer6
+fi
 
 GATE_END=$(date +%s)
 GATE_TOTAL=$((GATE_END - GATE_START))

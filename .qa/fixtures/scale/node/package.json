@@ -1,0 +1,10 @@
+{
+  "name": "scale-fixture-node",
+  "version": "1.0.0",
+  "description": "Scale soak test fixture — Node.js project",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "node index.js"
+  }
+}
