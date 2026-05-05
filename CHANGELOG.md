@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.28.0...v1.29.0) (2026-05-05)
+
+
+### Features
+
+* **phase-c:** multi-project ops — budget ceiling, kill switch, summary, concurrency ([#109](https://github.com/Viniciuscarvalho/monozukuri/issues/109)) ([d164a8e](https://github.com/Viniciuscarvalho/monozukuri/commit/d164a8eb6c7bc99ff296c383e21a2c4d673c2df1))
+
 ## [1.28.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.27.0...v1.28.0) (2026-05-05)
 
 
