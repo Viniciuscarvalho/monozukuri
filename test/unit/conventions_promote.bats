@@ -4,11 +4,8 @@
 # Create the .claude/feature-state/learned.json fixture that cannot be
 # committed because .claude is globally gitignored.
 setup_file() {
-  local _repo_root
-  _repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-  local _fixture="$_repo_root/test/fixtures/projects/no-agents-md"
-  mkdir -p "$_fixture/.claude/feature-state"
-  cat > "$_fixture/.claude/feature-state/learned.json" <<'LEARNEOF'
+  mkdir -p "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state"
+  cat > "$BATS_FILE_TMPDIR/no-agents-md/.claude/feature-state/learned.json" <<'LEARNEOF'
 [
   {"id":"learn-a1b2c3","pattern":"kysely migration fails to add nullable columns without .defaultTo(null)","fix":"Always call .defaultTo(null) on nullable columns in kysely migrations","archived":false,"confidence":0.8,"hits":5,"success_count":4,"failure_count":1,"ttl_days":90,"promotion_candidate":true,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"},
   {"id":"learn-archived","pattern":"archived entry should be skipped","fix":"should not appear","archived":true,"confidence":0.5,"hits":1,"success_count":0,"failure_count":1,"ttl_days":90,"promotion_candidate":false,"tier":"project","created_at":"2026-01-01T00:00:00Z","last_seen":"2026-01-01T00:00:00Z"}
@@ -16,16 +13,10 @@ setup_file() {
 LEARNEOF
 }
 
-teardown_file() {
-  local _repo_root
-  _repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-  rm -rf "$_repo_root/test/fixtures/projects/no-agents-md/.claude"
-}
-
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   LIB_DIR="$REPO_ROOT/lib"
-  FIXTURES="$REPO_ROOT/test/fixtures/projects"
+  FIXTURES="$BATS_FILE_TMPDIR"
   export LIB_DIR REPO_ROOT FIXTURES
   source "$LIB_DIR/agent/conventions-promote.sh"
 }
