@@ -1,0 +1,70 @@
+#!/bin/bash
+# .qa/fixtures/mocks/codex/codex — Mock codex CLI for gate tests.
+#
+# Behaviour controlled by MOCK_CODEX_MODE env var:
+#   (unset)       normal: writes canned artifacts, exits 0
+#   auth-expired  emits auth-error text, exits 1 → adapter returns 15
+#   hang          sleeps indefinitely (expect op_timeout to kill it)
+#   diverge       emits a fixed error signature every call (Phase A3 test)
+#   build-fail    exits 0 but writes no artifacts (empty worktree)
+#
+# Handles:
+#   codex --version
+#   codex login status
+#   codex --approval-mode <m> [--model <m>] -     (stdin prompt)
+
+set -euo pipefail
+
+MOCK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CANNED_DIR="$(dirname "$MOCK_DIR")/claude/canned"
+
+# --version
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "codex 1.0.0-mock (qa-gate fixture)"
+    exit 0
+  fi
+done
+
+# login status
+if [ "${1:-}" = "login" ] && [ "${2:-}" = "status" ]; then
+  echo "Logged in as qa-gate-fixture@example.com"
+  exit 0
+fi
+
+mode="${MOCK_CODEX_MODE:-}"
+
+case "$mode" in
+  auth-expired)
+    echo "Please run codex login to authenticate before using codex."
+    exit 1
+    ;;
+  hang)
+    sleep 3600
+    exit 0
+    ;;
+  diverge)
+    echo "Error: SyntaxError: Unexpected token at line 42"
+    exit 1
+    ;;
+  build-fail)
+    exit 0
+    ;;
+esac
+
+# Normal: write canned artifacts
+feat_id="${MONOZUKURI_FEATURE_ID:-feat-qa-001}"
+wt_path="${MONOZUKURI_WORKTREE:-}"
+
+if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then
+  task_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$task_dir"
+  [ -f "$CANNED_DIR/prd.md" ]      && cp "$CANNED_DIR/prd.md"      "$task_dir/prd.md"
+  [ -f "$CANNED_DIR/techspec.md" ] && cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
+  [ -f "$CANNED_DIR/tasks.json" ]  && cp "$CANNED_DIR/tasks.json"  "$task_dir/tasks.json"
+  mkdir -p "$wt_path/src"
+  printf '# codex mock stub for %s\n' "$feat_id" > "$wt_path/src/feature-codex.md"
+fi
+
+printf 'mock codex: wrote artifacts for %s\n' "$feat_id"
+exit 0

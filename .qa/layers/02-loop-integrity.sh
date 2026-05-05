@@ -186,6 +186,182 @@ _layer2_loop_run() {
   return "$failures"
 }
 
+# ── 2g–2j. Phase A1–A4 safety properties ─────────────────────────────────────
+#
+# A1: auth-expiry detection — _codex_auth_expired / _gemini_auth_expired pattern match
+# A2: wall-clock cap — op_timeout actually kills a hung subprocess
+# A3: divergent loop — phase3-loop-diverged fires before max_fix_attempts
+# A4: non-1 build exit — ANY non-zero verify_build exit is treated as broken
+
+_layer2_phase_a_safety() {
+  local failures=0
+
+  # ── 2g: auth-expiry pattern matching ────────────────────────────────────────
+
+  # Source adapters in a subshell to avoid polluting layer state
+  local codex_adapter="$REPO_ROOT/lib/agent/adapter-codex.sh"
+  local gemini_adapter="$REPO_ROOT/lib/agent/adapter-gemini.sh"
+
+  assert_file_exists "adapter-codex.sh exists" "$codex_adapter" \
+    || { failures=$((failures + 1)); }
+  assert_file_exists "adapter-gemini.sh exists" "$gemini_adapter" \
+    || { failures=$((failures + 1)); }
+
+  # codex: known auth-error strings must be detected
+  local tmp_log
+  tmp_log=$(mktemp)
+
+  for marker in \
+    "Please run codex login to authenticate" \
+    "Not authenticated" \
+    "Authentication required" \
+    "invalid api key" \
+    "session expired" \
+    "please log in" \
+    "token expired" \
+    "Unauthorized"
+  do
+    printf '%s\n' "$marker" > "$tmp_log"
+    if (source "$codex_adapter" 2>/dev/null; _codex_auth_expired "$tmp_log"); then
+      _qa_pass "codex auth-expiry detected: $(printf '%s' "$marker" | head -c 40)"
+    else
+      _qa_fail "codex auth-expiry NOT detected: $marker" || failures=$((failures + 1))
+    fi
+  done
+
+  # gemini: known auth-error strings must be detected
+  for marker in \
+    "OAuth token expired" \
+    "unable to refresh credentials" \
+    "authentication failed" \
+    "invalid credentials" \
+    "Please authenticate" \
+    "token revoked" \
+    "access denied" \
+    "401"
+  do
+    printf '%s\n' "$marker" > "$tmp_log"
+    if (source "$gemini_adapter" 2>/dev/null; _gemini_auth_expired "$tmp_log"); then
+      _qa_pass "gemini auth-expiry detected: $(printf '%s' "$marker" | head -c 40)"
+    else
+      _qa_fail "gemini auth-expiry NOT detected: $marker" || failures=$((failures + 1))
+    fi
+  done
+
+  # benign text must NOT trigger auth-expiry (avoid false positive abort)
+  printf '%s\n' "All tests passed. Feature complete." > "$tmp_log"
+  if (source "$codex_adapter" 2>/dev/null; _codex_auth_expired "$tmp_log"); then
+    _qa_fail "codex auth-expiry falsely triggered on benign output" \
+      || failures=$((failures + 1))
+  else
+    _qa_pass "codex auth-expiry no false positive on benign output"
+  fi
+
+  rm -f "$tmp_log"
+
+  # ── 2h: op_timeout actually kills a hung subprocess ─────────────────────────
+
+  local util_sh="$REPO_ROOT/lib/core/util.sh"
+  assert_file_exists "util.sh exists" "$util_sh" \
+    || { failures=$((failures + 1)); }
+
+  local t0 t1 elapsed hang_exit=0
+  t0=$(date +%s)
+  (
+    # shellcheck source=../../lib/core/util.sh
+    source "$util_sh"
+    op_timeout 2 sleep 100
+  ) || hang_exit=$?
+  t1=$(date +%s)
+  elapsed=$((t1 - t0))
+
+  if [ "$elapsed" -le 5 ]; then
+    _qa_pass "op_timeout killed hung process in ${elapsed}s (≤5s expected)"
+  else
+    _qa_fail "op_timeout took ${elapsed}s — too slow (≤5s expected)" \
+      || failures=$((failures + 1))
+  fi
+
+  # exit code must be non-zero (timeout exit codes vary: 124 on GNU, SIGKILL on perl)
+  if [ "$hang_exit" -ne 0 ]; then
+    _qa_pass "op_timeout returned non-zero exit ($hang_exit) for killed process"
+  else
+    _qa_fail "op_timeout returned 0 for a killed process — timeout may not have fired" \
+      || failures=$((failures + 1))
+  fi
+
+  # ── 2i: auth-expired adapter exits 15 (adapter integration) ─────────────────
+  #
+  # Run agent_run_phase from the codex adapter with the hang-mock on PATH,
+  # but in auth-expired mode — expect exit 15.
+
+  local mock_codex_dir="$QA_DIR/fixtures/mocks/codex"
+  assert_file_exists "mock codex binary exists" "$mock_codex_dir/codex" \
+    || { failures=$((failures + 1)); }
+
+  local wt
+  wt=$(mktemp -d)
+  git -C "$wt" init -q 2>/dev/null || true
+
+  local auth_exit=0
+  (
+    export PATH="$mock_codex_dir:$PATH"
+    export MONOZUKURI_FEATURE_ID="feat-qa-auth-test"
+    export MONOZUKURI_WORKTREE="$wt"
+    export MONOZUKURI_AUTONOMY="full_auto"
+    export MONOZUKURI_PHASE="prd"
+    export MONOZUKURI_LOG_FILE="/tmp/qa-codex-auth-$$.log"
+    export MOCK_CODEX_MODE="auth-expired"
+    source "$REPO_ROOT/lib/core/util.sh"
+    source "$codex_adapter"
+    render_phase_prompt() { echo "Implement feature ${MONOZUKURI_FEATURE_ID}."; }
+    agent_run_phase
+  ) || auth_exit=$?
+  rm -rf "$wt"
+
+  assert_eq "codex auth-expired exits 15" "15" "$auth_exit" \
+    || failures=$((failures + 1))
+
+  # ── 2j: wall-clock cap via op_timeout in adapter (hang mode) ─────────────────
+
+  local mock_gemini_dir="$QA_DIR/fixtures/mocks/gemini"
+  assert_file_exists "mock gemini binary exists" "$mock_gemini_dir/gemini" \
+    || { failures=$((failures + 1)); }
+
+  local wt2
+  wt2=$(mktemp -d)
+  git -C "$wt2" init -q 2>/dev/null || true
+
+  local t2 t3 cap_elapsed cap_exit=0
+  t2=$(date +%s)
+  (
+    export PATH="$mock_gemini_dir:$PATH"
+    export MONOZUKURI_FEATURE_ID="feat-qa-cap-test"
+    export MONOZUKURI_WORKTREE="$wt2"
+    export MONOZUKURI_AUTONOMY="full_auto"
+    export MONOZUKURI_PHASE="prd"
+    export MONOZUKURI_LOG_FILE="/tmp/qa-gemini-cap-$$.log"
+    export MOCK_GEMINI_MODE="hang"
+    export SKILL_TIMEOUT_SECONDS=2
+    source "$REPO_ROOT/lib/core/util.sh"
+    source "$gemini_adapter"
+    render_phase_prompt() { echo "Implement feature ${MONOZUKURI_FEATURE_ID}."; }
+    agent_run_phase
+  ) || cap_exit=$?
+  t3=$(date +%s)
+  cap_elapsed=$((t3 - t2))
+  rm -rf "$wt2"
+
+  if [ "$cap_elapsed" -le 10 ]; then
+    _qa_pass "gemini wall-clock cap terminated hung adapter in ${cap_elapsed}s (≤10s expected)"
+  else
+    _qa_fail "gemini wall-clock cap took ${cap_elapsed}s — SKILL_TIMEOUT_SECONDS=2 did not fire" \
+      || failures=$((failures + 1))
+  fi
+
+  return "$failures"
+}
+
 # ── entry point ───────────────────────────────────────────────────────────────
 
 run_layer2() {
@@ -193,9 +369,10 @@ run_layer2() {
 
   echo "Layer 2: Loop integrity"
 
-  _layer2_adapter_conformance || failures=$((failures + 1))
-  _layer2_adapter_syntax       || failures=$((failures + 1))
-  _layer2_loop_run             || failures=$((failures + 1))
+  _layer2_adapter_conformance  || failures=$((failures + 1))
+  _layer2_adapter_syntax        || failures=$((failures + 1))
+  _layer2_loop_run              || failures=$((failures + 1))
+  _layer2_phase_a_safety        || failures=$((failures + 1))
 
   return "$failures"
 }
