@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.29.0...v1.30.0) (2026-05-05)
+
+
+### Features
+
+* **phase-d:** release-gate truthfulness + CI enforcement ([#111](https://github.com/Viniciuscarvalho/monozukuri/issues/111)) ([e834c1c](https://github.com/Viniciuscarvalho/monozukuri/commit/e834c1c6088d9ba2b8c12b491a72a32cd0b876fc))
+
 ## [1.29.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.28.0...v1.29.0) (2026-05-05)
 
 
