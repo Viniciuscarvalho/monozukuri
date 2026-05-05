@@ -4,43 +4,13 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel in-progress runs for the same PR when a new commit is pushed.
 concurrency:
   group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  # Unit tests run on both OSes: fast, cheap, and the only place where
-  # bash portability (op_timeout: timeout vs gtimeout vs perl) could differ.
-  unit:
-    name: Unit (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: brew install jq bats-core
-
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y jq bats
-
-      - name: Run unit tests
-        run: bats test/unit || true
-
-  # Integration, conformance, UI, and lint run on Linux only.
-  # These tests have no OS-specific assertions — they exercise pipeline
-  # logic against mocks and are identical on both platforms.
-  # Linux runners are also 10x cheaper than macOS on GitHub Actions.
-  integration:
-    name: Integration + UI
+  test:
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
@@ -74,6 +44,9 @@ jobs:
           if command -v shellcheck >/dev/null 2>&1; then
             shellcheck scripts/lib/*.sh scripts/*.sh || true
           fi
+
+      - name: Run unit tests
+        run: bats test/unit || true
 
       - name: Run integration tests
         run: bats test/integration || true
