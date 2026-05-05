@@ -109,10 +109,14 @@ sub_run() {
   mkdir -p "$STATE_DIR" "$RESULTS_DIR"
 
   # C1/C3: Init global budget and register this project in the cross-project registry.
-  source "$LIB_DIR/ops/budget.sh"   2>/dev/null || true
-  source "$LIB_DIR/ops/projects.sh" 2>/dev/null || true
+  source "$LIB_DIR/ops/budget.sh"     2>/dev/null || true
+  source "$LIB_DIR/ops/projects.sh"   2>/dev/null || true
+  source "$LIB_DIR/ops/telemetry.sh"  2>/dev/null || true
   declare -f budget_init        &>/dev/null && budget_init
   declare -f projects_register  &>/dev/null && projects_register "$ROOT_DIR" "${ADAPTER:-unknown}"
+
+  # E3: Prompt for telemetry consent on first run (no-op if already decided or non-interactive)
+  declare -f telemetry_prompt &>/dev/null && telemetry_prompt
 
   banner "Orchestrate — $ADAPTER / $AUTONOMY / $BASE_BRANCH / model:$MODEL_DEFAULT"
 
@@ -219,6 +223,27 @@ sub_run() {
   if [ -f "$LIB_DIR/run/conventions-sync.sh" ]; then
     source "$LIB_DIR/run/conventions-sync.sh"
     conventions_auto_sync "$ROOT_DIR" || true
+  fi
+
+  # E3: Send anonymous telemetry (best-effort, background, no retries)
+  if declare -f telemetry_send &>/dev/null && declare -f telemetry_build_payload &>/dev/null; then
+    local _state_dir="$STATE_DIR"
+    export TELEMETRY_AGENT="${ADAPTER:-unknown}"
+    export TELEMETRY_COMPLETED TELEMETRY_PAUSED TELEMETRY_FAILED
+    TELEMETRY_COMPLETED=$(find "$_state_dir" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));['done','pr-created'].includes(d.status)?'1':''}catch(e){''}" \; \
+      2>/dev/null | grep -c "^1$" || echo "0")
+    TELEMETRY_PAUSED=$(find "$_state_dir" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='paused'?'1':''}catch(e){''}" \; \
+      2>/dev/null | grep -c "^1$" || echo "0")
+    TELEMETRY_FAILED=$(find "$_state_dir" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='failed'?'1':''}catch(e){''}" \; \
+      2>/dev/null | grep -c "^1$" || echo "0")
+    export TELEMETRY_TOP_ERROR="${MONOZUKURI_TOP_ERROR_CLASS:-none}"
+    export TELEMETRY_COST_USD="${MONOZUKURI_RUN_COST_USD:-0}"
+    local _payload
+    _payload=$(telemetry_build_payload)
+    telemetry_send "$_payload"
   fi
 
   # Cleanup backlog file
