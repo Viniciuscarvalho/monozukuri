@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.30.0...v1.31.0) (2026-05-05)
+
+
+### Features
+
+* **phase-e:** state-version stamping + opt-in telemetry ([#113](https://github.com/Viniciuscarvalho/monozukuri/issues/113)) ([975fdac](https://github.com/Viniciuscarvalho/monozukuri/commit/975fdacf97fde6837af4000015f96e6e72a78126))
+
 ## [1.30.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.29.0...v1.30.0) (2026-05-05)
 
 
