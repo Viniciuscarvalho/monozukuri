@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.32.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.31.0...v1.32.0) (2026-05-05)
+
+
+### Features
+
+* **phase-f:** schema render parity for codex/gemini ([#115](https://github.com/Viniciuscarvalho/monozukuri/issues/115)) ([14a1e77](https://github.com/Viniciuscarvalho/monozukuri/commit/14a1e770760bb3dbd6b1e5589ac88dfdd6e32bf7))
+
 ## [1.31.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.30.0...v1.31.0) (2026-05-05)
 
 
