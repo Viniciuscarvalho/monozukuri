@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.34.1...v1.35.0) (2026-05-06)
+
+
+### Features
+
+* **ci-guard:** add CI watcher skill and scripts ([#125](https://github.com/Viniciuscarvalho/monozukuri/issues/125)) ([20425e4](https://github.com/Viniciuscarvalho/monozukuri/commit/20425e4be38c7ef4bdda75090f73d2340b53a557))
+
 ## [1.34.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.34.0...v1.34.1) (2026-05-06)
 
 
