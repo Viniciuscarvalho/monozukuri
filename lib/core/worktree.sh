@@ -23,6 +23,12 @@ wt_create() {
 
   git worktree add "$wt_path" -b "$branch" "$base" >&2
 
+  # Symlink project agents into worktree so 'claude --agent <name>' resolves user agents
+  if [ -d "${ROOT_DIR:-}/.claude/agents" ]; then
+    mkdir -p "$wt_path/.claude"
+    ln -sf "${ROOT_DIR}/.claude/agents" "$wt_path/.claude/agents" 2>/dev/null || true
+  fi
+
   # State
   mkdir -p "$STATE_DIR/$feat_id/logs"
   echo "$wt_path" > "$STATE_DIR/$feat_id/worktree-path.txt"

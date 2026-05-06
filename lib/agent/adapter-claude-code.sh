@@ -22,6 +22,16 @@ if ! declare -f monozukuri_emit &>/dev/null; then
   monozukuri_emit() { :; }
 fi
 
+# stream_parse_emit_file is sourced from lib/cli/stream-parse.sh when available.
+if ! declare -f stream_parse_emit_file &>/dev/null; then
+  local _sp_sh
+  _sp_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/cli/stream-parse.sh"
+  [[ -f "$_sp_sh" ]] && source "$_sp_sh" || true
+fi
+if ! declare -f stream_parse_emit_file &>/dev/null; then
+  stream_parse_emit_file() { :; }
+fi
+
 agent_name() { echo "claude-code"; }
 
 agent_capabilities() {
@@ -91,6 +101,40 @@ _cc_inject_schemas() {
   done
 }
 
+# _cc_invoke_claude FEAT_ID PHASE WT_PATH LOG_FILE [flags...]
+# Shared invocation wrapper. When MONOZUKURI_RUN_ID is set (TUI mode), adds
+# --output-format stream-json, writes a sidecar .stream.jsonl alongside LOG_FILE,
+# extracts human-readable text into LOG_FILE, and post-emits tool/file events.
+# Falls back to plain text mode when not running under the TUI dispatcher.
+_cc_invoke_claude() {
+  local feat_id="$1" phase="$2" wt_path="$3" log_file="$4"; shift 4
+  local exit_code=0
+
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    local sj_log="${log_file%.log}.stream.jsonl"
+    # Inline node script: reads stream-json from stdin, writes text content to stdout.
+    local _extract_text
+    _extract_text='const rl=require("readline").createInterface({input:process.stdin,terminal:false});rl.on("line",l=>{try{const e=JSON.parse(l);if(e.type==="assistant"&&e.message&&Array.isArray(e.message.content)){for(const c of e.message.content)if(c.type==="text")process.stdout.write(c.text||"")}else if(e.type==="result")process.stdout.write(e.result||"")}catch(_){process.stdout.write(l+"\n")}});'
+    (
+      set -o pipefail
+      cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        "$@" --output-format stream-json 2>&1 \
+        | tee "$sj_log" \
+        | node -e "$_extract_text" \
+        | tee "$log_file" >/dev/null
+    ) || exit_code=$?
+    stream_parse_emit_file "$feat_id" "$phase" "$sj_log" || true
+  else
+    (
+      set -o pipefail
+      cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        "$@" 2>&1 | tee "$log_file"
+    ) || exit_code=$?
+  fi
+
+  return "$exit_code"
+}
+
 # _cc_run_phase_skill SKILL FEAT_ID WT_PATH LOG_FILE
 # Native skill invocation: claude --agent <skill> -p <feat-id>.
 # Used when the mz-* skill for the current phase is installed in the worktree
@@ -110,14 +154,11 @@ _cc_run_phase_skill() {
   local artifact_file="$artifact_dir/${phase}.md"
 
   local exit_code=0
-  (
-    set -o pipefail
-    cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-      ${effective_model:+--model "$effective_model"} \
-      --agent "$skill" \
-      $perm_flag \
-      -p "$feat_id" 2>&1 | tee "$log_file"
-  ) || exit_code=$?
+  _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
+    ${effective_model:+--model "$effective_model"} \
+    --agent "$skill" \
+    $perm_flag \
+    -p "$feat_id" || exit_code=$?
 
   [ "$exit_code" -eq 0 ] && [ -s "$log_file" ] && cp "$log_file" "$artifact_file" || true
   return "$exit_code"
@@ -150,13 +191,10 @@ _cc_run_phase_render() {
   local artifact_file="$artifact_dir/${phase}.md"
 
   local exit_code=0
-  (
-    set -o pipefail
-    cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-      ${effective_model:+--model "$effective_model"} \
-      $perm_flag \
-      -p "$rendered_prompt" 2>&1 | tee "$log_file"
-  ) || exit_code=$?
+  _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
+    ${effective_model:+--model "$effective_model"} \
+    $perm_flag \
+    -p "$rendered_prompt" || exit_code=$?
 
   [ "$exit_code" -eq 0 ] && [ -s "$log_file" ] && cp "$log_file" "$artifact_file" || true
   return "$exit_code"
@@ -182,14 +220,30 @@ agent_run_phase() {
     local fix_perm_flag=""
     [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
     local exit_code=0
-    (
-      set -o pipefail
-      cd "$wt_path" && printf '%s\n' "$fix_context" | \
-        platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-          ${fix_model:+--model "$fix_model"} \
-          $fix_perm_flag \
-          --print 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+    if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+      local _fr_sj_log="${log_file%.log}.stream.jsonl"
+      local _extract_text
+      _extract_text='const rl=require("readline").createInterface({input:process.stdin,terminal:false});rl.on("line",l=>{try{const e=JSON.parse(l);if(e.type==="assistant"&&e.message&&Array.isArray(e.message.content)){for(const c of e.message.content)if(c.type==="text")process.stdout.write(c.text||"")}else if(e.type==="result")process.stdout.write(e.result||"")}catch(_){process.stdout.write(l+"\n")}});'
+      (
+        set -o pipefail
+        cd "$wt_path" && printf '%s\n' "$fix_context" | \
+          platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+            ${fix_model:+--model "$fix_model"} \
+            $fix_perm_flag \
+            --print --output-format stream-json 2>&1 \
+          | tee "$_fr_sj_log" | node -e "$_extract_text" | tee "$log_file" >/dev/null
+      ) || exit_code=$?
+      stream_parse_emit_file "$feat_id" "fix-retry" "$_fr_sj_log" || true
+    else
+      (
+        set -o pipefail
+        cd "$wt_path" && printf '%s\n' "$fix_context" | \
+          platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+            ${fix_model:+--model "$fix_model"} \
+            $fix_perm_flag \
+            --print 2>&1 | tee "$log_file"
+      ) || exit_code=$?
+    fi
     if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
       printf '{"class":"phase","code":"fix-retry-failed","message":"fix-retry exited with code %d"}\n' \
         "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
@@ -275,15 +329,12 @@ agent_run_phase() {
 
     warn "Tier-3 fallback: no skill registered for phase '${phase:-<none>}' — using legacy:feature-marker"
     monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "3" skill "legacy:feature-marker"
-    (
-      set -o pipefail
-      cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-        ${effective_model:+--model "$effective_model"} \
-        --agent "$skill_arg" \
-        $perm_flag \
-        ${interactive_flag:+$interactive_flag} \
-        -p "prd-$feat_id" 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+    _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
+      ${effective_model:+--model "$effective_model"} \
+      --agent "$skill_arg" \
+      $perm_flag \
+      ${interactive_flag:+$interactive_flag} \
+      -p "prd-$feat_id" || exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
       monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "3"
     else

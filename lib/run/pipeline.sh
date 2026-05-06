@@ -177,9 +177,12 @@ run_backlog() {
       local deps_check
       deps_check=$(echo "$item_json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')).dependencies.join(',')||''")
 
+      monozukuri_emit feature.queued feature_id "$feat_id_check" position "$index"
+
       if [ -n "$deps_check" ]; then
         if ! dep_check_merge_state "$feat_id_check" "$deps_check"; then
           info "Skipping $feat_id_check — unmerged dependencies (hard-block)"
+          monozukuri_emit feature.skipped feature_id "$feat_id_check" reason "unmerged-dependencies"
           continue
         fi
       fi
@@ -344,6 +347,7 @@ run_feature() {
   current=$(fstate_get_status "$feat_id")
   if [ "$current" = "done" ] || [ "$current" = "pr-created" ]; then
     info "Skipping $feat_id (status: $current)"
+    monozukuri_emit feature.skipped feature_id "$feat_id" reason "$current"
     return 0
   fi
   [ "$current" != "none" ] && info "Resuming $feat_id (status: $current)"
@@ -604,6 +608,7 @@ EOPRD
         if [ -n "$overlaps" ]; then
           info "Deferring $feat_id: file-set overlap detected with: $overlaps"
           fstate_transition "$feat_id" "deferred" "file-overlap"
+          monozukuri_emit feature.deferred feature_id "$feat_id" reason "file-overlap" blocked_by "$overlaps"
           if declare -f manifest_update &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
             manifest_update "$MANIFEST_RUN_ID" "$feat_id" "deferred" "file-overlap" "overlaps_with=$overlaps"
           fi
@@ -613,10 +618,17 @@ EOPRD
     fi
   fi
 
+  monozukuri_emit phase.started feature_id "$feat_id" phase "code"
   export MONOZUKURI_PHASE="code"
   agent_run_phase || exit_code=$?
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
+
+  if [ "$exit_code" -eq 0 ]; then
+    monozukuri_emit phase.completed feature_id "$feat_id" phase "code" duration_ms 0 tokens_used 0 cost_usd 0
+  elif [ "$exit_code" -ne 21 ] && [ "$exit_code" -ne 15 ]; then
+    monozukuri_emit phase.failed feature_id "$feat_id" phase "code" error "exit-$exit_code" retryable 1
+  fi
 
   if [ "$exit_code" -eq 0 ] && declare -f workflow_memory_inspect &>/dev/null; then
     workflow_memory_inspect "$feat_id" "$CONFIG_DIR/runs" | while IFS= read -r _wfm_line; do
@@ -688,6 +700,7 @@ EOPRD
 
   # ── Phase 3: scripted tests ───────────────────────────────────────────
   if [ "$exit_code" -eq 0 ] && [ "$AUTONOMY" != "supervised" ]; then
+    monozukuri_emit phase.started feature_id "$feat_id" phase "tests"
     local phase3_fix_attempts=0
     run_phase3_tests "$feat_id" "$wt_path"
     local phase3_exit=$?
@@ -695,6 +708,11 @@ EOPRD
     local phase3_cost
     phase3_cost=$(cost_estimate_phase "3" "$phase3_fix_attempts" "generic")
     cost_record "$feat_id" "phase3" "$phase3_cost"
+    if [ "$phase3_exit" -eq 0 ]; then
+      monozukuri_emit phase.completed feature_id "$feat_id" phase "tests" duration_ms 0 tokens_used 0 cost_usd 0
+    else
+      monozukuri_emit phase.failed feature_id "$feat_id" phase "tests" error "phase3-exit-$phase3_exit" retryable 0
+    fi
     [ "$phase3_exit" -ne 0 ] && exit_code="$phase3_exit"
   fi
 
@@ -743,7 +761,9 @@ EOPRD
   # ── Handle result ─────────────────────────────────────────────────────
   if [ "$exit_code" -eq 0 ]; then
     if [ "$AUTONOMY" = "full_auto" ] || [ "$AUTONOMY" = "checkpoint" ]; then
+      monozukuri_emit phase.started feature_id "$feat_id" phase "pr"
       run_pr_creation "$feat_id" "$title" "$wt_path" "$results_file"
+      monozukuri_emit phase.completed feature_id "$feat_id" phase "pr" duration_ms 0 tokens_used 0 cost_usd 0
       # ADR-014: CI poll + flake detection + one reprompt
       if declare -f ci_wait_for_green &>/dev/null; then
         local _pr_url
