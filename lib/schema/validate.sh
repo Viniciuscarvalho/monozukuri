@@ -193,8 +193,13 @@ PYEOF
 schema_humanize_error() {
   local artifact_type="$1"
   local error_msg="$2"
-  printf 'The %s artifact failed structural validation and must be regenerated.\n\nValidation error: %s\n\nPlease rewrite the %s as a complete, well-structured document with all required sections filled in. Do not truncate or omit any section.\n' \
-    "$artifact_type" "$error_msg" "$artifact_type"
+  if [ "$artifact_type" = "tasks" ]; then
+    printf 'The tasks artifact failed structural validation and must be regenerated.\n\nValidation error: %s\n\nWrite a valid tasks.json file (a JSON array) to the path shown in the error. Each task object must contain: id, title, description, files_touched (array, ≥1 item), acceptance_criteria (array, ≥1 item). Do not write tasks.md — the expected output is tasks.json.\n' \
+      "$error_msg"
+  else
+    printf 'The %s artifact failed structural validation and must be regenerated.\n\nValidation error: %s\n\nPlease rewrite the %s as a complete, well-structured document with all required sections filled in. Do not truncate or omit any section.\n' \
+      "$artifact_type" "$error_msg" "$artifact_type"
+  fi
 }
 
 # schema_validate_with_reprompt <feat_id> <wt_path> <task_dir>
@@ -227,6 +232,16 @@ schema_validate_with_reprompt() {
       techspec) artifact_file="$task_dir/techspec.md" ;;
       tasks) artifact_file="$task_dir/tasks.json" ;;
     esac
+
+    # feature-marker generates tasks.md (not tasks.json); mz-create-tasks generates tasks.json.
+    # When tasks.json is absent but tasks.md exists the feature ran via the monolithic skill —
+    # skip JSON validation so we stay backward-compatible.
+    if [ "$artifact_type" = "tasks" ] && \
+       [ ! -f "$artifact_file" ] && \
+       [ -f "$task_dir/tasks.md" ]; then
+      info "Schema: tasks.json absent but tasks.md present — skipping JSON validation (feature-marker run)"
+      continue
+    fi
 
     if schema_validate "$artifact_type" "$artifact_file"; then
       continue

@@ -435,7 +435,9 @@ EOPRD
 
   # ── ADR-008 PR-A: Phase 0 optimisation ───────────────────────────────
   local phase0_cost=0
-  if [ -f "$task_dir/prd.md" ] && [ -f "$task_dir/techspec.md" ] && [ -f "$task_dir/tasks.md" ]; then
+  local _tasks_artifact="$task_dir/tasks.json"
+  [ ! -f "$_tasks_artifact" ] && _tasks_artifact="$task_dir/tasks.md"
+  if [ -f "$task_dir/prd.md" ] && [ -f "$task_dir/techspec.md" ] && [ -f "$_tasks_artifact" ]; then
     info "Phase 0: artifacts exist, skipping generation (cost: 0)"
   else
     info "Phase 0: artifacts missing — planning phase will generate PRD+TechSpec+Tasks (~${COST_PHASE_1_PLANNING} tokens estimated)"
@@ -444,7 +446,7 @@ EOPRD
   cost_record "$feat_id" "phase0" "$phase0_cost"
 
   # ── ADR-008 PR-D: feature-sizing gate ────────────────────────────────
-  if [ -f "$task_dir/tasks.md" ]; then
+  if [ -f "$task_dir/tasks.md" ] || [ -f "$task_dir/tasks.json" ]; then
     if ! size_gate_check "$feat_id" "$wt_path"; then
       local exceeded_str="${SIZE_EXCEEDED_CRITERIA:+$SIZE_EXCEEDED_CRITERIA }${SIZE_EXCEEDED_TASKS:+$SIZE_EXCEEDED_TASKS }${SIZE_EXCEEDED_FILES:+$SIZE_EXCEEDED_FILES}"
       if ! size_gate_signal "$feat_id" "$AUTONOMY" "$exceeded_str"; then
@@ -490,7 +492,7 @@ EOPRD
 
   if [ "$ROUTING_PREFER" = "true" ] && [ "$agent_count" -gt 0 ]; then
     local tasks_file
-    tasks_file=$(find "$wt_path" -name "tasks.md" -path "*/prd-*" 2>/dev/null | head -1)
+    tasks_file=$(find "$wt_path" \( -name "tasks.json" -o -name "tasks.md" \) -path "*/prd-*" 2>/dev/null | head -1)
     if [ -n "$tasks_file" ] && [ -f "$tasks_file" ]; then
       bash "$SCRIPTS_DIR/route-tasks.sh" "$wt_path" "$manifest_file" "$tasks_file" \
         > "$routing_file" 2>/dev/null || echo "[]" > "$routing_file"
@@ -515,19 +517,10 @@ EOPRD
   local feat_start
   feat_start=$(date +%s)
 
-  cost_record "$feat_id" "phase1" "$COST_PHASE_1_PLANNING"
-
   local task_count=1
-  if [ -f "$task_dir/tasks.md" ]; then
-    task_count=$(grep -c "^\- \[" "$task_dir/tasks.md" 2>/dev/null || echo "1")
-    [ "$task_count" -eq 0 ] && task_count=1
-  fi
   local default_agent="${MONOZUKURI_AGENT:-claude-code}"
   local agent_type="generic"
   [ "$routed_agent" != "$default_agent" ] && agent_type="specialist"
-  local phase2_cost
-  phase2_cost=$(cost_estimate_phase "2" "$task_count" "$agent_type")
-  cost_record "$feat_id" "phase2" "$phase2_cost"
 
   # SKILL_COMMAND stays set for the claude-code adapter back-compat path.
   # routed_agent overrides only for specialist routing.
@@ -574,7 +567,20 @@ EOPRD
 
   # Load the adapter and dispatch
   agent_load "${MONOZUKURI_AGENT:-claude-code}"
-  info "Autonomy=$AUTONOMY — invoking ${MONOZUKURI_AGENT:-claude-code} adapter (model: ${MODEL_DEFAULT:-default}, skill: ${SKILL_COMMAND:-feature-marker})..."
+  # Source skill-detect so skill_installed/phase_to_skill are available before phase dispatch.
+  if ! declare -f skill_installed &>/dev/null; then
+    local _sd="$LIB_DIR/agent/skill-detect.sh"
+    [[ -f "$_sd" ]] && source "$_sd"
+  fi
+
+  if declare -f skill_installed &>/dev/null && \
+     ! skill_installed "claude-code" "mz-create-prd" "$wt_path"; then
+    err "mz-* skills not installed. Run: monozukuri setup --global"
+    fstate_transition "$feat_id" "error" "skills-not-installed"
+    return 1
+  fi
+
+  info "Autonomy=$AUTONOMY — split-phase (mz-* skills): prd → techspec → tasks → code"
 
   if [ "$AUTONOMY" = "full_auto" ]; then
     if [ -z "${MONOZUKURI_RUN_ID:-}" ]; then
@@ -618,6 +624,49 @@ EOPRD
     fi
   fi
 
+  # ── Planning phases ───────────────────────────────────────────────────
+  # prd → techspec → tasks, each skipped when its artifact already exists.
+  local _planning_ran=false
+  local _ph _af _ph_exit
+  for _ph in prd techspec tasks; do
+    case "$_ph" in
+      prd)      _af="$task_dir/prd.md" ;;
+      techspec) _af="$task_dir/techspec.md" ;;
+      tasks)    _af="$task_dir/tasks.json" ;;
+    esac
+    if [ -f "$_af" ]; then
+      info "Phase $_ph: artifact cached — skipping"
+      monozukuri_emit phase.skipped feature_id "$feat_id" phase "$_ph" reason "cached"
+      continue
+    fi
+    _planning_ran=true
+    monozukuri_emit phase.started feature_id "$feat_id" phase "$_ph"
+    export MONOZUKURI_PHASE="$_ph"
+    _ph_exit=0
+    agent_run_phase || _ph_exit=$?
+    if [ "$_ph_exit" -ne 0 ]; then
+      monozukuri_emit phase.failed feature_id "$feat_id" phase "$_ph" error "exit-$_ph_exit" retryable 1
+      _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
+      fstate_transition "$feat_id" "error" "${_ph}-phase-failed"
+      return 1
+    fi
+    monozukuri_emit phase.completed feature_id "$feat_id" phase "$_ph" duration_ms 0 tokens_used 0 cost_usd 0
+  done
+  [ "$_planning_ran" = "true" ] && cost_record "$feat_id" "phase1" "$COST_PHASE_1_PLANNING"
+
+  # Derive task_count from tasks.json for accurate phase-2 cost estimate.
+  if [ -f "$task_dir/tasks.json" ]; then
+    task_count=$(python3 -c \
+      "import json,sys; print(len(json.load(open('$task_dir/tasks.json'))))" \
+      2>/dev/null || echo "1")
+    [ "$task_count" -eq 0 ] && task_count=1
+  fi
+
+  local phase2_cost
+  phase2_cost=$(cost_estimate_phase "2" "$task_count" "$agent_type")
+  cost_record "$feat_id" "phase2" "$phase2_cost"
+
+  # ── Code phase ────────────────────────────────────────────────────────
   monozukuri_emit phase.started feature_id "$feat_id" phase "code"
   export MONOZUKURI_PHASE="code"
   agent_run_phase || exit_code=$?

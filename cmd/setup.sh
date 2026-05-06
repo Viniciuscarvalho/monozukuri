@@ -158,7 +158,7 @@ _setup_confirm_agents() {
   done
   printf "\n\n"
 
-  if [ "$yes" = "true" ] || [ "${OPT_DRY_RUN:-false}" = "true" ]; then
+  if [ "$yes" = "true" ] || [ "${OPT_DRY_RUN:-false}" = "true" ] || [ "${OPT_SETUP_GLOBAL:-false}" = "true" ]; then
     return 0
   fi
 
