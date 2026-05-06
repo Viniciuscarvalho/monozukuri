@@ -1,0 +1,5 @@
+# Per-project ci-guard config. Defaults shown; uncomment to override.
+# retries_per_job: 2
+# retries_per_pr: 5
+# minutes_per_pr: 90
+# watch_interval_seconds: 60
