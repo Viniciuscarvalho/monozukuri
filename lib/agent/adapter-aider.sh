@@ -11,6 +11,18 @@
 # Aider-specific env vars:
 #   AIDER_MODEL   Override model (falls back to MONOZUKURI_MODEL → adapter default)
 
+# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
+# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
+if ! declare -f op_timeout &>/dev/null; then
+  op_timeout() { local _secs="$1"; shift; "$@"; }
+fi
+
+# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
+# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
+if ! declare -f adapter_tee &>/dev/null; then
+  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+fi
+
 agent_name() { echo "aider"; }
 
 agent_capabilities() {
@@ -140,16 +152,14 @@ agent_run_phase() {
   if [[ "${MONOZUKURI_PHASE:-}" == "fix-retry" ]]; then
     local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
     local exit_code=0
-    (
-      set -o pipefail
-      cd "$wt_path" && op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+    (cd "$wt_path" && adapter_tee "$log_file" -- \
+      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
         aider \
-        --model "$model" \
-        --no-git \
-        $yes_flag \
-        --read ".monozukuri-schemas" \
-        --message "$fix_context" 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+          --model "$model" \
+          --no-git \
+          $yes_flag \
+          --read ".monozukuri-schemas" \
+          --message "$fix_context") || exit_code=$?
     if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
       printf '{"class":"phase","code":"fix-retry-failed","message":"aider fix-retry exited with code %d"}\n' \
         "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
@@ -161,16 +171,14 @@ agent_run_phase() {
   prompt=$(_aider_build_prompt "$feat_id" "$run_dir" "$wt_path")
 
   local exit_code=0
-  (
-    set -o pipefail
-    cd "$wt_path" && op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+  (cd "$wt_path" && adapter_tee "$log_file" -- \
+    op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
       aider \
-      --model "$model" \
-      --no-git \
-      $yes_flag \
-      --read ".monozukuri-schemas" \
-      --message "$prompt" 2>&1 | tee "$log_file"
-  ) || exit_code=$?
+        --model "$model" \
+        --no-git \
+        $yes_flag \
+        --read ".monozukuri-schemas" \
+        --message "$prompt") || exit_code=$?
 
   # ADR-013: write error envelope
   if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then

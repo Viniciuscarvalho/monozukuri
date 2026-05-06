@@ -15,6 +15,18 @@
 # Auth: AWS credentials via standard AWS SDK chain (env vars, ~/.aws/credentials,
 # instance profile). Verified via `aws sts get-caller-identity`.
 
+# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
+# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
+if ! declare -f op_timeout &>/dev/null; then
+  op_timeout() { local _secs="$1"; shift; "$@"; }
+fi
+
+# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
+# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
+if ! declare -f adapter_tee &>/dev/null; then
+  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+fi
+
 agent_name() { echo "kiro"; }
 
 agent_capabilities() {
@@ -78,23 +90,23 @@ agent_run_phase() {
   if [[ "$phase" == "fix-retry" ]]; then
     local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
     local exit_code=0
-    (
-      set -o pipefail
-      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+    (cd "$wt_path" && printf '%s\n' "$fix_context" | \
+      adapter_tee "$log_file" -- \
         kiro agent run \
           --feature "$feat_id" \
           ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          - 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+          -) || exit_code=$?
     return "$exit_code"
   fi
 
   # For prd/techspec phases, optionally use kiro's native spec workflow
   if [ "$use_native_specs" = "true" ] && { [ "$phase" = "prd" ] || [ "$phase" = "techspec" ]; }; then
-    (cd "$wt_path" && kiro spec create \
-      --feature "$feat_id" \
-      --phase "$phase") 2>&1 | tee "$log_file"
-    return "${PIPESTATUS[0]}"
+    local exit_code=0
+    (cd "$wt_path" && adapter_tee "$log_file" -- \
+      kiro spec create \
+        --feature "$feat_id" \
+        --phase "$phase") || exit_code=$?
+    return "$exit_code"
   fi
 
   # All other phases (and prd/techspec when native specs disabled): agent run
@@ -105,11 +117,14 @@ agent_run_phase() {
     rendered_prompt="Implement feature ${feat_id}."
   fi
 
+  local exit_code=0
   (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
-    kiro agent run \
-      --feature "$feat_id" \
-      ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-      -) 2>&1 | tee "$log_file"
+    adapter_tee "$log_file" -- \
+      kiro agent run \
+        --feature "$feat_id" \
+        ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+        -) || exit_code=$?
+  return "$exit_code"
 }
 
 agent_report_cost() {

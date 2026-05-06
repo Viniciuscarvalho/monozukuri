@@ -15,6 +15,12 @@ if ! declare -f op_timeout &>/dev/null; then
   op_timeout() { local _secs="$1"; shift; "$@"; }
 fi
 
+# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
+# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
+if ! declare -f adapter_tee &>/dev/null; then
+  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+fi
+
 agent_name() { echo "codex"; }
 
 agent_capabilities() {
@@ -83,15 +89,13 @@ agent_run_phase() {
   if [[ "${MONOZUKURI_PHASE:-}" == "fix-retry" ]]; then
     local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
     local exit_code=0
-    (
-      set -o pipefail
-      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+    (cd "$wt_path" && printf '%s\n' "$fix_context" | \
+      adapter_tee "$log_file" -- \
         op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
           codex \
             --approval-mode "$approval_mode" \
             ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-            - 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+            -) || exit_code=$?
     _codex_auth_expired "$log_file" && return 15
     return "$exit_code"
   fi
@@ -105,11 +109,12 @@ agent_run_phase() {
 
   local exit_code=0
   (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
-    op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
-      codex \
-        --approval-mode "$approval_mode" \
-        ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-        -) 2>&1 | tee "$log_file" || exit_code=$?
+    adapter_tee "$log_file" -- \
+      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        codex \
+          --approval-mode "$approval_mode" \
+          ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+          -) || exit_code=$?
   _codex_auth_expired "$log_file" && return 15
   return "$exit_code"
 }
