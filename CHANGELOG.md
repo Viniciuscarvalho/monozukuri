@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.36.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.36.0...v1.36.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **setup:** stop TUI from eating keystrokes; accept bare positional verbs ([#129](https://github.com/Viniciuscarvalho/monozukuri/issues/129)) ([69999ba](https://github.com/Viniciuscarvalho/monozukuri/commit/69999bab363560d4a4bb0ea1361d7db6915a4915))
+
 ## [1.36.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.35.0...v1.36.0) (2026-05-06)
 
 
