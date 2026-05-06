@@ -181,13 +181,7 @@ _install_skill() {
   local args_file="$wt/platform-args"
   _install_skill "$wt" "mz-create-prd"
 
-  platform_claude() {
-    local _t="$1"; shift
-    printf '%s\n' "$@" > "$args_file"
-    echo "mock output"
-  }
-  export -f platform_claude
-
+  PLATFORM_ARGS_FILE="$args_file" \
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$wt/run.log" \
@@ -196,6 +190,7 @@ _install_skill() {
     agent_run_phase
 
   # Skill native path uses --agent <skill-name>, NOT a rendered prompt
+  grep -q -- "--agent" "$args_file"
   grep -q "mz-create-prd" "$args_file"
   # The feat-id is the -p argument (not a rendered template text)
   grep -q "feat-001" "$args_file"
