@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.33.0...v1.34.0) (2026-05-06)
+
+
+### Features
+
+* **ux:** execution visibility — phase events, tool stream, web dashboard ([#120](https://github.com/Viniciuscarvalho/monozukuri/issues/120)) ([981c1d4](https://github.com/Viniciuscarvalho/monozukuri/commit/981c1d4967ee738af4a47743d5eaaa92ae57183d))
+
 ## [1.33.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.32.0...v1.33.0) (2026-05-05)
 
 
