@@ -573,13 +573,6 @@ EOPRD
     [[ -f "$_sd" ]] && source "$_sd"
   fi
 
-  if declare -f skill_installed &>/dev/null && \
-     ! skill_installed "claude-code" "mz-create-prd" "$wt_path"; then
-    err "mz-* skills not installed. Run: monozukuri setup --global"
-    fstate_transition "$feat_id" "error" "skills-not-installed"
-    return 1
-  fi
-
   info "Autonomy=$AUTONOMY — split-phase (mz-* skills): prd → techspec → tasks → code"
 
   if [ "$AUTONOMY" = "full_auto" ]; then
@@ -638,6 +631,13 @@ EOPRD
       info "Phase $_ph: artifact cached — skipping"
       monozukuri_emit phase.skipped feature_id "$feat_id" phase "$_ph" reason "cached"
       continue
+    fi
+    # Guard: skills must be installed before invoking any planning phase.
+    if declare -f skill_installed &>/dev/null && \
+       ! skill_installed "claude-code" "mz-create-prd" "$wt_path"; then
+      err "mz-* skills not installed. Run: monozukuri setup --global"
+      fstate_transition "$feat_id" "error" "skills-not-installed"
+      return 1
     fi
     _planning_ran=true
     monozukuri_emit phase.started feature_id "$feat_id" phase "$_ph"
