@@ -241,7 +241,33 @@ export interface SetupCompletedEvent extends BaseEvent {
   action: string;
 }
 
+export interface ToolInvokedEvent extends BaseEvent {
+  type: 'tool.invoked';
+  feature_id: string;
+  phase: string;
+  tool: string;
+  input_summary: string;
+}
+
+export interface ToolCompletedEvent extends BaseEvent {
+  type: 'tool.completed';
+  feature_id: string;
+  phase: string;
+  tool: string;
+}
+
+export interface FileTouchedEvent extends BaseEvent {
+  type: 'file.touched';
+  feature_id: string;
+  phase: string;
+  path: string;
+  op: 'read' | 'edit' | 'write';
+}
+
 export type MonozukuriEvent =
+  | ToolInvokedEvent
+  | ToolCompletedEvent
+  | FileTouchedEvent
   | RunStartedEvent
   | BacklogLoadedEvent
   | FeatureQueuedEvent

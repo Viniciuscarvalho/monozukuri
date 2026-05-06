@@ -406,5 +406,6 @@ case "$SUBCOMMAND" in
   setup)           source "$CMD_DIR/setup.sh"; sub_setup ;;
   stop)            source "$CMD_DIR/stop.sh"; sub_stop "${@:2}" ;;
   summary)         source "$CMD_DIR/summary.sh"; sub_summary "${@:2}" ;;
+  ui)              source "$CMD_DIR/ui.sh"; sub_ui "${@:2}" ;;
   telemetry)       source "$CMD_DIR/telemetry.sh"; sub_telemetry "${OPT_TELEMETRY_ACTION:-}" ;;
 esac

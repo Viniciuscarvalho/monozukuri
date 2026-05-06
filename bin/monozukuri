@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 const { spawn } = require('node:child_process');
-const { existsSync } = require('node:fs');
+const { existsSync, mkdirSync, createWriteStream } = require('node:fs');
 const { join, resolve } = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { homedir } = require('node:os');
 
 // Resolve the directory containing orchestrate.sh.
 // Search order: Homebrew libexec sibling → repo root → repo scripts/ fallback.
@@ -60,7 +61,19 @@ if (wantsUI) {
       MONOZUKURI_RUN_ID: runId,
     },
   });
-  orchestrator.stdout?.pipe(ui.stdin);
+
+  // Persist event stream for `monozukuri ui` dashboard replay
+  const runsDir = join(homedir(), '.monozukuri', 'runs', runId);
+  mkdirSync(runsDir, { recursive: true });
+  const eventLog = createWriteStream(join(runsDir, 'events.jsonl'));
+  orchestrator.stdout?.on('data', (chunk) => {
+    ui.stdin.write(chunk);
+    eventLog.write(chunk);
+  });
+  orchestrator.stdout?.on('end', () => {
+    ui.stdin.end();
+    eventLog.end();
+  });
   ui.on('exit', (code) => {
     if (code === 0) {
       // Clean quit via 'q' — propagate to orchestrator

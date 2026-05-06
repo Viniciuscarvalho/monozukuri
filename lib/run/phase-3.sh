@@ -74,6 +74,7 @@ run_phase3_tests() {
     fix_attempts=$((fix_attempts + 1))
     echo "$fix_attempts" > "$STATE_DIR/$feat_id/phase3-fix-attempts"
     info "Phase 3: fix attempt $fix_attempts/$max_fix_attempts"
+    monozukuri_emit phase.progress feature_id "$feat_id" phase "tests" elapsed_ms 0 tokens_used 0
 
     local error_sig
     error_sig=$(echo "$test_output" | head -5 | tr '\n' ' ' | sed 's/  */ /g')

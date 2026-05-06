@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>monozukuri — dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'SF Mono', 'Fira Code', monospace; background: #0f172a; color: #cbd5e1; font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Header ── */
+  #header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0; }
+  #header h1 { font-size: 14px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.05em; }
+  #status-pill { font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: #334155; color: #94a3b8; }
+  #status-pill.live { background: #064e3b; color: #6ee7b7; }
+  #run-label { font-size: 11px; color: #64748b; margin-left: auto; }
+
+  /* ── Layout ── */
+  #main { display: flex; flex: 1; overflow: hidden; }
+  #left-panel { width: 320px; display: flex; flex-direction: column; border-right: 1px solid #1e293b; flex-shrink: 0; }
+  #right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── DAG ── */
+  #dag-section { padding: 12px; border-bottom: 1px solid #1e293b; }
+  #dag-section h2 { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  #dag-container { height: 90px; background: #0f172a; border-radius: 6px; border: 1px solid #1e293b; }
+  .dag-unavailable { padding: 8px; color: #64748b; font-size: 11px; }
+
+  /* ── Feature list ── */
+  #feature-list-section { flex: 1; overflow-y: auto; padding: 8px; }
+  #feature-list-section h2 { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .feat-item { padding: 6px 8px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; margin-bottom: 3px; }
+  .feat-item:hover { background: #1e293b; border-color: #334155; }
+  .feat-item.selected { background: #1e3a5f; border-color: #3b82f6; }
+  .feat-item .feat-id { color: #93c5fd; font-size: 12px; }
+  .feat-item .feat-status { font-size: 10px; color: #64748b; margin-top: 2px; }
+  .feat-item.done .feat-status { color: #10b981; }
+  .feat-item.failed .feat-status { color: #ef4444; }
+
+  /* ── Timeline ── */
+  #timeline-section { flex: 1; overflow-y: auto; padding: 12px; }
+  #timeline-section h2 { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .tl-header { display: flex; font-size: 10px; color: #475569; margin-bottom: 4px; }
+  .tl-label { width: 160px; flex-shrink: 0; }
+  .tl-bar-area { flex: 1; }
+  .tl-row { display: flex; align-items: center; margin-bottom: 6px; }
+  .tl-row.tl-row-done .tl-track { opacity: 0.7; }
+  .tl-row.tl-row-failed .tl-track { border-color: #7f1d1d; }
+  .tl-feat-label { width: 160px; flex-shrink: 0; font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+  .tl-track { flex: 1; height: 24px; background: #0f172a; border: 1px solid #1e293b; border-radius: 4px; position: relative; overflow: hidden; }
+  .tl-phase { position: absolute; top: 2px; bottom: 2px; min-width: 2px; border-radius: 2px; opacity: 0.85; transition: width 0.3s; }
+  .tl-phase.tl-phase-failed { opacity: 0.5; }
+  .tl-dot { position: absolute; top: 50%; transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%; }
+  .tl-file { position: absolute; top: 50%; transform: translateY(-50%); width: 2px; height: 12px; border-radius: 1px; }
+
+  /* ── Event log ── */
+  #log-section { height: 160px; flex-shrink: 0; border-top: 1px solid #1e293b; overflow-y: auto; padding: 8px 12px; font-size: 11px; }
+  #log-section h2 { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .log-entry { display: flex; gap: 8px; padding: 1px 0; }
+  .log-ts { color: #475569; flex-shrink: 0; }
+  .log-type { color: #6366f1; flex-shrink: 0; width: 160px; }
+  .log-detail { color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-entry.phase-ev .log-type { color: #3b82f6; }
+  .log-entry.tool-ev .log-type { color: #f59e0b; }
+  .log-entry.file-ev .log-type { color: #10b981; }
+  .log-entry.feat-ev .log-type { color: #a855f7; }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>monozukuri</h1>
+  <span id="status-pill">connecting…</span>
+  <span id="run-label">—</span>
+</div>
+
+<div id="main">
+  <div id="left-panel">
+    <div id="dag-section">
+      <h2>Workflow</h2>
+      <div id="dag-container"></div>
+    </div>
+    <div id="feature-list-section">
+      <h2>Features</h2>
+      <div id="feature-list"></div>
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div id="timeline-section">
+      <h2>Execution timeline</h2>
+      <div id="timeline-container"></div>
+    </div>
+    <div id="log-section">
+      <h2>Recent events</h2>
+      <div id="log-entries"></div>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/cytoscape.min.js"></script>
+<script src="dag.js"></script>
+<script src="timeline.js"></script>
+<script>
+'use strict';
+
+const statusPill = document.getElementById('status-pill');
+const runLabel = document.getElementById('run-label');
+const featureList = document.getElementById('feature-list');
+const logEntries = document.getElementById('log-entries');
+const dagContainer = document.getElementById('dag-container');
+const timelineContainer = document.getElementById('timeline-container');
+
+const dag = new DAG(dagContainer);
+const timeline = new Timeline(timelineContainer);
+
+const features = {};
+
+function formatTs(ts) {
+  return ts ? new Date(ts).toLocaleTimeString('en-US', { hour12: false }) : '?';
+}
+
+function logEvent(ev) {
+  const entry = document.createElement('div');
+  const typeClass = ev.type.startsWith('phase') ? 'phase-ev'
+    : ev.type.startsWith('tool') ? 'tool-ev'
+    : ev.type.startsWith('file') ? 'file-ev'
+    : ev.type.startsWith('feature') ? 'feat-ev'
+    : '';
+  entry.className = `log-entry ${typeClass}`;
+  const detail = ev.tool || ev.path || ev.phase || ev.reason || ev.text || '';
+  entry.innerHTML = `<span class="log-ts">${formatTs(ev.ts)}</span><span class="log-type">${ev.type}</span><span class="log-detail">${ev.feature_id ? ev.feature_id + ' ' : ''}${detail}</span>`;
+  logEntries.prepend(entry);
+  if (logEntries.children.length > 200) logEntries.lastChild.remove();
+}
+
+function updateFeatureList(featId, status) {
+  let el = features[featId];
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'feat-item';
+    el.innerHTML = `<div class="feat-id">${featId}</div><div class="feat-status">queued</div>`;
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.feat-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+    featureList.appendChild(el);
+    features[featId] = el;
+  }
+  el.querySelector('.feat-status').textContent = status;
+  el.classList.remove('done', 'failed', 'active');
+  if (status === 'done' || status === 'pr-created') el.classList.add('done');
+  else if (status === 'failed' || status === 'paused') el.classList.add('failed');
+}
+
+function handleEvent(ev) {
+  dag.handle(ev);
+  if (ev.feature_id && ['tool.invoked', 'tool.completed', 'file.touched', 'phase.started', 'phase.completed', 'phase.failed', 'feature.completed', 'feature.failed'].includes(ev.type)) {
+    timeline.handle(ev);
+  }
+  logEvent(ev);
+
+  // Feature list updates
+  if (ev.type === 'feature.queued') updateFeatureList(ev.feature_id, 'queued');
+  if (ev.type === 'feature.started') updateFeatureList(ev.feature_id, 'running');
+  if (ev.type === 'feature.completed') updateFeatureList(ev.feature_id, 'done');
+  if (ev.type === 'feature.failed') updateFeatureList(ev.feature_id, 'failed');
+  if (ev.type === 'feature.skipped') updateFeatureList(ev.feature_id, 'skipped');
+  if (ev.type === 'feature.deferred') updateFeatureList(ev.feature_id, 'deferred');
+}
+
+// Fetch run ID
+fetch('/run-id').then(r => r.json()).then(({ runId }) => {
+  runLabel.textContent = `run: ${runId.slice(0, 8)}…`;
+}).catch(() => {});
+
+// Connect to SSE
+function connect() {
+  const es = new EventSource('/events');
+  es.onopen = () => {
+    statusPill.textContent = 'live';
+    statusPill.classList.add('live');
+  };
+  es.onerror = () => {
+    statusPill.textContent = 'reconnecting…';
+    statusPill.classList.remove('live');
+    es.close();
+    setTimeout(connect, 3000);
+  };
+  es.onmessage = (msg) => {
+    try {
+      const ev = JSON.parse(msg.data);
+      handleEvent(ev);
+    } catch (_) {}
+  };
+}
+
+connect();
+</script>
+</body>
+</html>
