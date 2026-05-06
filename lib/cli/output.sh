@@ -6,7 +6,7 @@ display_feature_status() {
   local title="$2"
   local priority="$3"
   local status="$4"
-  local agent="${5:-feature-marker}"
+  local agent="${5:-claude-code}"
 
   printf "  %-14s %-6s %-20s %s\n" "$feat_id" "$priority" "$status" "$agent"
 }
@@ -171,7 +171,7 @@ display_routing() {
   node -e "
     const r = JSON.parse(require('fs').readFileSync('$routing_file','utf-8'));
     r.forEach(t => {
-      const agent = t.agent === 'feature-marker' ? 'feature-marker (generic)' : t.agent;
+      const agent = t.agent || 'claude-code';
       console.log('    Task ' + t.task_id + ': ' + t.title.substring(0,35).padEnd(35) + ' -> ' + agent);
     });
   " 2>/dev/null || true

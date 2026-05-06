@@ -56,43 +56,29 @@ teardown() {
   [ -f "$wt/tasks/prd-feat-001/techspec.md" ]
 }
 
-@test "agent_run_phase: without MONOZUKURI_PHASE, uses legacy feature-marker path" {
+@test "agent_run_phase: without MONOZUKURI_PHASE, exits non-zero with no-skill-or-template error" {
   local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
   local log_file="$wt/run.log"
-
-  # Stub to detect which path was taken
-  platform_claude() {
-    printf '%s\n' "$@" > "$wt/invocation-args"
-  }
-  export -f platform_claude
 
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$log_file" \
-    agent_run_phase || true
-
-  # Legacy path passes --agent flag
-  grep -q -- "--agent" "$wt/invocation-args" || \
-    grep -q "feature-marker" "$wt/invocation-args"
+    agent_run_phase
+  [ $? -ne 0 ]
 }
 
-@test "agent_run_phase: CONTEXT_JSON missing file falls back to legacy path" {
+@test "agent_run_phase: CONTEXT_JSON missing file exits non-zero" {
   local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
 
-  platform_claude() {
-    printf '%s\n' "$@" > "$wt/invocation-args"
-  }
-  export -f platform_claude
-
+  local rc=0
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$wt/run.log" \
   MONOZUKURI_PHASE="prd" \
   CONTEXT_JSON="/nonexistent.json" \
-    agent_run_phase || true
+    agent_run_phase || rc=$?
 
-  grep -q -- "--agent" "$wt/invocation-args" || \
-    grep -q "feature-marker" "$wt/invocation-args"
+  [ "$rc" -ne 0 ]
 }
 
 # ── _cc_run_phase_render internals ───────────────────────────────────────────

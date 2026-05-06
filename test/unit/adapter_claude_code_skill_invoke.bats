@@ -162,25 +162,18 @@ _install_skill() {
   [ -f "$wt/tasks/prd-feat-001/pr.md" ]
 }
 
-# ── Tier 3: legacy feature-marker fallback ────────────────────────────────────
+# ── No skill/template: hard error ─────────────────────────────────────────────
 
-@test "agent_run_phase: uses legacy path when no phase and no CONTEXT_JSON" {
+@test "agent_run_phase: exits non-zero when no phase and no CONTEXT_JSON" {
   local wt; wt=$(mktemp -d /tmp/cc-skill-test-XXXXX)
-  local args_file="$wt/platform-args"
 
-  platform_claude() {
-    local _t="$1"; shift
-    printf '%s\n' "$@" > "$args_file"
-  }
-  export -f platform_claude
-
+  local rc=0
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$wt/run.log" \
-    agent_run_phase || true
+    agent_run_phase || rc=$?
 
-  grep -q -- "--agent" "$args_file"
-  grep -q "feature-marker" "$args_file"
+  [ "$rc" -ne 0 ]
 }
 
 @test "agent_run_phase: skill path wins over render path when skill installed" {

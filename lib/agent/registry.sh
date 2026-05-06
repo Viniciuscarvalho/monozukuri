@@ -3,7 +3,7 @@
 #
 # Extends contract.sh with phase-aware dispatch:
 #   - prd/techspec: render template → pipe rendered prompt to agent
-#   - other phases: existing feature-marker skill path (no change)
+#   - other phases: mz-* skill or render-template path
 #
 # Functions:
 #   registry_adapter_for_phase PHASE  — echo adapter name for PHASE

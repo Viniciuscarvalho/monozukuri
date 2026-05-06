@@ -65,8 +65,7 @@ load_config() {
   export MONOZUKURI_AGENT
 
   # Skill command (Claude Code specific) — deprecated; use agents.claude-code.skills.<phase>.
-  # Back-compat: old configs with skill.command: <skill> keep working as before.
-  SKILL_COMMAND="${CFG_SKILL_COMMAND:-feature-marker}"
+  SKILL_COMMAND="${CFG_SKILL_COMMAND:-}"
   export SKILL_COMMAND
 
   # Discovery (ADR-006)
