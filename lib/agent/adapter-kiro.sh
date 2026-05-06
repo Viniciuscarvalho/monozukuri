@@ -78,23 +78,23 @@ agent_run_phase() {
   if [[ "$phase" == "fix-retry" ]]; then
     local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
     local exit_code=0
-    (
-      set -o pipefail
-      cd "$wt_path" && printf '%s\n' "$fix_context" | \
+    (cd "$wt_path" && printf '%s\n' "$fix_context" | \
+      adapter_tee "$log_file" -- \
         kiro agent run \
           --feature "$feat_id" \
           ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          - 2>&1 | tee "$log_file"
-    ) || exit_code=$?
+          -) || exit_code=$?
     return "$exit_code"
   fi
 
   # For prd/techspec phases, optionally use kiro's native spec workflow
   if [ "$use_native_specs" = "true" ] && { [ "$phase" = "prd" ] || [ "$phase" = "techspec" ]; }; then
-    (cd "$wt_path" && kiro spec create \
-      --feature "$feat_id" \
-      --phase "$phase") 2>&1 | tee "$log_file"
-    return "${PIPESTATUS[0]}"
+    local exit_code=0
+    (cd "$wt_path" && adapter_tee "$log_file" -- \
+      kiro spec create \
+        --feature "$feat_id" \
+        --phase "$phase") || exit_code=$?
+    return "$exit_code"
   fi
 
   # All other phases (and prd/techspec when native specs disabled): agent run
@@ -105,11 +105,14 @@ agent_run_phase() {
     rendered_prompt="Implement feature ${feat_id}."
   fi
 
+  local exit_code=0
   (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
-    kiro agent run \
-      --feature "$feat_id" \
-      ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-      -) 2>&1 | tee "$log_file"
+    adapter_tee "$log_file" -- \
+      kiro agent run \
+        --feature "$feat_id" \
+        ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
+        -) || exit_code=$?
+  return "$exit_code"
 }
 
 agent_report_cost() {

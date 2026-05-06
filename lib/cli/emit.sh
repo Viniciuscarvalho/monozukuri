@@ -4,6 +4,24 @@
 
 MONOZUKURI_RUN_ID="${MONOZUKURI_RUN_ID:-}"
 
+# adapter_tee <log_file> -- <cmd> [args...]
+# Routes command stdout+stderr based on whether we're in event-stream mode:
+#   MONOZUKURI_RUN_ID set → log file only (stdout is the JSONL event stream;
+#                            raw agent text would corrupt it)
+#   otherwise             → tee to log file (user sees output in terminal)
+# Stdin is passed through to <cmd> unchanged.
+# Returns the exit code of <cmd>.
+adapter_tee() {
+  local _log_file="$1"; shift
+  [ "${1:-}" = "--" ] && shift
+  if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+    "$@" > "$_log_file" 2>&1
+  else
+    "$@" 2>&1 | tee "$_log_file"
+    return "${PIPESTATUS[0]}"
+  fi
+}
+
 monozukuri_emit() {
   # Only emit when launched via Node dispatcher (MONOZUKURI_RUN_ID is set to a UUID).
   # Direct shell invocations leave it empty, so events don't leak to stdout.
