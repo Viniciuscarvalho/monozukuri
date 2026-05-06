@@ -84,6 +84,10 @@ router_detect_stack_from_paths() {
 router_stack_to_agent() {
   local stack="$1"
 
+  # Per-project override: set MONOZUKURI_AGENT_NODE=fullstack-developer in .env
+  local env_override="MONOZUKURI_AGENT_$(printf '%s' "$stack" | tr '[:lower:]' '[:upper:]')"
+  [ -n "${!env_override}" ] && echo "${!env_override}" && return 0
+
   case "$stack" in
     ios)    echo "swift-expert" ;;
     node)   echo "typescript-pro" ;;
