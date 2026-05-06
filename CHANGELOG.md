@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.34.0...v1.34.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **adapters:** event stream parity for Codex, Gemini, Kiro, Aider ([#122](https://github.com/Viniciuscarvalho/monozukuri/issues/122)) ([ca80cef](https://github.com/Viniciuscarvalho/monozukuri/commit/ca80cef0717db3c2293ac6b02d129b8c2fabb0c0))
+
 ## [1.34.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.33.0...v1.34.0) (2026-05-06)
 
 
