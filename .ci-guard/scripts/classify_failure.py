@@ -23,6 +23,31 @@ from typing import Optional
 # masked by a coincidental network signal in the same log.
 RULES: list[tuple[str, str, str, re.Pattern]] = [
     # ---------- branch_failure (real bugs in the change) ----------
+
+    # Test runner output — check first so a failing test doesn't get masked
+    # by a coincidental network line that appears later in the same log.
+    ("branch_failure", "high", "TAP/BATS test failure (not ok N)",
+     re.compile(r"^not ok \d+", re.M)),
+    ("branch_failure", "high", "TAP bail-out (suite aborted)",
+     re.compile(r"^Bail out!", re.M)),
+    ("branch_failure", "high", "pytest FAILED line",
+     re.compile(r"^FAILED ", re.M)),
+    ("branch_failure", "high", "pytest FAILURES section",
+     re.compile(r"^={3,} FAILURES ={3,}", re.M)),
+    ("branch_failure", "high", "Jest / Vitest FAIL file line",
+     re.compile(r"^\s*FAIL\s+\S+", re.M)),
+    ("branch_failure", "high", "Jest / Vitest test count: N failed",
+     re.compile(r"Tests?:\s+\d+ failed", re.I)),
+    ("branch_failure", "high", "Mocha / tap N failing",
+     re.compile(r"\b\d+ (failing|failed)\b", re.I)),
+    ("branch_failure", "medium", "AssertionError (test assertion failed)",
+     re.compile(r"\bAssertionError\b")),
+    ("branch_failure", "medium", "RSpec / Ruby failure summary",
+     re.compile(r"\d+ example[s]?,? \d+ failure", re.I)),
+    ("branch_failure", "medium", "JUnit / Go test FAIL line",
+     re.compile(r"^(FAIL\t|--- FAIL:)", re.M)),
+
+    # Compiler / linter errors
     ("branch_failure", "high", "Python SyntaxError",
      re.compile(r"\bSyntaxError:", re.I)),
     ("branch_failure", "high", "TypeScript/Flow type error",
