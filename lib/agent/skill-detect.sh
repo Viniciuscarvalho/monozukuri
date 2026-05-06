@@ -2,7 +2,7 @@
 # lib/agent/skill-detect.sh — Phase-to-skill mapping and installation detection.
 #
 # Used by adapter-*.sh to decide whether to invoke a native mz-* skill
-# or fall back to the template-render or legacy feature-marker paths.
+# or fall back to the template-render path.
 #
 # Public functions:
 #   phase_to_skill <phase>                       → mz-* skill name or ""

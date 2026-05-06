@@ -568,6 +568,18 @@ EOPRD
   # Load the adapter and dispatch
   agent_load "${MONOZUKURI_AGENT:-claude-code}"
 
+  # Build context JSON for the template-render path (Tier 2 in adapter).
+  # Required when mz-* skills are not installed in the worktree.
+  if declare -f context_pack_build &>/dev/null; then
+    local _ctx_json="$wt_path/.monozukuri-ctx.json"
+    export FEATURE_TITLE="$title" FEATURE_DESCRIPTION="$body"
+    if context_pack_build "$feat_id" "$_ctx_json" 2>/dev/null; then
+      export CONTEXT_JSON="$_ctx_json"
+    else
+      warn "context_pack_build failed — Tier 2 render path unavailable"
+    fi
+  fi
+
   info "Autonomy=$AUTONOMY — split-phase (mz-* skills): prd → techspec → tasks → code"
 
   if [ "$AUTONOMY" = "full_auto" ]; then

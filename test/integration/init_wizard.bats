@@ -40,7 +40,7 @@ teardown() {
   grep -q "^agent: claude-code" "$TMP_PROJECT/.monozukuri/config.yaml"
 }
 
-@test "init --non-interactive config has no 'skill.command: feature-marker' hardcode" {
+@test "init --non-interactive config has no legacy 'skill.command' hardcode" {
   run bash "$ORCHESTRATE" init --non-interactive
   [ "$status" -eq 0 ]
   ! grep -q "skill:" "$TMP_PROJECT/.monozukuri/config.yaml"

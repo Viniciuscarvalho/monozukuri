@@ -132,7 +132,7 @@ sub_run() {
 
   # Agent discovery (ADR-006)
   # Scaffold AGENTS.md when neither it nor .claude/agents/ exist, so new projects
-  # don't silently fall into the Tier-3 legacy-feature-marker trap.
+  # have clear agent configuration from the start.
   local agents_md="$ROOT_DIR/AGENTS.md"
   local agents_dir="$ROOT_DIR/.claude/agents"
   if [ "${MONOZUKURI_NO_SCAFFOLD:-}" != "1" ] \

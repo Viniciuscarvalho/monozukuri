@@ -1,8 +1,8 @@
 #!/bin/bash
 # lib/agent/adapter-claude-code.sh — Claude Code reference adapter (ADR-012/013).
 #
-# Implements the six-function adapter contract. Wraps the feature-marker skill
-# invocation with:
+# Implements the six-function adapter contract. Wraps mz-* skill
+# invocations with:
 #   - Schema injection to worktree (.monozukuri-schemas/) before invocation
 #   - Proper exit-code capture with pipefail
 #   - Error envelope writing to MONOZUKURI_ERROR_FILE on failure (ADR-013)
@@ -14,12 +14,18 @@
 #   MONOZUKURI_MODEL        model alias (optional; empty = config default)
 #   MONOZUKURI_LOG_FILE     where to tee claude output (optional)
 #   MONOZUKURI_ERROR_FILE   path for structured error envelope on failure (optional)
-#   SKILL_COMMAND           which Claude Code skill to invoke (default: feature-marker)
+#   SKILL_COMMAND           deprecated; use agents.claude-code.skills.<phase> in config
 
 # monozukuri_emit is sourced from lib/cli/emit.sh by cmd/run.sh.
 # Provide a no-op stub for tests that source this adapter in isolation.
 if ! declare -f monozukuri_emit &>/dev/null; then
   monozukuri_emit() { :; }
+fi
+
+# error/warn/info may be provided by the caller chain (lib/core/util.sh or similar).
+# Provide lightweight stubs so this adapter works when sourced in isolation.
+if ! declare -f error &>/dev/null; then
+  error() { printf 'error: %s\n' "$*" >&2; }
 fi
 
 # stream_parse_emit_file is sourced from lib/cli/stream-parse.sh when available.
@@ -267,7 +273,7 @@ agent_run_phase() {
   #   1. <worktree>/.claude/skills/<skill>/SKILL.md   — project-local install
   #   2. ~/.claude/skills/<skill>/SKILL.md             — global install (monozukuri setup --global)
   #   3. Tier 2: template-render path (CONTEXT_JSON present, no installed skill)
-  #   4. Tier 3: legacy feature-marker (no phase mapping, no context)
+  #   4. No match: hard error (no skill or template available)
   # Bundled mz-* skills in the monozukuri source tree are NOT used directly here;
   # they must first be installed via `monozukuri setup` to appear at one of the paths above.
   local skill=""
@@ -315,31 +321,11 @@ agent_run_phase() {
       monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "2" exit_code "$exit_code"
     fi
 
-  # Tier 3: legacy feature-marker path (unknown phase or no skill/template available)
+  # No skill or render template available — hard error
   else
-    local skill_arg="${SKILL_COMMAND:-feature-marker}"
-    local effective_model="${MONOZUKURI_MODEL:-}"
-    [ "$effective_model" = "opusplan" ] && effective_model="opus"
-
-    local perm_flag=""
-    [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--permission-mode bypassPermissions"
-
-    local interactive_flag=""
-    [ "${MONOZUKURI_AUTONOMY:-}" = "supervised" ] && interactive_flag="--interactive"
-
-    warn "Tier-3 fallback: no skill registered for phase '${phase:-<none>}' — using legacy:feature-marker"
-    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "3" skill "legacy:feature-marker"
-    _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
-      ${effective_model:+--model "$effective_model"} \
-      --agent "$skill_arg" \
-      $perm_flag \
-      ${interactive_flag:+$interactive_flag} \
-      -p "prd-$feat_id" || exit_code=$?
-    if [ "$exit_code" -eq 0 ]; then
-      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "3"
-    else
-      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "3" exit_code "$exit_code"
-    fi
+    error "No mz-* skill or render template available for phase '${phase:-<none>}'. Install skills via 'monozukuri setup' or ensure CONTEXT_JSON points to a valid context file."
+    monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "0" exit_code "1" reason "no-skill-or-template"
+    exit_code=1
   fi
 
   # ADR-013: write error envelope so policy engine can classify without log scraping

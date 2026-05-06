@@ -4,13 +4,15 @@
 # Handles every invocation monozukuri makes during a gate fixture run:
 #   claude --version
 #   claude auth status
-#   claude [--model M] --agent feature-marker [--permission-mode bypassPermissions] -p "<feat_id>"
+#   claude [--model M] --agent <skill-name> [--permission-mode bypassPermissions] -p "<feat_id>"
+#   claude [--model M] -p "<rendered-prompt>"   (Tier 2 template-render path)
 #
-# On feature-marker invocations: writes canned prd.md, techspec.md, tasks.json to
-# $MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/ and a stub source file, then exits 0.
+# Tier 1 (--agent): writes artifact files directly to MONOZUKURI_WORKTREE (skill writes own files)
+# Tier 2 (-p render): prints artifact content to stdout so _cc_run_phase_render can cp it to the
+#   artifact file. Must NOT print to stderr: _cc_invoke_claude uses 2>&1, so stderr leaks into
+#   the log_file and the render path would then cp that corrupt content over the real artifact.
 #
-# All other invocations (e.g. schema reprompt via --print) exit 0 silently so they
-# don't break the run if unexpectedly triggered.
+# All other invocations (e.g. schema reprompt, auth) exit 0 silently.
 
 set -euo pipefail
 
@@ -31,7 +33,42 @@ if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
   exit 0
 fi
 
-# ── feature-marker invocation ────────────────────────────────────────────────
+# ── artifact-writing helper (Tier 1 only — skill writes own files) ────────────
+_write_phase_artifact_files() {
+  local feat_id="$1"
+  local wt_path="$2"
+  local phase="${3:-}"
+  local task_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$task_dir"
+
+  case "$phase" in
+    prd)
+      cp "$CANNED_DIR/prd.md" "$task_dir/prd.md"
+      ;;
+    techspec)
+      cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
+      ;;
+    tasks)
+      cp "$CANNED_DIR/tasks.json" "$task_dir/tasks.json"
+      ;;
+    code|tests|implementation)
+      mkdir -p "$wt_path/src"
+      printf '# QA gate fixture implementation stub for %s\n' "$feat_id" \
+        > "$wt_path/src/feature-qa.md"
+      ;;
+    *)
+      # pr, commit-summary, unknown — write all canned files as a safe fallback
+      cp "$CANNED_DIR/prd.md"      "$task_dir/prd.md"
+      cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
+      cp "$CANNED_DIR/tasks.json"  "$task_dir/tasks.json"
+      mkdir -p "$wt_path/src"
+      printf '# QA gate fixture implementation stub for %s\n' "$feat_id" \
+        > "$wt_path/src/feature-qa.md"
+      ;;
+  esac
+}
+
+# ── skill invocation (Tier 1 — --agent flag) ─────────────────────────────────
 has_agent=false
 for arg in "$@"; do
   [ "$arg" = "--agent" ] && has_agent=true && break
@@ -42,23 +79,45 @@ if [ "$has_agent" = "true" ]; then
   wt_path="${MONOZUKURI_WORKTREE:-}"
 
   if [ -z "$wt_path" ]; then
-    printf 'mock: MONOZUKURI_WORKTREE not set\n' >&2
     exit 1
   fi
 
-  task_dir="$wt_path/tasks/prd-$feat_id"
-  mkdir -p "$task_dir"
+  _write_phase_artifact_files "$feat_id" "$wt_path" "${MONOZUKURI_PHASE:-}"
+  exit 0
+fi
 
-  cp "$CANNED_DIR/prd.md"      "$task_dir/prd.md"
-  cp "$CANNED_DIR/techspec.md" "$task_dir/techspec.md"
-  cp "$CANNED_DIR/tasks.json"  "$task_dir/tasks.json"
+# ── render-path invocation (Tier 2 — -p flag with MONOZUKURI_WORKTREE) ────────
+# _cc_invoke_claude runs: platform_claude ... -p "$rendered_prompt" 2>&1 | tee "$log_file"
+# Then _cc_run_phase_render copies log_file to the artifact file.
+# We must print artifact content to stdout (captured in log_file) and print NOTHING to
+# stderr (because 2>&1 merges stderr into log_file, corrupting the artifact).
+if [ -n "${MONOZUKURI_WORKTREE:-}" ] && [ -n "${MONOZUKURI_FEATURE_ID:-}" ]; then
+  phase="${MONOZUKURI_PHASE:-}"
+  feat_id="$MONOZUKURI_FEATURE_ID"
+  wt_path="$MONOZUKURI_WORKTREE"
 
-  # Write a stub source file so the worktree has actual changes.
-  mkdir -p "$wt_path/src"
-  printf '# QA gate fixture implementation stub for %s\n' "$feat_id" \
-    > "$wt_path/src/feature-qa.md"
-
-  printf 'mock: wrote artifacts for %s to %s\n' "$feat_id" "$task_dir"
+  case "$phase" in
+    prd)
+      cat "$CANNED_DIR/prd.md"
+      ;;
+    techspec)
+      cat "$CANNED_DIR/techspec.md"
+      ;;
+    tasks)
+      # Render path saves as tasks.md; schema compat path handles tasks.json absence
+      cat "$CANNED_DIR/tasks.json"
+      ;;
+    code|tests|implementation)
+      # Write stub file AND print to stdout so log_file is non-empty (render path checks -s)
+      mkdir -p "$wt_path/src"
+      printf '# QA gate fixture implementation stub for %s\n' "$feat_id" \
+        > "$wt_path/src/feature-qa.md"
+      cat "$wt_path/src/feature-qa.md"
+      ;;
+    *)
+      cat "$CANNED_DIR/prd.md"
+      ;;
+  esac
   exit 0
 fi
 

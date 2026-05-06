@@ -125,7 +125,7 @@ run_pr_creation() {
     --base "$BASE_BRANCH" \
     --head "$branch" \
     --title "feat: $title" \
-    --body "Automated by feature-marker orchestrator." \
+    --body "Automated by monozukuri." \
     $pr_flag 2>"$pr_tmpfile"); then
     pr_exit=0
   else

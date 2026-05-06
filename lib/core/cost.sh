@@ -8,7 +8,7 @@
 # Exported variables (populated by cost_load_config):
 #   COST_PHASE_1_PLANNING      — tokens for Phase 1 planning invocation
 #   COST_PHASE_2_SPECIALIST    — tokens per task routed to a specialist agent
-#   COST_PHASE_2_GENERIC       — tokens per task routed to feature-marker
+#   COST_PHASE_2_GENERIC       — tokens per task routed via render path
 #   COST_PHASE_4_COMMIT_PR     — tokens for Phase 4 commit+PR creation
 #   COST_FIX_ATTEMPT           — overhead tokens per fix attempt in Phase 3
 
@@ -66,7 +66,7 @@ cost_init() {
 #
 # Note: phase 2 estimates are routing-dependent. A feature routed to a
 # specialist agent (e.g. swift-expert) uses COST_PHASE_2_SPECIALIST (8K/task
-# default), while feature-marker fallback uses COST_PHASE_2_GENERIC (12K/task
+# default), while the render path uses COST_PHASE_2_GENERIC (12K/task
 # default). The same feature can show different phase 2 estimates across runs
 # if agent availability changes — this is expected, not a bug.
 

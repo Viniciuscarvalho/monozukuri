@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# stack-detector.sh — Tech-stack detection engine for feature-marker
+# stack-detector.sh — Tech-stack detection engine for monozukuri
 # Detects iOS, Node.js, Rust, Python, Go (and sub-types / monorepos)
 # Outputs: platform-context.json in the given state directory
 set -euo pipefail
@@ -68,8 +68,8 @@ detect_stack() {
 
   [[ $platform_count -gt 1 ]] && is_monorepo="true"
 
-  # Check for manual override in .feature-marker.json
-  local config_file="${project_root}/.feature-marker.json"
+  # Check for manual override in .monozukuri.json
+  local config_file="${project_root}/.monozukuri.json"
   if [[ -f "$config_file" ]]; then
     local override
     override=$(python3 -c "import json,sys; d=json.load(open('$config_file')); print(d.get('platform',''))" 2>/dev/null || echo "")

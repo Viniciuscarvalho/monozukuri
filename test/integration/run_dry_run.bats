@@ -16,8 +16,6 @@ source:
 autonomy: checkpoint
 execution:
   base_branch: main
-skill:
-  command: feature-marker
 EOCFG
 
   cd "$SAMPLE_PROJECT"

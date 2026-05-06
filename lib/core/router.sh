@@ -2,8 +2,7 @@
 # lib/router.sh — Block-based stack routing with specialist fallback (ADR-008 PR-B, ADR-009 PR-G)
 #
 # Detects the tech stack from file paths associated with a task, maps that stack
-# to the most appropriate specialist agent, checks if the agent is installed, and
-# falls back to the generic feature-marker if not.
+# to the most appropriate specialist agent and checks if the agent is installed.
 #
 # ADR-009 PR-G: when local_model.enabled=true, local_model::classify refines
 # routing beyond file-path heuristics. The classification_label is stored in
@@ -124,7 +123,7 @@ router_agent_installed() {
 # Full routing pipeline:
 #   1. Detect stack from file paths
 #   2. Map stack to preferred agent
-#   3. Check if agent is installed; fall back to feature-marker if not
+#   3. Check if agent is installed; fall back to default agent if not
 #   4. Cache result in stack-map.json
 # Prints the resolved agent name to stdout.
 

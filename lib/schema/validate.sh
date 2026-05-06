@@ -233,13 +233,12 @@ schema_validate_with_reprompt() {
       tasks) artifact_file="$task_dir/tasks.json" ;;
     esac
 
-    # feature-marker generates tasks.md (not tasks.json); mz-create-tasks generates tasks.json.
-    # When tasks.json is absent but tasks.md exists the feature ran via the monolithic skill —
-    # skip JSON validation so we stay backward-compatible.
+    # mz-create-tasks generates tasks.json; older runs may have tasks.md only.
+    # When tasks.json is absent but tasks.md exists skip JSON validation for backward compat.
     if [ "$artifact_type" = "tasks" ] && \
        [ ! -f "$artifact_file" ] && \
        [ -f "$task_dir/tasks.md" ]; then
-      info "Schema: tasks.json absent but tasks.md present — skipping JSON validation (feature-marker run)"
+      info "Schema: tasks.json absent but tasks.md present — skipping JSON validation"
       continue
     fi
 

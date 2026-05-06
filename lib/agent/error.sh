@@ -94,7 +94,7 @@ agent_error_field() {
 # Greps the agent log for human-input blocker markers. If found, writes a
 # class:"human" envelope to error_file (if given) and returns 1 so callers
 # can exit EXIT_AGENT_BLOCKED (21). Returns 0 when no blocker is found.
-# The marker regex is intentionally broad to catch feature-marker and custom
+# The marker regex is intentionally broad to catch mz-* and custom
 # agent skills that follow the "## ⚠️ Blocker" or "Need Your Input" pattern.
 agent_scan_for_blocker() {
   local log_file="${1:-}"

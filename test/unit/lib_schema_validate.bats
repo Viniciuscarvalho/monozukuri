@@ -319,7 +319,7 @@ EOF
   [ "$rc" -eq 0 ]
 }
 
-@test "schema_validate_with_reprompt: returns 0 when tasks.md exists but tasks.json absent (feature-marker run)" {
+@test "schema_validate_with_reprompt: returns 0 when tasks.md exists but tasks.json absent (legacy run)" {
   _make_valid_prd
   _make_valid_techspec
   cat >"$TMPDIR_TEST/tasks.md" <<'EOF'
