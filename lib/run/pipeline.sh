@@ -567,11 +567,6 @@ EOPRD
 
   # Load the adapter and dispatch
   agent_load "${MONOZUKURI_AGENT:-claude-code}"
-  # Source skill-detect so skill_installed/phase_to_skill are available before phase dispatch.
-  if ! declare -f skill_installed &>/dev/null; then
-    local _sd="$LIB_DIR/agent/skill-detect.sh"
-    [[ -f "$_sd" ]] && source "$_sd"
-  fi
 
   info "Autonomy=$AUTONOMY — split-phase (mz-* skills): prd → techspec → tasks → code"
 
@@ -631,13 +626,6 @@ EOPRD
       info "Phase $_ph: artifact cached — skipping"
       monozukuri_emit phase.skipped feature_id "$feat_id" phase "$_ph" reason "cached"
       continue
-    fi
-    # Guard: skills must be installed before invoking any planning phase.
-    if declare -f skill_installed &>/dev/null && \
-       ! skill_installed "claude-code" "mz-create-prd" "$wt_path"; then
-      err "mz-* skills not installed. Run: monozukuri setup --global"
-      fstate_transition "$feat_id" "error" "skills-not-installed"
-      return 1
     fi
     _planning_ran=true
     monozukuri_emit phase.started feature_id "$feat_id" phase "$_ph"
