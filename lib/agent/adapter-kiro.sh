@@ -15,6 +15,18 @@
 # Auth: AWS credentials via standard AWS SDK chain (env vars, ~/.aws/credentials,
 # instance profile). Verified via `aws sts get-caller-identity`.
 
+# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
+# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
+if ! declare -f op_timeout &>/dev/null; then
+  op_timeout() { local _secs="$1"; shift; "$@"; }
+fi
+
+# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
+# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
+if ! declare -f adapter_tee &>/dev/null; then
+  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+fi
+
 agent_name() { echo "kiro"; }
 
 agent_capabilities() {
