@@ -319,6 +319,26 @@ EOF
   [ "$rc" -eq 0 ]
 }
 
+@test "schema_validate_with_reprompt: returns 0 when tasks.md exists but tasks.json absent (feature-marker run)" {
+  _make_valid_prd
+  _make_valid_techspec
+  cat >"$TMPDIR_TEST/tasks.md" <<'EOF'
+# Tasks
+
+### T1 — Add login route
+
+- **File**: src/routes/auth.js
+- **Acceptance**: Login endpoint returns 200 on valid credentials.
+EOF
+
+  platform_claude() { echo "UNEXPECTED call" >&2; return 1; }
+  export -f platform_claude
+
+  local rc=0
+  schema_validate_with_reprompt "feat-001" "$TMPDIR_TEST" "$TMPDIR_TEST" || rc=$?
+  [ "$rc" -eq 0 ]
+}
+
 @test "schema_validate_with_reprompt: returns 1 when prd invalid and reprompt does not fix it" {
   echo "too short" >"$TMPDIR_TEST/prd.md"
   _make_valid_techspec

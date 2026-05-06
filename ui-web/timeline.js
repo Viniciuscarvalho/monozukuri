@@ -77,6 +77,17 @@ class Timeline {
       }
     }
 
+    if (ev.type === 'phase.skipped') {
+      const seg = document.createElement('div');
+      seg.className = 'tl-phase tl-phase-skipped';
+      seg.style.background = PHASE_COLORS[ev.phase] || '#6b7280';
+      seg.style.left = `${Math.min(elapsed / 3600000 * 100, 95)}%`;
+      seg.style.width = '0.6%';
+      seg.style.opacity = '0.35';
+      seg.title = `${ev.phase}: cached (skipped)`;
+      lane.track.appendChild(seg);
+    }
+
     if (ev.type === 'tool.invoked') {
       const dot = document.createElement('span');
       dot.className = 'tl-dot';

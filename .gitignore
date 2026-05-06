@@ -23,7 +23,9 @@ ui/dist/*.map
 .windsurf/
 .zencoder/
 # External skills installed by skill-sync tools (symlinks to .agents/skills/)
+skills/ci-guard
 skills/grill-me
 skills/to-prd
 test/fixtures/sample-project/.monozukuri/
 .qa/reports/
+.ci-guard/.watch-state.json
