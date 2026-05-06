@@ -193,6 +193,15 @@ while [ $# -gt 0 ]; do
     list|archive|promote)
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
+      [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
+      ;;
+    install|status|uninstall)
+      if [ "$SUBCOMMAND" = "setup" ]; then
+        case "$1" in
+          status)    OPT_SETUP_ACTION=status ;;
+          uninstall) OPT_SETUP_ACTION=uninstall ;;
+        esac
+      fi
       ;;
     sources|show|generate|preview|write|diff|restore|restore-list|candidates)
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
