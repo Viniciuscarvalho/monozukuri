@@ -54,6 +54,22 @@ jobs:
       - name: Run unit tests
         run: bats --jobs 4 test/unit/
 
+      - name: Update flaky ledger
+        if: always()
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
+          TEST_ID: ${{ github.job }}
+        run: |
+          if [ "$JOB_STATUS" = "failure" ]; then
+            python3 .ci-guard/scripts/flaky_ledger.py record-failure \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          else
+            python3 .ci-guard/scripts/flaky_ledger.py record-pass \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          fi
+
   # ── Integration tests ────────────────────────────────────────────────────────
   integration:
     name: Integration tests
@@ -76,6 +92,22 @@ jobs:
       - name: Run integration tests
         run: bats test/integration/
 
+      - name: Update flaky ledger
+        if: always()
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
+          TEST_ID: ${{ github.job }}
+        run: |
+          if [ "$JOB_STATUS" = "failure" ]; then
+            python3 .ci-guard/scripts/flaky_ledger.py record-failure \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          else
+            python3 .ci-guard/scripts/flaky_ledger.py record-pass \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          fi
+
   # ── Conformance tests ────────────────────────────────────────────────────────
   conformance:
     name: Conformance tests
@@ -92,3 +124,36 @@ jobs:
 
       - name: Run conformance tests
         run: bats test/conformance/
+
+      - name: Update flaky ledger
+        if: always()
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
+          TEST_ID: ${{ github.job }}
+        run: |
+          if [ "$JOB_STATUS" = "failure" ]; then
+            python3 .ci-guard/scripts/flaky_ledger.py record-failure \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          else
+            python3 .ci-guard/scripts/flaky_ledger.py record-pass \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          fi
+
+  # ── Quarantine guard ─────────────────────────────────────────────────────────
+  quarantine-guard:
+    name: Quarantine guard
+    runs-on: ubuntu-latest
+    needs: [lint-ui, unit, integration, conformance]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Warn on quarantine candidates
+        run: |
+          candidates=$(python3 .ci-guard/scripts/flaky_ledger.py quarantine-candidates)
+          if [ -n "$(echo "$candidates" | jq -r '.[]' 2>/dev/null)" ]; then
+            echo "::warning::Quarantine candidates exist; review before merging."
+            echo "$candidates"
+          fi
