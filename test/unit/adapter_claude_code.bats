@@ -60,11 +60,13 @@ teardown() {
   local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
   local log_file="$wt/run.log"
 
+  local rc=0
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$log_file" \
-    agent_run_phase
-  [ $? -ne 0 ]
+    agent_run_phase || rc=$?
+
+  [ "$rc" -ne 0 ]
 }
 
 @test "agent_run_phase: CONTEXT_JSON missing file exits non-zero" {

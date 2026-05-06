@@ -22,6 +22,12 @@ if ! declare -f monozukuri_emit &>/dev/null; then
   monozukuri_emit() { :; }
 fi
 
+# error/warn/info may be provided by the caller chain (lib/core/util.sh or similar).
+# Provide lightweight stubs so this adapter works when sourced in isolation.
+if ! declare -f error &>/dev/null; then
+  error() { printf 'error: %s\n' "$*" >&2; }
+fi
+
 # stream_parse_emit_file is sourced from lib/cli/stream-parse.sh when available.
 if ! declare -f stream_parse_emit_file &>/dev/null; then
   local _sp_sh
