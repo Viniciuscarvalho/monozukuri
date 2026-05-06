@@ -28,12 +28,14 @@ context_pack_build() {
   fi
 
   # Build learnings array: split on newlines, strip "- " / "* " prefixes, skip blanks
+  # (grep -v || true) prevents pipefail from triggering when input is empty,
+  # which would cause jq -s to output [] AND the fallback echo to fire — producing "[]\n[]".
   local learnings_json
   learnings_json=$(printf '%s\n' "$learnings_raw" \
     | sed 's/^[[:space:]]*[-*][[:space:]]*//' \
-    | grep -v '^[[:space:]]*$' \
+    | (grep -v '^[[:space:]]*$' || true) \
     | jq -R '{summary: .}' \
-    | jq -s '.' 2>/dev/null || echo '[]')
+    | jq -s '.') || learnings_json='[]'
 
   # Prepend project convention records (AGENTS.md, CLAUDE.md, etc.) when available.
   # Conventions are a separate read-only dataset — never written to the learning store.
@@ -92,7 +94,7 @@ context_pack_build() {
         --argjson inject "$_conv_learnings" \
         --argjson refs   "$_native_refs" \
         --argjson store  "$learnings_json" \
-        '$inject + $refs + $store')
+        '$inject + $refs + $store') || learnings_json='[]'
     fi
   fi
 
