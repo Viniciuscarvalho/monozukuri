@@ -45,12 +45,38 @@ const wantsUI =
   !args.includes('--plan') &&
   existsSync(uiDist);
 
+// --dashboard: also spawn the web server alongside the Ink TUI.
+// The server is independent — if it dies, the orchestrator keeps running.
+const wantsDashboard =
+  cmd === 'run' &&
+  (args.includes('--dashboard') || process.env.MONOZUKURI_DASHBOARD === '1');
+
+const DASHBOARD_PORT = parseInt(process.env.MONOZUKURI_DASHBOARD_PORT || '7639', 10);
+
 const runId = randomUUID();
 
-const orchestrator = spawn('bash', [orchestrate, ...args], {
+// Always create the runs directory + empty events file before spawning anything
+// so the dashboard server can attach immediately without a race.
+const runsDir = join(homedir(), '.monozukuri', 'runs', runId);
+mkdirSync(runsDir, { recursive: true });
+const eventsFilePath = join(runsDir, 'events.jsonl');
+
+const orchestrator = spawn('bash', [orchestrate, ...args.filter(a => a !== '--dashboard')], {
   env: { ...process.env, MONOZUKURI_HOME: SCRIPT_ROOT, MONOZUKURI_RUN_ID: runId },
   stdio: wantsUI ? ['inherit', 'pipe', 'inherit'] : 'inherit',
 });
+
+let dashServer = null;
+
+if (wantsDashboard) {
+  const serverScript = resolve(SCRIPT_ROOT, 'lib', 'ui', 'server.js');
+  if (existsSync(serverScript)) {
+    dashServer = spawn('node', [serverScript, eventsFilePath, runId, String(DASHBOARD_PORT)], {
+      stdio: 'inherit',
+    });
+    dashServer.on('exit', () => { dashServer = null; });
+  }
+}
 
 if (wantsUI) {
   const ui = spawn('node', [uiDist], {
@@ -62,10 +88,7 @@ if (wantsUI) {
     },
   });
 
-  // Persist event stream for `monozukuri ui` dashboard replay
-  const runsDir = join(homedir(), '.monozukuri', 'runs', runId);
-  mkdirSync(runsDir, { recursive: true });
-  const eventLog = createWriteStream(join(runsDir, 'events.jsonl'));
+  const eventLog = createWriteStream(eventsFilePath);
   orchestrator.stdout?.on('data', (chunk) => {
     ui.stdin.write(chunk);
     eventLog.write(chunk);
@@ -81,6 +104,14 @@ if (wantsUI) {
     }
     // Non-zero exit (crash, terminal close, SIGKILL) — orchestrator continues headless
   });
+} else if (wantsDashboard) {
+  // No Ink TUI (non-TTY or --no-ui) but dashboard requested: pipe events to disk only.
+  const eventLog = createWriteStream(eventsFilePath);
+  orchestrator.stdout?.on('data', (chunk) => eventLog.write(chunk));
+  orchestrator.stdout?.on('end', () => eventLog.end());
 }
 
-orchestrator.on('exit', (code) => process.exit(code ?? 0));
+orchestrator.on('exit', (code) => {
+  if (dashServer) dashServer.kill();
+  process.exit(code ?? 0);
+});
