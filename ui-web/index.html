@@ -35,6 +35,8 @@
   .feat-item .feat-status { font-size: 10px; color: #64748b; margin-top: 2px; }
   .feat-item.done .feat-status { color: #10b981; }
   .feat-item.failed .feat-status { color: #ef4444; }
+  .feat-item.paused .feat-status { color: #f59e0b; }
+  .feat-item.retrying .feat-status { color: #a78bfa; }
 
   /* ── Timeline ── */
   #timeline-section { flex: 1; overflow-y: auto; padding: 12px; }
@@ -63,6 +65,17 @@
   .log-entry.tool-ev .log-type { color: #f59e0b; }
   .log-entry.file-ev .log-type { color: #10b981; }
   .log-entry.feat-ev .log-type { color: #a855f7; }
+  .log-entry.schema-ev .log-type { color: #f97316; }
+
+  /* ── Safeguard panel ── */
+  #safeguard-panel { display: none; padding: 10px 12px; border-top: 1px solid #1e293b; background: #0f172a; font-size: 11px; }
+  #safeguard-panel.visible { display: block; }
+  #safeguard-panel h3 { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .sg-row { display: flex; gap: 8px; padding: 2px 0; }
+  .sg-ts { color: #475569; flex-shrink: 0; }
+  .sg-type { color: #f97316; flex-shrink: 0; width: 180px; }
+  .sg-detail { color: #94a3b8; }
+  .sg-recovery { margin-top: 6px; padding: 6px 8px; background: #1c1917; border: 1px solid #78350f; border-radius: 4px; color: #fbbf24; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -93,6 +106,11 @@
       <h2>Recent events</h2>
       <div id="log-entries"></div>
     </div>
+    <div id="safeguard-panel">
+      <h3>Safeguard history — <span id="sg-feat-id"></span></h3>
+      <div id="sg-entries"></div>
+      <div id="sg-recovery" class="sg-recovery" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -113,9 +131,30 @@ const dag = new DAG(dagContainer);
 const timeline = new Timeline(timelineContainer);
 
 const features = {};
+const safeguardHistory = {};  // feat_id → [{ts, type, detail}]
+let selectedFeatId = null;
 
 function formatTs(ts) {
   return ts ? new Date(ts).toLocaleTimeString('en-US', { hour12: false }) : '?';
+}
+
+function schemaEventDetail(ev) {
+  if (ev.type === 'schema.reprompt.started')
+    return `${ev.artifact_type} — attempt ${ev.attempt}/${ev.max}`;
+  if (ev.type === 'schema.reprompt.succeeded')
+    return `${ev.artifact_type} fixed on attempt ${ev.attempt}`;
+  if (ev.type === 'schema.reprompt.exhausted')
+    return `${ev.artifact_type} — ${ev.escalated == 1 ? 'escalated → paused' : 'exhausted (no escalation)'}`;
+  if (ev.type === 'schema.validation.failed')
+    return `${ev.artifact_type}: ${ev.error_signature || ''}`;
+  return '';
+}
+
+function recordSafeguardEntry(featId, ev) {
+  if (!featId) return;
+  if (!safeguardHistory[featId]) safeguardHistory[featId] = [];
+  safeguardHistory[featId].push({ ts: ev.ts, type: ev.type, detail: schemaEventDetail(ev) || ev.reason || '' });
+  if (selectedFeatId === featId) renderSafeguardPanel(featId);
 }
 
 function logEvent(ev) {
@@ -123,13 +162,41 @@ function logEvent(ev) {
   const typeClass = ev.type.startsWith('phase') ? 'phase-ev'
     : ev.type.startsWith('tool') ? 'tool-ev'
     : ev.type.startsWith('file') ? 'file-ev'
+    : ev.type.startsWith('schema') ? 'schema-ev'
     : ev.type.startsWith('feature') ? 'feat-ev'
     : '';
   entry.className = `log-entry ${typeClass}`;
-  const detail = ev.tool || ev.path || ev.phase || ev.reason || ev.text || '';
+  const detail = ev.type.startsWith('schema') ? schemaEventDetail(ev)
+    : ev.tool || ev.path || ev.phase || ev.reason || ev.text || '';
   entry.innerHTML = `<span class="log-ts">${formatTs(ev.ts)}</span><span class="log-type">${ev.type}</span><span class="log-detail">${ev.feature_id ? ev.feature_id + ' ' : ''}${detail}</span>`;
   logEntries.prepend(entry);
   if (logEntries.children.length > 200) logEntries.lastChild.remove();
+}
+
+function renderSafeguardPanel(featId) {
+  const panel = document.getElementById('safeguard-panel');
+  const sgFeatId = document.getElementById('sg-feat-id');
+  const sgEntries = document.getElementById('sg-entries');
+  const sgRecovery = document.getElementById('sg-recovery');
+  if (!featId) { panel.classList.remove('visible'); return; }
+  panel.classList.add('visible');
+  sgFeatId.textContent = featId;
+  sgEntries.innerHTML = '';
+  const history = safeguardHistory[featId] || [];
+  for (const entry of history) {
+    const row = document.createElement('div');
+    row.className = 'sg-row';
+    row.innerHTML = `<span class="sg-ts">${formatTs(entry.ts)}</span><span class="sg-type">${entry.type}</span><span class="sg-detail">${entry.detail}</span>`;
+    sgEntries.appendChild(row);
+  }
+  const el = features[featId];
+  const isPaused = el && el.classList.contains('paused');
+  if (isPaused) {
+    sgRecovery.style.display = 'block';
+    sgRecovery.textContent = `↻ Recoverable — run: monozukuri retry --feat ${featId}`;
+  } else {
+    sgRecovery.style.display = 'none';
+  }
 }
 
 function updateFeatureList(featId, status) {
@@ -141,30 +208,46 @@ function updateFeatureList(featId, status) {
     el.addEventListener('click', () => {
       document.querySelectorAll('.feat-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
+      selectedFeatId = featId;
+      renderSafeguardPanel(featId);
     });
     featureList.appendChild(el);
     features[featId] = el;
   }
   el.querySelector('.feat-status').textContent = status;
-  el.classList.remove('done', 'failed', 'active');
+  el.classList.remove('done', 'failed', 'paused', 'retrying', 'active');
   if (status === 'done' || status === 'pr-created') el.classList.add('done');
-  else if (status === 'failed' || status === 'paused') el.classList.add('failed');
+  else if (status === 'failed') el.classList.add('failed');
+  else if (status === 'paused') el.classList.add('paused');
+  else if (status === 'retrying') el.classList.add('retrying');
+  if (selectedFeatId === featId) renderSafeguardPanel(featId);
 }
 
 function handleEvent(ev) {
   dag.handle(ev);
-  if (ev.feature_id && ['tool.invoked', 'tool.completed', 'file.touched', 'phase.started', 'phase.completed', 'phase.failed', 'feature.completed', 'feature.failed'].includes(ev.type)) {
+  if (ev.feature_id && ['tool.invoked', 'tool.completed', 'file.touched', 'phase.started', 'phase.completed', 'phase.failed', 'feature.completed', 'feature.failed', 'feature.paused'].includes(ev.type)) {
     timeline.handle(ev);
   }
   logEvent(ev);
+
+  // Safeguard history (schema events + paused/retry events)
+  if (ev.feature_id && (ev.type.startsWith('schema.') || ev.type === 'feature.paused' || ev.type.startsWith('feature.retry'))) {
+    recordSafeguardEntry(ev.feature_id, ev);
+  }
 
   // Feature list updates
   if (ev.type === 'feature.queued') updateFeatureList(ev.feature_id, 'queued');
   if (ev.type === 'feature.started') updateFeatureList(ev.feature_id, 'running');
   if (ev.type === 'feature.completed') updateFeatureList(ev.feature_id, 'done');
   if (ev.type === 'feature.failed') updateFeatureList(ev.feature_id, 'failed');
+  if (ev.type === 'feature.paused') updateFeatureList(ev.feature_id, 'paused');
   if (ev.type === 'feature.skipped') updateFeatureList(ev.feature_id, 'skipped');
   if (ev.type === 'feature.deferred') updateFeatureList(ev.feature_id, 'deferred');
+  if (ev.type === 'feature.retry_started') updateFeatureList(ev.feature_id, 'retrying');
+  if (ev.type === 'feature.retry_completed') {
+    const newStatus = ev.new_status || (ev.exit_code == 0 ? 'done' : 'paused');
+    updateFeatureList(ev.feature_id, newStatus);
+  }
 }
 
 // Fetch run ID

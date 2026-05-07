@@ -248,11 +248,19 @@ schema_validate_with_reprompt() {
 
     local error_msg="$SCHEMA_VALIDATE_ERROR"
     warn "Schema validation failed ($feat_id/$artifact_type): $error_msg"
+    declare -f monozukuri_emit &>/dev/null && \
+      monozukuri_emit schema.validation.failed \
+        feature_id "$feat_id" artifact_type "$artifact_type" \
+        error_signature "${artifact_type}:${error_msg%%: /*}"
 
     local attempt=0 validated=false
     while [ "$attempt" -lt "$max_reprompts" ]; do
       attempt=$((attempt + 1))
       info "Schema: reprompting agent for $feat_id/$artifact_type (attempt $attempt/$max_reprompts, ADR-012)..."
+      declare -f monozukuri_emit &>/dev/null && \
+        monozukuri_emit schema.reprompt.started \
+          feature_id "$feat_id" artifact_type "$artifact_type" \
+          attempt "$attempt" max "$max_reprompts"
       local fix_prompt
       fix_prompt=$(schema_humanize_error "$artifact_type" "$error_msg")
       (cd "$wt_path" && printf '%b' "$fix_prompt" |
@@ -261,6 +269,9 @@ schema_validate_with_reprompt() {
 
       if schema_validate "$artifact_type" "$artifact_file"; then
         info "Schema: $artifact_type valid after reprompt (attempt $attempt)"
+        declare -f monozukuri_emit &>/dev/null && \
+          monozukuri_emit schema.reprompt.succeeded \
+            feature_id "$feat_id" artifact_type "$artifact_type" attempt "$attempt"
         validated=true
         break
       fi
@@ -269,6 +280,7 @@ schema_validate_with_reprompt() {
     done
 
     if [ "$validated" = "false" ]; then
+      local _escalated=0
       if declare -f learning_write &>/dev/null; then
         local _raw_msg="${error_msg#*: }"
         # Strip the absolute file path from "file not found: /abs/path" errors so
@@ -279,13 +291,18 @@ schema_validate_with_reprompt() {
           "Extend heading aliases in skills/mz-create-${artifact_type}/references/${artifact_type}-validation.md or ensure the artifact uses a recognized section heading"
       fi
       if [ "${MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN:-false}" = "true" ]; then
+        _escalated=1
         if declare -f fstate_transition &>/dev/null && declare -f fstate_record_pause &>/dev/null; then
           fstate_transition "$feat_id" "paused" "schema-needs-review"
           fstate_record_pause "$feat_id" "human" "schema-needs-review"
           info "Schema: escalating $feat_id to human review after $max_reprompts reprompt(s)"
         fi
-        return 2
       fi
+      declare -f monozukuri_emit &>/dev/null && \
+        monozukuri_emit schema.reprompt.exhausted \
+          feature_id "$feat_id" artifact_type "$artifact_type" \
+          error_signature "${artifact_type}:${error_msg%%: /*}" escalated "$_escalated"
+      [ "$_escalated" -eq 1 ] && return 2
       return 1
     fi
   done

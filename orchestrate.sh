@@ -132,10 +132,13 @@ OPT_SETUP_COPY=false
 OPT_SETUP_FORCE=false
 OPT_SETUP_YES=false
 OPT_TELEMETRY_ACTION=""
+OPT_RETRY_ALL=false
+OPT_RETRY_FEATS=""
+OPT_RETRY_REASON="schema"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|stop|summary)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|stop|summary|retry)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -153,6 +156,12 @@ while [ $# -gt 0 ]; do
       ;;
     --ack)
       OPT_RESUME_ACK=true
+      ;;
+    --all)
+      OPT_RETRY_ALL=true
+      ;;
+    --reason)
+      shift; OPT_RETRY_REASON="$1"
       ;;
     --autonomy)
       shift; OPT_AUTONOMY="$1"
@@ -311,6 +320,10 @@ while [ $# -gt 0 ]; do
       echo "  setup --status               Show current install state"
       echo "  setup --uninstall            Remove monozukuri-installed skills"
       echo "  setup --force                Overwrite foreign/drifted skills"
+      echo "  retry                        List schema-validation-failed features (dry-run)"
+      echo "  retry --all                  Retry all recoverable schema failures"
+      echo "  retry --feat <id>            Retry specific feature(s); repeatable"
+      echo "  retry --reason <substring>   Filter by pause/error reason (default: schema)"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
@@ -346,6 +359,13 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_ACTION="$1"
       elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
         OPT_ROUTING_PHASE="$1"
+      elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
+        shift
+        if [ -n "${OPT_RETRY_FEATS:-}" ]; then
+          OPT_RETRY_FEATS="${OPT_RETRY_FEATS},$1"
+        else
+          OPT_RETRY_FEATS="$1"
+        fi
       elif [ "$SUBCOMMAND" = "conventions" ] && [ -z "$OPT_CONVENTIONS_ACTION" ]; then
         OPT_CONVENTIONS_ACTION="$1"
       elif [ "$SUBCOMMAND" = "conventions" ] && [ -z "$OPT_CONVENTIONS_ID" ]; then
@@ -406,6 +426,7 @@ case "$SUBCOMMAND" in
   learning)        source "$CMD_DIR/learning.sh"; sub_learning ;;
   promote-learning) source "$CMD_DIR/learning.sh"; sub_promote_learning ;;
   resume-paused)   source "$CMD_DIR/resume.sh"; sub_resume_paused ;;
+  retry)           source "$CMD_DIR/retry.sh"; sub_retry ;;
   ingest-status)   source "$CMD_DIR/ingest-status.sh"; sub_ingest_status ;;
   agent)           source "$CMD_DIR/agent.sh"; sub_agent ;;
   routing)         source "$CMD_DIR/routing.sh"; sub_routing ;;
