@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.36.1...v1.37.0) (2026-05-07)
+
+
+### Features
+
+* **resilience:** auto-mode schema resilience — paused recovery, retry command, UI visibility ([#132](https://github.com/Viniciuscarvalho/monozukuri/issues/132)) ([824b1bf](https://github.com/Viniciuscarvalho/monozukuri/commit/824b1bf0d800aed346e5757938a30d23aeafd258))
+
 ## [1.36.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.36.0...v1.36.1) (2026-05-06)
 
 
