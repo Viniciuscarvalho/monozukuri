@@ -548,6 +548,11 @@ EOPRD
   export MONOZUKURI_WORKTREE="$wt_path"
   export MONOZUKURI_AUTONOMY="$AUTONOMY"
   [ "$AUTONOMY" = "full_auto" ] && export MONOZUKURI_INTERACTIVE=0 || export MONOZUKURI_INTERACTIVE=1
+  # Under full_auto there is no TTY to surface failures; land schema errors in
+  # `paused` so --resume-paused and `monozukuri retry` can recover them.
+  if [ "$AUTONOMY" = "full_auto" ] && [ -z "${MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN+x}" ]; then
+    export MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN=true
+  fi
   export MONOZUKURI_MODEL="${MODEL_DEFAULT:-}"
   export MONOZUKURI_LOG_FILE="$log_file"
   export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
@@ -718,7 +723,16 @@ EOPRD
     local _schema_rc=0
     schema_validate_with_reprompt "$feat_id" "$wt_path" "$task_dir" || _schema_rc=$?
     if [ "$_schema_rc" -ne 0 ]; then
-      [ "$_schema_rc" -eq 1 ] && fstate_transition "$feat_id" "error" "schema-validation-failed"
+      if [ "$_schema_rc" -eq 1 ]; then
+        # Reprompts exhausted without human escalation — still land in paused so
+        # `monozukuri retry` can recover, rather than error (which has no recovery verb).
+        fstate_transition "$feat_id" "paused" "schema-needs-review"
+        fstate_record_pause "$feat_id" "human" "schema-needs-review"
+        monozukuri_emit feature.paused feature_id "$feat_id" reason "schema-needs-review" recoverable 1
+      fi
+      # rc=2 means escalation already wrote pause.json and transitioned state inside
+      # schema_validate_with_reprompt — emit the event here so the dashboard sees it.
+      [ "$_schema_rc" -eq 2 ] && monozukuri_emit feature.paused feature_id "$feat_id" reason "schema-needs-review" recoverable 1
       return 1
     fi
   fi

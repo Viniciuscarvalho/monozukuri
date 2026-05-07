@@ -30,7 +30,7 @@ const uiDist =
   process.env.MONOZUKURI_UI_DIST ??
   resolve(__dirname, '..', 'ui', 'dist', 'index.js');
 
-const UI_COMMANDS = new Set(['run', 'setup']);
+const UI_COMMANDS = new Set(['run']);
 // TUI activates for any interactive (TTY) terminal session — including full_auto.
 // The bash render layer is silenced when MONOZUKURI_RUN_ID is set, so only
 // the Ink TUI produces output in TTY mode.
