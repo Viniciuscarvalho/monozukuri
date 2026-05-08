@@ -13,8 +13,7 @@ setup() {
   LIB_DIR="$REPO_ROOT/lib"
   FIXTURES="$REPO_ROOT/test/fixtures/projects"
   export LIB_DIR REPO_ROOT FIXTURES
-  source "$LIB_DIR/agent/conventions-generate.sh"
-  source "$LIB_DIR/agent/conventions-merge.sh"
+  source "$LIB_DIR/agent/conventions.sh"
 }
 
 # ── Safety 1: content outside markers is byte-identical ──────────────────────

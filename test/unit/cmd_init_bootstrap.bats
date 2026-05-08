@@ -25,7 +25,7 @@ _load_init_fns() {
   }
 
   declare -f conventions_merge_write &>/dev/null || \
-    source "$REPO_ROOT/lib/agent/conventions-merge.sh" 2>/dev/null || true
+    source "$REPO_ROOT/lib/agent/conventions.sh" 2>/dev/null || true
 
   # Provide LIB_DIR so the source guards inside _init_bootstrap_context work.
   export LIB_DIR="$REPO_ROOT/lib"
@@ -52,7 +52,7 @@ _init_bootstrap_context() {
   declare -f stack_profile_init &>/dev/null || \
     source "$LIB_DIR/core/stack-profile.sh" 2>/dev/null || true
   declare -f conventions_merge_write &>/dev/null || \
-    source "$LIB_DIR/agent/conventions-merge.sh" 2>/dev/null || true
+    source "$LIB_DIR/agent/conventions.sh" 2>/dev/null || true
 
   stack_profile_init "$project_root" 2>/dev/null || true
   local stack="${PROJECT_STACK:-unknown}"

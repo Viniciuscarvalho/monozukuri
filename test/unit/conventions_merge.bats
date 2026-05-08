@@ -6,7 +6,7 @@ setup() {
   LIB_DIR="$REPO_ROOT/lib"
   FIXTURES="$REPO_ROOT/test/fixtures/projects"
   export LIB_DIR REPO_ROOT FIXTURES
-  source "$LIB_DIR/agent/conventions-merge.sh"
+  source "$LIB_DIR/agent/conventions.sh"
 
   # Minimal block file used by most tests
   BLOCK=$(mktemp)
