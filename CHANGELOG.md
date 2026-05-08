@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.1...v1.37.2) (2026-05-08)
+
+
+### Documentation
+
+* document retry, resume-paused, stop, and 7 other undocumented subcommands ([#136](https://github.com/Viniciuscarvalho/monozukuri/issues/136)) ([197a3c5](https://github.com/Viniciuscarvalho/monozukuri/commit/197a3c59e1f589f745940c00e2c92e44b525073a))
+
 ## [1.37.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.0...v1.37.1) (2026-05-08)
 
 
