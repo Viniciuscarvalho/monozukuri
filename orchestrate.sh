@@ -135,6 +135,7 @@ OPT_TELEMETRY_ACTION=""
 OPT_RETRY_ALL=false
 OPT_RETRY_FEATS=""
 OPT_RETRY_REASON="schema"
+OPT_NO_UI=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -195,6 +196,9 @@ while [ $# -gt 0 ]; do
       ;;
     --non-interactive)
       OPT_NON_INTERACTIVE=true
+      ;;
+    --no-ui)
+      OPT_NO_UI=true
       ;;
     --resume)
       OPT_RESUME=true
@@ -339,6 +343,7 @@ while [ $# -gt 0 ]; do
       echo "  --json                       Emit machine-readable JSON (status, learning list)"
       echo "  --non-interactive            Skip all prompts; use defaults"
       echo "  --resume                     Resume the most recent run (idempotent)"
+      echo "  --no-ui                      Skip the Ink TUI; emit plain-text output"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -413,20 +418,48 @@ trap _on_sigint  INT
 trap _on_sigusr1 USR1
 trap _on_sigusr2 USR2
 
+# ── TUI Setup ─────────────────────────────────────────────────────────
+# For orchestration commands, launch the Ink TUI when stdout is a TTY
+# and --no-ui was not passed. The TUI reads JSONL events from stdin;
+# monozukuri_emit() only emits JSONL when MONOZUKURI_RUN_ID is set.
+
+_TUI_SCRIPT="${MONOZUKURI_HOME:-$SCRIPT_DIR}/ui/dist/index.js"
+_use_tui=false
+case "$SUBCOMMAND" in
+  run|retry|resume-paused)
+    if [ "${OPT_NO_UI:-false}" != "true" ] && [ -t 1 ] && [ -f "$_TUI_SCRIPT" ]; then
+      MONOZUKURI_RUN_ID=$(uuidgen 2>/dev/null \
+        || python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null \
+        || printf '%s%s' "$(date +%s)" "$$")
+      export MONOZUKURI_RUN_ID
+      _use_tui=true
+    fi
+    ;;
+esac
+
 # ── Dispatch ──────────────────────────────────────────────────────────
 
 case "$SUBCOMMAND" in
   doctor)          source "$CMD_DIR/doctor.sh"; sub_doctor ;;
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
-  run)             source "$CMD_DIR/run.sh"; sub_run ;;
+  run)
+    source "$CMD_DIR/run.sh"
+    if [ "$_use_tui" = "true" ]; then sub_run | node "$_TUI_SCRIPT"; else sub_run; fi
+    ;;
   status)          source "$CMD_DIR/status.sh"; sub_status ;;
   clean)           source "$CMD_DIR/cleanup.sh"; sub_clean ;;
   calibrate)       source "$CMD_DIR/calibrate.sh"; sub_calibrate ;;
   config)          source "$CMD_DIR/config.sh"; sub_config ;;
   learning)        source "$CMD_DIR/learning.sh"; sub_learning ;;
   promote-learning) source "$CMD_DIR/learning.sh"; sub_promote_learning ;;
-  resume-paused)   source "$CMD_DIR/resume.sh"; sub_resume_paused ;;
-  retry)           source "$CMD_DIR/retry.sh"; sub_retry ;;
+  resume-paused)
+    source "$CMD_DIR/resume.sh"
+    if [ "$_use_tui" = "true" ]; then sub_resume_paused | node "$_TUI_SCRIPT"; else sub_resume_paused; fi
+    ;;
+  retry)
+    source "$CMD_DIR/retry.sh"
+    if [ "$_use_tui" = "true" ]; then sub_retry | node "$_TUI_SCRIPT"; else sub_retry; fi
+    ;;
   ingest-status)   source "$CMD_DIR/ingest-status.sh"; sub_ingest_status ;;
   agent)           source "$CMD_DIR/agent.sh"; sub_agent ;;
   routing)         source "$CMD_DIR/routing.sh"; sub_routing ;;
