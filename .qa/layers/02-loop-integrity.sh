@@ -37,7 +37,7 @@ _l2_feature_status() {
 
 _layer2_adapter_conformance() {
   local failures=0
-  local adapter_script="$REPO_ROOT/lib/plan/adapters/markdown.js"
+  local adapter_script="$REPO_ROOT/lib/ingest/adapters/markdown.js"
   local fixture_backlog="$QA_DIR/fixtures/backlogs/markdown.md"
 
   assert_file_exists "markdown adapter exists" "$adapter_script" || return 1
@@ -97,7 +97,7 @@ _layer2_adapter_syntax() {
   local failures=0
 
   for adapter in github linear; do
-    local script="$REPO_ROOT/lib/plan/adapters/${adapter}.js"
+    local script="$REPO_ROOT/lib/ingest/adapters/${adapter}.js"
     assert_file_exists "${adapter} adapter file exists" "$script" \
       || { failures=$((failures + 1)); continue; }
     node --check "$script" 2>/dev/null \
@@ -188,7 +188,7 @@ _layer2_loop_run() {
 
 # ── 2g–2j. Phase A1–A4 safety properties ─────────────────────────────────────
 #
-# A1: auth-expiry detection — _codex_auth_expired / _gemini_auth_expired pattern match
+# A1: auth-expiry detection — _thin_shell_auth_check pattern match (codex + gemini adapters)
 # A2: wall-clock cap — op_timeout actually kills a hung subprocess
 # A3: divergent loop — phase3-loop-diverged fires before max_fix_attempts
 # A4: non-1 build exit — ANY non-zero verify_build exit is treated as broken
@@ -222,7 +222,7 @@ _layer2_phase_a_safety() {
     "Unauthorized"
   do
     printf '%s\n' "$marker" > "$tmp_log"
-    if (source "$codex_adapter" 2>/dev/null; _codex_auth_expired "$tmp_log"); then
+    if (source "$codex_adapter" 2>/dev/null; _thin_shell_auth_check "$tmp_log"); then
       _qa_pass "codex auth-expiry detected: $(printf '%s' "$marker" | head -c 40)"
     else
       _qa_fail "codex auth-expiry NOT detected: $marker" || failures=$((failures + 1))
@@ -241,7 +241,7 @@ _layer2_phase_a_safety() {
     "401"
   do
     printf '%s\n' "$marker" > "$tmp_log"
-    if (source "$gemini_adapter" 2>/dev/null; _gemini_auth_expired "$tmp_log"); then
+    if (source "$gemini_adapter" 2>/dev/null; _thin_shell_auth_check "$tmp_log"); then
       _qa_pass "gemini auth-expiry detected: $(printf '%s' "$marker" | head -c 40)"
     else
       _qa_fail "gemini auth-expiry NOT detected: $marker" || failures=$((failures + 1))
@@ -250,7 +250,7 @@ _layer2_phase_a_safety() {
 
   # benign text must NOT trigger auth-expiry (avoid false positive abort)
   printf '%s\n' "All tests passed. Feature complete." > "$tmp_log"
-  if (source "$codex_adapter" 2>/dev/null; _codex_auth_expired "$tmp_log"); then
+  if (source "$codex_adapter" 2>/dev/null; _thin_shell_auth_check "$tmp_log"); then
     _qa_fail "codex auth-expiry falsely triggered on benign output" \
       || failures=$((failures + 1))
   else
