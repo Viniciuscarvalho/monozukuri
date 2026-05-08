@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.0...v1.37.1) (2026-05-08)
+
+
+### Refactoring
+
+* **arch:** deepen modules C2-C8 + fix pricing budget ceiling ([#134](https://github.com/Viniciuscarvalho/monozukuri/issues/134)) ([821453e](https://github.com/Viniciuscarvalho/monozukuri/commit/821453e8ff39f696a3687eb0da5a4a0fb8d761a4))
+
 ## [1.37.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.36.1...v1.37.0) (2026-05-07)
 
 
