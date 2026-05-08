@@ -202,6 +202,31 @@ monozukuri doctor                         # verify dependencies, auth, and envir
 monozukuri agent list                     # list available agents and install status
 monozukuri agent enable <name>            # set active agent in config (claude-code | codex | gemini | kiro)
 monozukuri agent doctor [name]            # check install and auth for all or one agent
+
+# Error recovery
+monozukuri retry                          # list recoverable error/paused features (dry-run)
+monozukuri retry --all                    # retry every matching feature
+monozukuri retry --feat <id>              # retry a specific feature by ID
+monozukuri --resume-paused <feat-id>      # resume a paused feature from its last checkpoint
+
+# Emergency controls
+monozukuri stop --all                     # halt all running pipelines after current feature
+monozukuri stop --clear                   # clear kill switch and allow future runs
+monozukuri stop --status                  # show whether kill switch is active
+
+# Inspection and reporting
+monozukuri summary                        # cross-project dashboard (outcomes, costs)
+monozukuri conventions list               # show loaded project conventions
+monozukuri config validate                # validate .monozukuri/config.yaml against schema
+monozukuri config show                    # print resolved config with all defaults applied
+monozukuri metrics                        # show canary benchmark metrics and trends
+monozukuri review list                    # list all runs with summaries
+monozukuri review export <run-id>         # generate static HTML review bundle
+monozukuri review open <run-id>           # generate and open HTML bundle in browser
+monozukuri routing suggest [<phase>]      # data-gated adapter recommendation per phase
+monozukuri telemetry --status             # show telemetry consent state
+monozukuri telemetry --opt-in             # enable anonymous usage telemetry
+monozukuri telemetry --opt-out            # disable telemetry
 ```
 
 ### `monozukuri setup`
@@ -301,6 +326,143 @@ tests           8,000        7,821    0.98    ✓ baseline accurate
 ...
 
 → Updated calibration coefficients written to config/pricing.yaml
+```
+
+---
+
+### `monozukuri retry`
+
+Recovers features stuck in `error` or `paused` state. Running it bare is a dry-run that lists candidates without acting.
+
+```bash
+monozukuri retry                          # dry-run: list recoverable features and their reasons
+monozukuri retry --all                    # retry every matching feature
+monozukuri retry --feat PRO-205           # retry a single feature
+monozukuri retry --all --reason phase-failed   # filter by reason substring
+
+# Lift the schema-reprompt budget for a triage pass
+MONOZUKURI_SCHEMA_MAX_REPROMPTS=6 monozukuri retry --all
+```
+
+For each matched feature, `retry`:
+
+1. Migrates its state from `error` → `paused / schema-needs-review`
+2. Clears retry sentinels (`retry-count`, `phase3-fix-attempts`)
+3. Calls `run_feature` directly — bypasses the backlog adapter, so GitHub/Linear labels don't matter
+
+Phase 0 short-circuits cached artifacts (PRD / TechSpec / Tasks), so retry only re-runs the phases that haven't completed yet.
+
+| Flag          | Default  | Description                            |
+| ------------- | -------- | -------------------------------------- |
+| `--all`       | `false`  | Retry all matched features             |
+| `--feat <id>` |          | Retry a specific feature (repeatable)  |
+| `--reason`    | `schema` | Filter by pause/error reason substring |
+
+> **When to use** — features showing `error (schema-needs-review)` or `error (<phase>-phase-failed)` in `monozukuri status`. Plain `monozukuri run` does **not** auto-recover error-state features; `retry` is the dedicated path.
+
+---
+
+### `monozukuri --resume-paused`
+
+Resumes a single feature from its last checkpoint. Requires `--ack` for human-class pauses (i.e., when the feature was paused for human review).
+
+```bash
+monozukuri --resume-paused feat-007
+monozukuri --resume-paused feat-007 --ack   # acknowledge human-review pause
+```
+
+> **When to use** — features in `paused` state that have a valid `results.json` checkpoint (planning phases completed). For features that errored before planning finished, use `monozukuri retry` instead — `--resume-paused` will reject them because the checkpoint doesn't exist.
+
+---
+
+### `monozukuri stop`
+
+Global kill switch for overnight or multi-project autonomous runs. Creates a sentinel file at `~/.monozukuri/STOP`; each running pipeline checks for it after finishing the current feature and halts cleanly (no mid-feature kill, worktrees are left intact).
+
+```bash
+monozukuri stop --all      # set kill switch — active pipelines halt after current feature
+monozukuri stop --clear    # remove kill switch — allow future runs
+monozukuri stop --status   # show current sentinel state
+```
+
+---
+
+### `monozukuri summary`
+
+Cross-project dashboard. Reads `~/.monozukuri/projects.json` (populated automatically by every `monozukuri run`) and prints outcomes, costs, and last-run times for every registered project.
+
+```bash
+monozukuri summary          # overview of all registered projects
+monozukuri summary --all    # include projects with no recent activity
+```
+
+---
+
+### `monozukuri conventions`
+
+Inspects the project-convention files that the orchestrator feeds to each agent run (AGENTS.md, CLAUDE.md, .cursorrules, etc.).
+
+```bash
+monozukuri conventions list              # count and summarise all loaded conventions
+monozukuri conventions list --source     # group by source file
+monozukuri conventions show <substring>  # show full body of matching conventions
+monozukuri conventions sources           # list detected source files only
+```
+
+---
+
+### `monozukuri config`
+
+Validates or displays the resolved project configuration.
+
+```bash
+monozukuri config validate   # validate .monozukuri/config.yaml against the JSON schema
+monozukuri config show       # print the resolved config with all defaults filled in
+```
+
+---
+
+### `monozukuri review`
+
+Generates a static HTML review bundle from a completed run — useful for async review, sharing, or archiving.
+
+```bash
+monozukuri review list                # list all runs with feature counts and costs
+monozukuri review export <run-id>     # generate HTML bundle to .monozukuri/reviews/
+monozukuri review open <run-id>       # generate bundle and open it in your browser
+```
+
+---
+
+### `monozukuri metrics`
+
+Displays canary benchmark metrics and performance trends from `docs/canary-history.md`. Useful for tracking cost-per-feature and phase-latency regressions across versions.
+
+```bash
+monozukuri metrics
+```
+
+---
+
+### `monozukuri routing`
+
+Data-threshold-gated adapter recommendation. Suggests the optimal adapter per phase based on accumulated CI-pass and cost data across completed runs. Requires at least 4 data points per phase before making a recommendation.
+
+```bash
+monozukuri routing suggest           # suggest adapter for all phases
+monozukuri routing suggest code      # suggest adapter for the code phase only
+```
+
+---
+
+### `monozukuri telemetry`
+
+Manages anonymous usage telemetry consent. No data is sent without opt-in.
+
+```bash
+monozukuri telemetry --status    # show current consent state
+monozukuri telemetry --opt-in    # enable anonymous usage telemetry
+monozukuri telemetry --opt-out   # disable telemetry
 ```
 
 ---
