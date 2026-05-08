@@ -7,8 +7,9 @@
 #   monozukuri retry --feat <id> [--feat <id> ...]  # retry named features
 #   monozukuri retry --reason <substring>     # filter by pause/error reason substring
 #
-# Matches features whose status is `error` or `paused` and whose recorded reason
-# contains the --reason substring (default: schema-needs-review|schema-validation-failed).
+# Matches features whose status is `error` or `paused`. When --reason is given,
+# filters to features whose recorded reason contains that substring. Without --reason,
+# all error/paused features are candidates (--all matches everything).
 #
 # Token budget: honours MONOZUKURI_SCHEMA_MAX_REPROMPTS from env so the caller
 # can lift the reprompt ceiling for a triage pass:
@@ -77,7 +78,7 @@ sub_retry() {
 
   # Parse args passed via OPT_RETRY_* variables set by orchestrate.sh arg parsing.
   local retry_all="${OPT_RETRY_ALL:-false}"
-  local retry_reason="${OPT_RETRY_REASON:-schema}"
+  local retry_reason="${OPT_RETRY_REASON:-}"
   local -a retry_feat_ids=()
   if [ -n "${OPT_RETRY_FEATS:-}" ]; then
     IFS=',' read -ra retry_feat_ids <<< "$OPT_RETRY_FEATS"
@@ -110,7 +111,7 @@ sub_retry() {
         2>/dev/null || true)
     fi
 
-    if ! echo "$recorded_reason" | grep -qiE "$retry_reason"; then
+    if [ -n "$retry_reason" ] && ! echo "$recorded_reason" | grep -qiE "$retry_reason"; then
       continue
     fi
 
@@ -118,7 +119,11 @@ sub_retry() {
   done < <(find "$STATE_DIR" -name status.json -mindepth 2 -maxdepth 2 2>/dev/null | sort)
 
   if [ "${#candidates[@]}" -eq 0 ]; then
-    info "retry: no recoverable features found matching reason '${retry_reason}'"
+    if [ -n "$retry_reason" ]; then
+      info "retry: no recoverable features found matching reason '${retry_reason}'"
+    else
+      info "retry: no recoverable features found (status: error or paused)"
+    fi
     return 0
   fi
 
