@@ -24,24 +24,33 @@ pricing_load() {
   # Skip if already loaded
   [ "$_PRICING_LOADED" = true ] && return 0
 
-  # Locate pricing.yaml (project config or bundled default)
+  # Locate pricing.yaml. Priority:
+  #   1. Project override: $PROJECT_ROOT/config/pricing.yaml (user-managed)
+  #   2. Install-dir override: $SCRIPT_DIR/config/pricing.yaml (set by orchestrate.sh)
+  #   3. BASH_SOURCE-relative: always resolves to $MONOZUKURI_HOME/config/pricing.yaml
+  #      regardless of whether $SCRIPT_DIR is set correctly. This is the safe fallback.
+  local _self_dir
+  _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local pricing_file=""
-  if [ -f "$PROJECT_ROOT/config/pricing.yaml" ]; then
-    pricing_file="$PROJECT_ROOT/config/pricing.yaml"
-  elif [ -f "$SCRIPT_DIR/config/pricing.yaml" ]; then
-    pricing_file="$SCRIPT_DIR/config/pricing.yaml"
+  if [ -f "${PROJECT_ROOT:-}/config/pricing.yaml" ]; then
+    pricing_file="${PROJECT_ROOT}/config/pricing.yaml"
+  elif [ -f "${SCRIPT_DIR:-}/config/pricing.yaml" ]; then
+    pricing_file="${SCRIPT_DIR}/config/pricing.yaml"
+  elif [ -f "${_self_dir}/../../config/pricing.yaml" ]; then
+    pricing_file="${_self_dir}/../../config/pricing.yaml"
   else
-    # Pricing file missing — warn and use defaults
-    printf "⚠ [pricing] pricing.yaml not found — using default calibration (1.0)\n" >&2
+    printf "[pricing] WARNING: pricing.yaml not found — budget checks will use $0 cost estimates\n" >&2
+    printf "[pricing]   Checked: \$PROJECT_ROOT/config/, \$SCRIPT_DIR/config/, and install-relative path\n" >&2
     _PRICING_LOADED=true
-    return 0
+    return 1
   fi
 
   # Check yq availability
   if ! command -v yq &>/dev/null; then
-    printf "⚠ [pricing] yq not installed — USD cost calculation disabled\n" >&2
+    printf "[pricing] WARNING: yq not installed — USD cost calculation disabled; budget ceiling non-functional\n" >&2
+    printf "[pricing]   Install yq: brew install yq\n" >&2
     _PRICING_LOADED=true
-    return 0
+    return 1
   fi
 
   # Parse metadata

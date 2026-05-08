@@ -41,8 +41,8 @@ sub_retry() {
   module_require core/router
   source "$LIB_DIR/agent/contract.sh"
   module_require memory/learning
-  module_require plan/size-gate
-  module_require plan/cycle-gate
+  module_require run/size-gate
+  module_require run/cycle-gate
   module_optional run/local-model  "local_model::embed" "local_model::classify" \
                                    "local_model::summarize" "local_model::generate"
   module_optional run/ingest       "ingest_trigger_if_merged" "ingest_reap_stale"

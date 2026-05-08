@@ -129,10 +129,10 @@ validate_config() {
   esac
 
   # Validate adapter exists
-  local adapter_script="$LIB_DIR/plan/adapters/${ADAPTER}.js"
+  local adapter_script="$LIB_DIR/ingest/adapters/${ADAPTER}.js"
   if [ ! -f "$adapter_script" ]; then
     err "No adapter for source.adapter: $ADAPTER"
-    err "Available: $(ls "$LIB_DIR/plan/adapters/"*.js 2>/dev/null | xargs -I{} basename {} .js | tr '\n' ', ')"
+    err "Available: $(ls "$LIB_DIR/ingest/adapters/"*.js 2>/dev/null | xargs -I{} basename {} .js | tr '\n' ', ')"
     errors=$((errors+1))
   fi
 
@@ -173,7 +173,7 @@ validate_config() {
 }
 
 run_adapter() {
-  local adapter_script="$LIB_DIR/plan/adapters/${ADAPTER}.js"
+  local adapter_script="$LIB_DIR/ingest/adapters/${ADAPTER}.js"
 
   case "$ADAPTER" in
     markdown)

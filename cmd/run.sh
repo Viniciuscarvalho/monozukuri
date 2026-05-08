@@ -34,8 +34,8 @@ sub_run() {
   # Agent adapter contract (multi-agent support)
   source "$LIB_DIR/agent/contract.sh"
   module_require memory/learning
-  module_require plan/size-gate
-  module_require plan/cycle-gate
+  module_require run/size-gate
+  module_require run/cycle-gate
   # ADR-009 optional modules — stubs registered so `declare -f` guards work
   module_optional run/local-model  "local_model::embed" "local_model::classify" \
                                    "local_model::summarize" "local_model::generate"

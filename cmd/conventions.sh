@@ -5,7 +5,6 @@
 
 sub_conventions() {
   source "$LIB_DIR/agent/conventions.sh"
-  source "$LIB_DIR/agent/conventions-promote.sh"
 
   local action="${OPT_CONVENTIONS_ACTION:-list}"
   local repo_root="${ROOT_DIR:-$(pwd)}"
@@ -63,9 +62,6 @@ sub_conventions() {
       ;;
 
     generate|preview)
-      source "$LIB_DIR/agent/conventions-generate.sh"
-      source "$LIB_DIR/agent/conventions-merge.sh"
-
       local block; block=$(mktemp)
       conventions_generate_content "$repo_root" > "$block"
 
@@ -84,9 +80,6 @@ sub_conventions() {
       ;;
 
     write)
-      source "$LIB_DIR/agent/conventions-generate.sh"
-      source "$LIB_DIR/agent/conventions-merge.sh"
-
       if [[ "${OPT_NON_INTERACTIVE:-false}" != "true" ]] && \
          [[ "${OPT_CONVENTIONS_YES:-false}" != "true" ]]; then
         printf 'Write generated block to %s/AGENTS.md? [y/N] ' "$repo_root"
@@ -101,9 +94,6 @@ sub_conventions() {
       ;;
 
     diff)
-      source "$LIB_DIR/agent/conventions-generate.sh"
-      source "$LIB_DIR/agent/conventions-merge.sh"
-
       local block; block=$(mktemp)
       conventions_generate_content "$repo_root" > "$block"
       conventions_merge_diff "$repo_root" "$block" || true
@@ -111,12 +101,10 @@ sub_conventions() {
       ;;
 
     restore)
-      source "$LIB_DIR/agent/conventions-merge.sh"
       conventions_restore "$repo_root" "${OPT_CONVENTIONS_ID:-}"
       ;;
 
     restore-list)
-      source "$LIB_DIR/agent/conventions-merge.sh"
       conventions_restore_list "$repo_root"
       ;;
 

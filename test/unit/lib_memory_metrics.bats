@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test/unit/lib_memory_metrics.bats — Tests for lib/memory/metrics.sh
+# test/unit/lib_memory_metrics.bats — Tests for lib/run/metrics.sh
 
 setup() {
   # Create temp directory for test fixtures
@@ -8,7 +8,7 @@ setup() {
 
   # Source the metrics module
   LIB_DIR="${BATS_TEST_DIRNAME}/../../lib"
-  source "$LIB_DIR/memory/metrics.sh"
+  source "$LIB_DIR/run/metrics.sh"
 }
 
 teardown() {

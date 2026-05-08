@@ -8,8 +8,8 @@ setup() {
 
   warn() { echo "WARN: $*" >&2; }
   info() { echo "INFO: $*" >&2; }
-  platform_claude() { :; }
-  export -f warn info platform_claude
+  agent_run_phase() { :; }
+  export -f warn info agent_run_phase
 
   source "$LIB_DIR/schema/validate.sh"
 
@@ -311,8 +311,8 @@ EOF
   _make_valid_techspec
   _make_valid_tasks
 
-  platform_claude() { echo "UNEXPECTED call" >&2; return 1; }
-  export -f platform_claude
+  agent_run_phase() { echo "UNEXPECTED call" >&2; return 1; }
+  export -f agent_run_phase
 
   local rc=0
   schema_validate_with_reprompt "feat-001" "$TMPDIR_TEST" "$TMPDIR_TEST" || rc=$?
@@ -331,8 +331,8 @@ EOF
 - **Acceptance**: Login endpoint returns 200 on valid credentials.
 EOF
 
-  platform_claude() { echo "UNEXPECTED call" >&2; return 1; }
-  export -f platform_claude
+  agent_run_phase() { echo "UNEXPECTED call" >&2; return 1; }
+  export -f agent_run_phase
 
   local rc=0
   schema_validate_with_reprompt "feat-001" "$TMPDIR_TEST" "$TMPDIR_TEST" || rc=$?
@@ -344,8 +344,8 @@ EOF
   _make_valid_techspec
   _make_valid_tasks
 
-  platform_claude() { :; }
-  export -f platform_claude
+  agent_run_phase() { :; }
+  export -f agent_run_phase
 
   local rc=0
   schema_validate_with_reprompt "feat-001" "$TMPDIR_TEST" "$TMPDIR_TEST" || rc=$?
@@ -358,7 +358,7 @@ EOF
   _make_valid_tasks
 
   local _prd_fixture="$TMPDIR_TEST/prd.md"
-  platform_claude() {
+  agent_run_phase() {
     cat >"$_prd_fixture" <<'EOF'
 # Feature
 
@@ -370,7 +370,7 @@ Users cannot authenticate. We need a login flow to solve this problem properly.
 - [ ] Invalid credentials are rejected with an error
 EOF
   }
-  export -f platform_claude
+  export -f agent_run_phase
   export _prd_fixture
 
   local rc=0

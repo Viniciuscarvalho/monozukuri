@@ -1,5 +1,5 @@
 #!/bin/bash
-# lib/cycle_gate.sh — Cycle-completion gate (ADR-008 PR-D)
+# lib/run/cycle-gate.sh — Cycle-completion gate (ADR-008 PR-D)
 #
 # Asserts that a feature has completed its full execution cycle before the
 # orchestrator advances to the next feature.

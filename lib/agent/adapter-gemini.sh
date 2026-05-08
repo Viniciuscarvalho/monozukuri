@@ -1,5 +1,5 @@
 #!/bin/bash
-# lib/agent/adapter-gemini.sh — Google Gemini CLI adapter.
+# lib/agent/adapter-gemini.sh — Google Gemini CLI adapter manifest.
 #
 # Required env vars (set by pipeline.sh before calling agent_run_phase):
 #   MONOZUKURI_FEATURE_ID   feature being processed
@@ -9,17 +9,9 @@
 #
 # Auth: gemini CLI must be logged in (run: gemini auth login).
 
-# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
-# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
-if ! declare -f op_timeout &>/dev/null; then
-  op_timeout() { local _secs="$1"; shift; "$@"; }
-fi
-
-# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
-# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
-if ! declare -f adapter_tee &>/dev/null; then
-  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
-fi
+_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=thin-shell-base.sh
+source "${_ADAPTER_DIR}/thin-shell-base.sh"
 
 agent_name() { echo "gemini"; }
 
@@ -65,73 +57,23 @@ agent_doctor() {
 
 agent_login_hint() { printf 'gemini auth login\n'; }
 
-agent_estimate_tokens() {
-  local prompt; prompt=$(cat)
-  if declare -f cost_estimate_tokens &>/dev/null; then
-    cost_estimate_tokens "$prompt"
-  else
-    printf '%d\n' $(( ${#prompt} / 4 ))
-  fi
-}
-
-agent_run_phase() {
-  local feat_id="${MONOZUKURI_FEATURE_ID:?agent_run_phase: MONOZUKURI_FEATURE_ID not set}"
-  local wt_path="${MONOZUKURI_WORKTREE:?agent_run_phase: MONOZUKURI_WORKTREE not set}"
-  local log_file="${MONOZUKURI_LOG_FILE:-/tmp/monozukuri-${feat_id}-$(date +%s).log}"
-
-  # Map autonomy: full_auto → --yolo true; others → --yolo false (interactive)
+_thin_shell_invoke() {
+  local prompt="$1" log_file="$2" _feat_id="$3" wt_path="$4"
   local yolo_flag="false"
   [ "${MONOZUKURI_AUTONOMY:-checkpoint}" = "full_auto" ] && yolo_flag="true"
-
-  # fix-retry: Phase 3 Ralph Loop — feed MONOZUKURI_FIX_CONTEXT directly to gemini.
-  if [[ "${MONOZUKURI_PHASE:-}" == "fix-retry" ]]; then
-    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
-    local exit_code=0
-    (cd "$wt_path" && printf '%s\n' "$fix_context" | \
-      adapter_tee "$log_file" -- \
-        op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
-          gemini \
-            --yolo "$yolo_flag" \
-            ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-            -) || exit_code=$?
-    _gemini_auth_expired "$log_file" && return 15
-    return "$exit_code"
-  fi
-
-  local rendered_prompt
-  if declare -f render_phase_prompt &>/dev/null; then
-    rendered_prompt=$(render_phase_prompt "${MONOZUKURI_PHASE:-prd}")
-  else
-    rendered_prompt="Implement feature ${feat_id}."
-  fi
-
-  local exit_code=0
-  (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
+  (cd "$wt_path" && printf '%s\n' "$prompt" | \
     adapter_tee "$log_file" -- \
       op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
         gemini \
           --yolo "$yolo_flag" \
           ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          -) || exit_code=$?
-  _gemini_auth_expired "$log_file" && return 15
-  return "$exit_code"
+          -)
 }
 
-# _gemini_auth_expired <log_file>
-# Returns 0 (true) if the log contains a gemini auth-failure marker.
-# Used to distinguish auth expiry (exit 15) from ordinary phase failures.
-_gemini_auth_expired() {
+_thin_shell_auth_check() {
   grep -qiE \
     "oauth token expired|unable to refresh credentials|authentication failed|invalid credentials|please authenticate|token.*revoked|access denied|401" \
     "${1:-}" 2>/dev/null
-}
-
-agent_report_cost() {
-  if declare -f cost_report &>/dev/null; then
-    cost_report
-  else
-    echo "0.00"
-  fi
 }
 
 agent_native_context_files() {

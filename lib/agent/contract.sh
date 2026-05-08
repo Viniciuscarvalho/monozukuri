@@ -15,10 +15,15 @@
 #                                            tests. Prompt is in MONOZUKURI_FIX_CONTEXT.
 #                                            Adapter reads that var and invokes its CLI
 #                                            with appropriate permission/model flags.
+#   fix-schema                             — Schema-reprompt loop (ADR-012): re-run agent
+#                                            to correct a structurally invalid artifact.
+#                                            Prompt is in MONOZUKURI_FIX_CONTEXT (humanized
+#                                            AJV diagnostic from schema_humanize_error).
 #
-# Additional env vars for fix-retry phase:
-#   MONOZUKURI_FIX_CONTEXT  — prompt string built by phase-3.sh: test output +
-#                              learning-store hint. Adapter feeds this to its CLI.
+# Additional env vars for fix-retry and fix-schema phases:
+#   MONOZUKURI_FIX_CONTEXT  — prompt string. For fix-retry: test output + learning-store
+#                              hint. For fix-schema: humanized artifact validation error.
+#                              Adapter feeds this to its CLI.
 #
 # Optional functions (not checked by agent_verify):
 #   agent_native_context_files() → echo JSON array of repo-relative paths this

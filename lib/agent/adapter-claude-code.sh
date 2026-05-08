@@ -217,6 +217,47 @@ agent_run_phase() {
   local exit_code=0
   local phase="${MONOZUKURI_PHASE:-}"
 
+  # fix-schema: schema-reprompt dispatched here instead of calling platform_claude
+  # directly. MONOZUKURI_FIX_CONTEXT carries the humanized AJV diagnostic from
+  # schema_humanize_error. Symmetric with fix-retry (ADR-012).
+  if [[ "$phase" == "fix-schema" ]]; then
+    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Rewrite the artifact with all required sections.}"
+    local fix_model="${MONOZUKURI_MODEL:-}"
+    [ "$fix_model" = "opusplan" ] && fix_model="opus"
+    local fix_perm_flag=""
+    [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
+    local exit_code=0
+    if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+      local _fs_sj_log="${log_file%.log}.stream.jsonl"
+      local _extract_text
+      _extract_text='const rl=require("readline").createInterface({input:process.stdin,terminal:false});rl.on("line",l=>{try{const e=JSON.parse(l);if(e.type==="assistant"&&e.message&&Array.isArray(e.message.content)){for(const c of e.message.content)if(c.type==="text")process.stdout.write(c.text||"")}else if(e.type==="result")process.stdout.write(e.result||"")}catch(_){process.stdout.write(l+"\n")}});'
+      (
+        set -o pipefail
+        cd "$wt_path" && printf '%s\n' "$fix_context" | \
+          platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+            ${fix_model:+--model "$fix_model"} \
+            $fix_perm_flag \
+            --print --output-format stream-json 2>&1 \
+          | tee "$_fs_sj_log" | node -e "$_extract_text" | tee "$log_file" >/dev/null
+      ) || exit_code=$?
+      stream_parse_emit_file "$feat_id" "fix-schema" "$_fs_sj_log" || true
+    else
+      (
+        set -o pipefail
+        cd "$wt_path" && printf '%s\n' "$fix_context" | \
+          platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
+            ${fix_model:+--model "$fix_model"} \
+            $fix_perm_flag \
+            --print 2>&1 | tee "$log_file"
+      ) || exit_code=$?
+    fi
+    if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
+      printf '{"class":"phase","code":"fix-schema-failed","message":"fix-schema exited with code %d"}\n' \
+        "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
+    fi
+    return "$exit_code"
+  fi
+
   # fix-retry: Phase 3 Ralph Loop dispatched here instead of calling platform_claude
   # directly. MONOZUKURI_FIX_CONTEXT carries the prompt built by phase-3.sh.
   if [[ "$phase" == "fix-retry" ]]; then
@@ -349,10 +390,10 @@ agent_run_phase() {
         [ -n "${MONOZUKURI_ERROR_FILE:-}" ] && \
           printf '{"class":"human","code":"agent-blocker","message":"Agent requested human input"}\n' \
           > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
-        exit_code=21  # EXIT_AGENT_BLOCKED
+        exit_code=${EXIT_AGENT_BLOCKED:-21}
       fi
     elif declare -f agent_scan_for_blocker &>/dev/null; then
-      agent_scan_for_blocker "$log_file" "${MONOZUKURI_ERROR_FILE:-}" || exit_code=21
+      agent_scan_for_blocker "$log_file" "${MONOZUKURI_ERROR_FILE:-}" || exit_code=${EXIT_AGENT_BLOCKED:-21}
     fi
   fi
 
