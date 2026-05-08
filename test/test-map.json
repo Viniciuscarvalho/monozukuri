@@ -1,0 +1,217 @@
+{
+  "_comment": "source file → test files that must run when that source changes. Maintained by prompts/ci-test-selector.md.",
+  "blast_radius": [
+    "orchestrate.sh",
+    "lib/core/modules.sh",
+    "lib/core/util.sh",
+    "lib/config/load.sh",
+    "lib/core/platform.sh"
+  ],
+  "map": {
+    "lib/agent/adapter-claude-code.sh": [
+      "test/unit/adapter_claude_code.bats",
+      "test/unit/adapter_claude_code_skill_invoke.bats",
+      "test/unit/lib_agent_claude_code.bats",
+      "test/integration/agent_claude_code_dry_run.bats",
+      "test/integration/prd_phase.bats"
+    ],
+    "lib/agent/adapter-codex.sh": [
+      "test/unit/lib_agent_codex.bats",
+      "test/unit/phase_a_loop_safety.bats"
+    ],
+    "lib/agent/adapter-gemini.sh": [
+      "test/unit/lib_agent_gemini.bats"
+    ],
+    "lib/agent/adapter-kiro.sh": [
+      "test/unit/lib_agent_kiro.bats"
+    ],
+    "lib/agent/contract.sh": [
+      "test/unit/lib_agent_contract.bats",
+      "test/unit/adapter_claude_code.bats",
+      "test/unit/adapter_claude_code_skill_invoke.bats"
+    ],
+    "lib/agent/conventions.sh": [
+      "test/unit/conventions_parse.bats",
+      "test/unit/conventions_generate.bats",
+      "test/unit/conventions_merge.bats",
+      "test/unit/conventions_promote.bats",
+      "test/unit/conventions_suppress.bats",
+      "test/unit/conventions_sync.bats"
+    ],
+    "lib/agent/error.sh": [
+      "test/unit/lib_agent_error.bats"
+    ],
+    "lib/agent/registry.sh": [
+      "test/unit/lib_agent_contract.bats"
+    ],
+    "lib/agent/skill-detect.sh": [
+      "test/unit/adapter_skill_detect.bats",
+      "test/integration/skill_routing.bats"
+    ],
+    "lib/cli/emit.sh": [
+      "test/unit/event_emit.bats"
+    ],
+    "lib/cli/output.sh": [
+      "test/unit/event_emit.bats"
+    ],
+    "lib/config/load.sh": [
+      "test/unit/lib_config.bats"
+    ],
+    "lib/core/cost.sh": [
+      "test/unit/lib_core_pricing.bats",
+      "test/integration/test_gap8_pricing.bats"
+    ],
+    "lib/core/feature-state.sh": [
+      "test/unit/lib_feature_state.bats",
+      "test/unit/phase_e_state_telemetry.bats"
+    ],
+    "lib/core/modules.sh": [
+      "test/unit/lib_modules.bats"
+    ],
+    "lib/core/platform.sh": [
+      "test/unit/lib_platform.bats"
+    ],
+    "lib/core/pricing.sh": [
+      "test/unit/lib_core_pricing.bats",
+      "test/integration/test_gap8_pricing.bats"
+    ],
+    "lib/core/router.sh": [
+      "test/unit/cmd_routing.bats",
+      "test/unit/lib_run_routing.bats"
+    ],
+    "lib/core/worktree.sh": [
+      "test/unit/lib_feature_state.bats"
+    ],
+    "lib/memory/learning.sh": [
+      "test/unit/learning_signature_stability.bats",
+      "test/integration/learning_promotion_inject.bats"
+    ],
+    "lib/memory/memory.sh": [
+      "test/unit/workflow_memory.bats",
+      "test/integration/workflow_memory_e2e.bats"
+    ],
+    "lib/memory/workflow-scratchpad.sh": [
+      "test/unit/workflow_memory.bats",
+      "test/integration/workflow_memory_e2e.bats"
+    ],
+    "lib/prompt/context-pack.sh": [
+      "test/unit/conventions_suppress.bats",
+      "test/integration/prd_phase.bats"
+    ],
+    "lib/prompt/render.sh": [
+      "test/unit/lib_prompt_render.bats",
+      "test/unit/render.bats",
+      "test/unit/adapter_claude_code.bats",
+      "test/unit/adapter_claude_code_skill_invoke.bats",
+      "test/integration/prd_phase.bats"
+    ],
+    "lib/review/bundle.sh": [
+      "test/unit/lib_review_bundle.bats",
+      "test/unit/cmd_review.bats"
+    ],
+    "lib/run/ci-poll.sh": [
+      "test/unit/lib_run_ci_poll.bats"
+    ],
+    "lib/run/dep-check.sh": [
+      "test/unit/lib_run_dep_check.bats"
+    ],
+    "lib/run/implicit-dep.sh": [
+      "test/unit/lib_run_implicit_dep.bats"
+    ],
+    "lib/run/manifest.sh": [
+      "test/unit/lib_run_manifest.bats"
+    ],
+    "lib/run/metrics.sh": [
+      "test/unit/lib_memory_metrics.bats"
+    ],
+    "lib/run/pause.sh": [
+      "test/integration/resume_kill9.bats",
+      "test/unit/lib_feature_state.bats"
+    ],
+    "lib/run/pipeline.sh": [
+      "test/unit/phase_a_loop_safety.bats",
+      "test/unit/phase_c_ops.bats",
+      "test/unit/phase_e_state_telemetry.bats",
+      "test/integration/run_dry_run.bats",
+      "test/integration/full_auto_blocker.bats"
+    ],
+    "lib/run/policy.sh": [
+      "test/unit/lib_run_policy.bats"
+    ],
+    "lib/run/report.sh": [
+      "test/unit/lib_run_report.bats"
+    ],
+    "lib/run/routing.sh": [
+      "test/unit/lib_run_routing.bats"
+    ],
+    "lib/schema/validate.sh": [
+      "test/unit/lib_schema_validate.bats",
+      "test/unit/validator_aliases.bats"
+    ],
+    "lib/setup/detect.sh": [
+      "test/unit/setup_detect.bats",
+      "test/integration/skill_routing.bats",
+      "test/integration/setup_full.bats"
+    ],
+    "lib/setup/install.sh": [
+      "test/unit/setup_install.bats",
+      "test/integration/setup_full.bats"
+    ],
+    "cmd/agent.sh": [
+      "test/unit/cmd_agent.bats"
+    ],
+    "cmd/calibrate.sh": [
+      "test/unit/cmd_calibrate.bats",
+      "test/integration/test_gap8_pricing.bats"
+    ],
+    "cmd/init.sh": [
+      "test/unit/cmd_init_bootstrap.bats",
+      "test/integration/init_wizard.bats"
+    ],
+    "cmd/metrics.sh": [
+      "test/unit/cmd_metrics.bats"
+    ],
+    "cmd/resume.sh": [
+      "test/integration/resume_kill9.bats"
+    ],
+    "cmd/retry.sh": [
+      "test/unit/lib_feature_state.bats",
+      "test/integration/run_dry_run.bats"
+    ],
+    "cmd/review.sh": [
+      "test/unit/cmd_review.bats"
+    ],
+    "cmd/routing.sh": [
+      "test/unit/cmd_routing.bats"
+    ],
+    "cmd/run.sh": [
+      "test/integration/run_dry_run.bats",
+      "test/integration/full_auto_blocker.bats"
+    ],
+    "cmd/setup.sh": [
+      "test/unit/setup_detect.bats",
+      "test/integration/setup_full.bats"
+    ],
+    "skills/mz-create-prd": [
+      "test/unit/lib_schema_validate.bats",
+      "test/unit/skill_validation.bats",
+      "test/unit/template_lift.bats",
+      "test/integration/prd_phase.bats"
+    ],
+    "skills/mz-create-techspec": [
+      "test/unit/lib_schema_validate.bats",
+      "test/unit/skill_validation.bats",
+      "test/unit/template_lift.bats"
+    ],
+    "skills/mz-create-tasks": [
+      "test/unit/lib_schema_validate.bats",
+      "test/unit/skill_validation.bats",
+      "test/unit/template_lift.bats"
+    ],
+    ".github/workflows/ci.yml": [],
+    ".ci-guard/config.yml": [],
+    ".ci-guard/scripts/classify_failure.py": [],
+    ".ci-guard/scripts/ci_watch.py": [],
+    ".ci-guard/scripts/flaky_ledger.py": []
+  }
+}
