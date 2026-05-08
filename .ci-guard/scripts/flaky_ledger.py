@@ -29,10 +29,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-LEDGER_PATH_DEFAULT = Path(".ci-guard/flaky-ledger.json")
+sys.path.insert(0, str(Path(__file__).parent))
+from config import LEDGER_PATH, QUARANTINE_FAIL_THRESHOLD, QUARANTINE_RATE_THRESHOLD  # noqa: E402
+
 WINDOW_DAYS = 30
-QUARANTINE_FAIL_THRESHOLD = 3
-QUARANTINE_RATE_THRESHOLD = 0.05
 
 
 def utcnow_iso() -> str:
@@ -107,33 +107,79 @@ def _ensure_test(data: dict, test_id: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Subcommands
+# Public API (importable by other scripts)
 # --------------------------------------------------------------------------- #
 
 
-def cmd_record(args, kind: str) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+def _record_event(test_id: str, kind: str, sha: str, run_id: str, path: Path) -> dict:
     data = load(path)
-    entry = _ensure_test(data, args.test)
-    entry["events"].append({
-        "kind": kind,
-        "at": utcnow_iso(),
-        "sha": args.sha or "",
-        "run_id": args.run_id or "",
-    })
+    entry = _ensure_test(data, test_id)
+    entry["events"].append({"kind": kind, "at": utcnow_iso(), "sha": sha, "run_id": run_id})
     if kind == "fail":
         entry["last_failure"] = utcnow_date()
     else:
         entry["last_pass"] = utcnow_date()
     _recompute(entry)
     save(path, data)
+    return entry
+
+
+def record_failure(
+    test_id: str,
+    sha: str = "",
+    run_id: str = "",
+    ledger_path: Optional[Path] = None,
+) -> dict:
+    """Record a test failure. Returns the updated ledger entry."""
+    return _record_event(test_id, "fail", sha, run_id, ledger_path or Path(LEDGER_PATH))
+
+
+def record_pass(
+    test_id: str,
+    sha: str = "",
+    run_id: str = "",
+    ledger_path: Optional[Path] = None,
+) -> dict:
+    """Record a test pass. Returns the updated ledger entry."""
+    return _record_event(test_id, "pass", sha, run_id, ledger_path or Path(LEDGER_PATH))
+
+
+def get_quarantine_candidates(ledger_path: Optional[Path] = None) -> list[dict]:
+    """Return tests that have crossed the quarantine threshold, sorted by severity."""
+    data = load(ledger_path or Path(LEDGER_PATH))
+    out = []
+    for test_id, entry in data["tests"].items():
+        if entry.get("status") == "quarantined":
+            continue
+        if (entry.get("failure_count_30d", 0) >= QUARANTINE_FAIL_THRESHOLD
+                and entry.get("flake_rate", 0) >= QUARANTINE_RATE_THRESHOLD):
+            out.append({
+                "test": test_id,
+                "failure_count_30d": entry["failure_count_30d"],
+                "pass_count_30d": entry["pass_count_30d"],
+                "flake_rate": entry["flake_rate"],
+                "last_failure": entry.get("last_failure"),
+            })
+    out.sort(key=lambda r: (-r["failure_count_30d"], -r["flake_rate"]))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Subcommands (thin CLI wrappers over the public API)
+# --------------------------------------------------------------------------- #
+
+
+def cmd_record(args, kind: str) -> int:
+    fn = record_failure if kind == "fail" else record_pass
+    entry = fn(args.test, sha=args.sha or "", run_id=args.run_id or "",
+               ledger_path=Path(args.ledger))
     print(json.dumps({"test": args.test, "kind": kind,
                       "entry": entry}, indent=2, default=str))
     return 0
 
 
 def cmd_query(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+    path = Path(args.ledger or LEDGER_PATH)
     data = load(path)
     entry = data["tests"].get(args.test)
     if entry is None:
@@ -150,7 +196,7 @@ def cmd_query(args) -> int:
 
 
 def cmd_list(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+    path = Path(args.ledger or LEDGER_PATH)
     data = load(path)
     rows = []
     for test_id, entry in data["tests"].items():
@@ -169,28 +215,12 @@ def cmd_list(args) -> int:
 
 
 def cmd_quarantine_candidates(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
-    data = load(path)
-    out = []
-    for test_id, entry in data["tests"].items():
-        if entry.get("status") == "quarantined":
-            continue
-        if (entry.get("failure_count_30d", 0) >= QUARANTINE_FAIL_THRESHOLD
-                and entry.get("flake_rate", 0) >= QUARANTINE_RATE_THRESHOLD):
-            out.append({
-                "test": test_id,
-                "failure_count_30d": entry["failure_count_30d"],
-                "pass_count_30d": entry["pass_count_30d"],
-                "flake_rate": entry["flake_rate"],
-                "last_failure": entry.get("last_failure"),
-            })
-    out.sort(key=lambda r: (-r["failure_count_30d"], -r["flake_rate"]))
-    print(json.dumps(out, indent=2, default=str))
+    print(json.dumps(get_quarantine_candidates(Path(args.ledger)), indent=2, default=str))
     return 0
 
 
 def cmd_set_status(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+    path = Path(args.ledger or LEDGER_PATH)
     data = load(path)
     entry = data["tests"].get(args.test)
     if entry is None:
@@ -210,7 +240,7 @@ def cmd_set_status(args) -> int:
 
 
 def cmd_prune(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+    path = Path(args.ledger or LEDGER_PATH)
     data = load(path)
     cutoff = datetime.now(timezone.utc) - timedelta(days=args.older_than)
     removed = []
@@ -233,7 +263,7 @@ def cmd_prune(args) -> int:
 
 
 def cmd_repair(args) -> int:
-    path = Path(args.ledger or LEDGER_PATH_DEFAULT)
+    path = Path(args.ledger or LEDGER_PATH)
     if not path.exists():
         print(json.dumps({"action": "noop", "reason": "no ledger"}, indent=2))
         return 0
@@ -265,7 +295,7 @@ def cmd_repair(args) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     p.add_argument("--ledger", help="Override path to ledger JSON.",
-                   default=str(LEDGER_PATH_DEFAULT))
+                   default=LEDGER_PATH)
     sub = p.add_subparsers(dest="cmd", required=True)
 
     rf = sub.add_parser("record-failure", help="Record a test failure.")

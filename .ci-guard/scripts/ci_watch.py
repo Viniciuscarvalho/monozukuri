@@ -10,8 +10,6 @@ Depends on: gh CLI (authenticated), python 3.9+, stdlib only.
 Sister scripts:
     flaky_ledger.py        — persistent per-repo flaky-test ledger.
     classify_failure.py    — heuristics for log-based failure classification.
-
-Both are invoked as subprocesses so they can be used standalone too.
 """
 
 from __future__ import annotations
@@ -23,24 +21,28 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-# --------------------------------------------------------------------------- #
-# Config
-# --------------------------------------------------------------------------- #
+_sleep = time.sleep  # replaced in tests via unittest.mock.patch
 
-DEFAULT_BUDGET = {
-    "retries_per_job": 2,
-    "retries_per_pr": 5,
-    "minutes_per_pr": 90,
-    "watch_interval_seconds": 60,
-}
+sys.path.insert(0, str(Path(__file__).parent))
+from classify_failure import classify  # noqa: E402
+from config import (  # noqa: E402
+    DEFAULT_BUDGET,
+    LEDGER_PATH,
+    QUARANTINE_FAIL_THRESHOLD,
+    QUARANTINE_RATE_THRESHOLD,
+    STATE_PATH,
+    check_script_freshness,
+    load_config,
+)
+from flaky_ledger import record_failure, record_pass  # noqa: E402
 
-LEDGER_PATH_DEFAULT = ".ci-guard/flaky-ledger.json"
-CONFIG_PATH_DEFAULT = ".ci-guard/config.yml"
-STATE_PATH_DEFAULT = ".ci-guard/.watch-state.json"  # gitignored
-
+_freshness_warning = check_script_freshness()
+if _freshness_warning:
+    print(_freshness_warning, file=sys.stderr)
 
 # --------------------------------------------------------------------------- #
 # Data shapes
@@ -68,9 +70,10 @@ class Snapshot:
     head_sha: str
     head_sha_short: str
     pr_state: str  # OPEN / MERGED / CLOSED
-    mergeable: Optional[str]
+    mergeable: Optional[str]  # MERGEABLE / CONFLICTING / UNKNOWN
     checks: list[CheckSnapshot] = field(default_factory=list)
-    actions: list[str] = field(default_factory=list)
+    actions: list[dict] = field(default_factory=list)
+    terminal: Optional[str] = None  # pr_merged / pr_closed / needs_help / budget_exhausted
     cost_summary: dict = field(default_factory=dict)
     quarantine_candidates: list[dict] = field(default_factory=list)
     timestamp: str = ""
@@ -101,6 +104,15 @@ def gh(*args: str, check: bool = True) -> str:
         if check:
             sys.exit(2)
         return ""
+
+
+def _gh_returncode(*args: str) -> int:
+    """Run a gh command and return its exit code without raising."""
+    try:
+        return subprocess.run(["gh", *args], capture_output=True, text=True).returncode
+    except FileNotFoundError:
+        sys.stderr.write("ci-guard: 'gh' CLI not found. Install from https://cli.github.com.\n")
+        sys.exit(2)
 
 
 def resolve_pr(arg: str) -> int:
@@ -154,29 +166,8 @@ def fetch_failed_log(run_id: str, max_chars: int = 20000) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def load_config(repo_root: Path) -> dict:
-    cfg_path = repo_root / CONFIG_PATH_DEFAULT
-    cfg = dict(DEFAULT_BUDGET)
-    if not cfg_path.exists():
-        return cfg
-    # tiny YAML-ish parser (key: value only, to avoid pyyaml dep)
-    for line in cfg_path.read_text().splitlines():
-        line = line.split("#", 1)[0].strip()
-        if not line or ":" not in line:
-            continue
-        k, v = line.split(":", 1)
-        k, v = k.strip(), v.strip()
-        if v.isdigit():
-            cfg[k] = int(v)
-        elif v.lower() in {"true", "false"}:
-            cfg[k] = v.lower() == "true"
-        else:
-            cfg[k] = v
-    return cfg
-
-
 def load_ledger(repo_root: Path) -> dict:
-    p = repo_root / LEDGER_PATH_DEFAULT
+    p = repo_root / LEDGER_PATH
     if not p.exists():
         return {"version": 1, "tests": {}}
     try:
@@ -190,17 +181,21 @@ def load_ledger(repo_root: Path) -> dict:
 
 
 def load_state(repo_root: Path) -> dict:
-    p = repo_root / STATE_PATH_DEFAULT
+    p = repo_root / STATE_PATH
     if not p.exists():
-        return {"prs": {}}
+        return {"state_version": 1, "prs": {}}
     try:
-        return json.loads(p.read_text())
+        data = json.loads(p.read_text())
+        if "state_version" not in data:  # migrate v0 files
+            data["state_version"] = 1
+        return data
     except json.JSONDecodeError:
-        return {"prs": {}}
+        return {"state_version": 1, "prs": {}}
 
 
 def save_state(repo_root: Path, state: dict) -> None:
-    p = repo_root / STATE_PATH_DEFAULT
+    state["state_version"] = 1
+    p = repo_root / STATE_PATH
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(state, indent=2))
 
@@ -223,37 +218,16 @@ def repo_root() -> Path:
 
 
 def classify_check(check: dict, ledger: dict, repo_root_path: Path) -> dict:
-    """Decide which bucket a failed check falls into.
-
-    Order matters: branch_failure dominates flake classifications because a
-    real bug masquerading as a flake is the worst-case outcome.
-    """
+    """Decide which bucket a failed check falls into."""
     if check.get("conclusion") not in {"failure", "cancelled", "timed_out"}:
         return {"category": "n/a", "confidence": "n/a", "reason": "Not a failure."}
 
     run_id = check.get("run_id")
     log = fetch_failed_log(run_id) if run_id else ""
 
-    classifier = repo_root_path / ".ci-guard" / "scripts" / "classify_failure.py"
-    if not classifier.exists():
-        # fall back to inline minimal heuristics so the watcher still works
-        # if the user only installed ci_watch.py
-        return _inline_classify(log, check, ledger)
+    result = classify(log)
 
-    proc = subprocess.run(
-        ["python3", str(classifier), "--stdin", "--check-name", check["name"]],
-        input=log, capture_output=True, text=True, check=False,
-    )
-    if proc.returncode != 0 or not proc.stdout.strip():
-        return _inline_classify(log, check, ledger)
-
-    try:
-        result = json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        return _inline_classify(log, check, ledger)
-
-    # Augment with ledger lookup: if a known-flaky test is in the failed log,
-    # prefer test_flake even if the heuristics said unknown.
+    # Ledger lookup: if a known-flaky test appears in the log, prefer test_flake.
     flake_hits = _ledger_hits_in_log(log, ledger)
     if flake_hits and result.get("category") in {"unknown", "test_flake"}:
         result["category"] = "test_flake"
@@ -264,62 +238,6 @@ def classify_check(check: dict, ledger: dict, repo_root_path: Path) -> dict:
         )
         result["matched_ledger_tests"] = flake_hits
     return result
-
-
-def _inline_classify(log: str, check: dict, ledger: dict) -> dict:
-    """Last-resort minimal classifier if classify_failure.py is missing."""
-    log_l = log.lower()
-    flake_hits = _ledger_hits_in_log(log, ledger)
-    if flake_hits:
-        return {
-            "category": "test_flake",
-            "confidence": "medium",
-            "reason": "Ledger match (inline fallback).",
-            "matched_ledger_tests": flake_hits,
-        }
-    infra_signals = [
-        "the runner has received a shutdown signal",
-        "lost communication with the server",
-        "could not resolve host",
-        "connection reset by peer",
-        "i/o timeout",
-        "503 service unavailable",
-        "502 bad gateway",
-    ]
-    if any(s in log_l for s in infra_signals):
-        return {
-            "category": "infra_flake",
-            "confidence": "medium",
-            "reason": "Infra-signal match (inline fallback).",
-        }
-    dep_signals = [
-        "npm err! 429",
-        "npm err! 5",
-        "could not get pypi",
-        "error fetching crate",
-        "registry-1.docker.io",
-    ]
-    if any(s in log_l for s in dep_signals):
-        return {
-            "category": "dependency_failure",
-            "confidence": "medium",
-            "reason": "Registry/dependency signal match (inline fallback).",
-        }
-    branch_signals = [
-        "syntaxerror",
-        "compilation failed",
-        "type error",
-        "no such file or directory",
-        "snapshot does not match",
-    ]
-    if any(s in log_l for s in branch_signals):
-        return {
-            "category": "branch_failure",
-            "confidence": "high",
-            "reason": "Branch-signal match (inline fallback).",
-        }
-    return {"category": "unknown", "confidence": "low",
-            "reason": "No matching heuristic; manual diagnosis required."}
 
 
 def _ledger_hits_in_log(log: str, ledger: dict) -> list[str]:
@@ -378,39 +296,48 @@ def can_retry(check: CheckSnapshot, budget: dict) -> tuple[bool, str]:
 # --------------------------------------------------------------------------- #
 
 
-def _check_to_snapshot(c: dict, ledger: dict, repo_root_path: Path,
-                       state: dict, pr: int) -> CheckSnapshot:
-    # `gh pr checks` doesn't expose run_id directly; the link does.
-    link = c.get("link", "") or ""
-    run_id = ""
+def _extract_run_id(link: str) -> str:
+    """Parse the GitHub Actions run ID from a check link URL."""
     if "/runs/" in link:
-        run_id = link.split("/runs/")[1].split("/")[0]
-    elif "/actions/runs/" in link:
-        run_id = link.split("/actions/runs/")[1].split("/")[0]
+        return link.split("/runs/")[1].split("/")[0]
+    return ""
 
+
+def _normalize_check(c: dict) -> tuple[str, Optional[str], Optional[int]]:
+    """Map gh pr checks fields to (status, conclusion, duration_seconds)."""
     bucket = (c.get("bucket") or "").lower()
-    state_field = (c.get("state") or "").lower()
-    status = "completed" if bucket in {"pass", "fail", "cancel", "skipping"} else state_field or "in_progress"
-    conclusion = None
-    if bucket == "pass":
-        conclusion = "success"
-    elif bucket == "fail":
-        conclusion = "failure"
-    elif bucket == "cancel":
-        conclusion = "cancelled"
-    elif bucket == "skipping":
-        conclusion = "skipped"
-
+    status = (
+        "completed" if bucket in {"pass", "fail", "cancel", "skipping"}
+        else (c.get("state") or "").lower() or "in_progress"
+    )
+    conclusion = {"pass": "success", "fail": "failure",
+                  "cancel": "cancelled", "skipping": "skipped"}.get(bucket)
     duration_seconds = None
     if c.get("startedAt") and c.get("completedAt"):
-        from datetime import datetime
         try:
             s = datetime.fromisoformat(c["startedAt"].replace("Z", "+00:00"))
             e = datetime.fromisoformat(c["completedAt"].replace("Z", "+00:00"))
             duration_seconds = int((e - s).total_seconds())
         except Exception:
             pass
+    return status, conclusion, duration_seconds
 
+
+def _enrich_check(snap: CheckSnapshot, ledger: dict, repo_root_path: Path) -> None:
+    """Attach classification and flaky history for failed checks (mutates snap)."""
+    if snap.conclusion not in {"failure", "cancelled", "timed_out"}:
+        return
+    snap.classification = classify_check(
+        {"conclusion": snap.conclusion, "name": snap.name, "run_id": snap.run_id},
+        ledger, repo_root_path,
+    )
+    snap.flaky_history = _flaky_history_for_check(snap.classification, ledger)
+
+
+def _check_to_snapshot(c: dict, ledger: dict, repo_root_path: Path,
+                       state: dict, pr: int) -> CheckSnapshot:
+    run_id = _extract_run_id(c.get("link", "") or "")
+    status, conclusion, duration_seconds = _normalize_check(c)
     snap = CheckSnapshot(
         name=c.get("name", "unknown"),
         workflow=c.get("workflow", ""),
@@ -422,15 +349,7 @@ def _check_to_snapshot(c: dict, ledger: dict, repo_root_path: Path,
         retries_used_job=state.get("prs", {}).get(str(pr), {}).get(
             "retries_per_job", {}).get(c.get("name", ""), 0),
     )
-
-    if conclusion in {"failure", "cancelled", "timed_out"}:
-        # only spend tokens classifying actual failures
-        snap.classification = classify_check(
-            {"conclusion": conclusion, "name": snap.name, "run_id": run_id},
-            ledger, repo_root_path,
-        )
-        snap.flaky_history = _flaky_history_for_check(snap.classification, ledger)
-
+    _enrich_check(snap, ledger, repo_root_path)
     return snap
 
 
@@ -451,39 +370,64 @@ def _flaky_history_for_check(classification: dict, ledger: dict) -> dict:
     return summary
 
 
-def derive_actions(snap: Snapshot, budget: dict) -> list[str]:
-    actions: list[str] = []
-    if snap.pr_state in {"MERGED", "CLOSED"}:
-        return ["stop_pr_closed"]
-    has_failure = any(c.conclusion in {"failure", "cancelled", "timed_out"} for c in snap.checks)
-    has_pending = any(c.status in {"queued", "in_progress", "pending"} for c in snap.checks)
-    has_unknown = any(c.classification.get("category") == "unknown" for c in snap.checks)
-    has_branch = any(c.classification.get("category") == "branch_failure" for c in snap.checks)
-    has_retryable = any(
-        c.classification.get("category") in {"infra_flake", "test_flake", "dependency_failure"}
-        and c.conclusion == "failure"
-        for c in snap.checks
-    )
-    flaky_greens = any(
-        c.conclusion == "success" and c.flaky_history
-        for c in snap.checks
+def decide_actions(
+    snap: Snapshot, budget: dict
+) -> tuple[list[dict], Optional[str]]:
+    """Pure function — no I/O. Returns (actions, terminal).
+
+    terminal is None while the loop should continue, or one of:
+      pr_merged, pr_closed, needs_help, budget_exhausted.
+    """
+    state = (snap.pr_state or "").upper()
+    if state == "MERGED":
+        return [{"action": "stop", "reason": "pr_merged"}], "pr_merged"
+    if state == "CLOSED":
+        return [{"action": "stop", "reason": "pr_closed"}], "pr_closed"
+
+    actions: list[dict] = []
+
+    branch_checks = [
+        c.name for c in snap.checks
+        if c.classification.get("category") == "branch_failure"
+        and c.conclusion in {"failure", "cancelled", "timed_out"}
+    ]
+    unknown_checks = [
+        c.name for c in snap.checks
+        if c.classification.get("category") == "unknown"
+        and c.conclusion in {"failure", "cancelled", "timed_out"}
+    ]
+    retryable_checks = [
+        c.name for c in snap.checks
+        if c.classification.get("category") in {"infra_flake", "test_flake", "dependency_failure"}
+        and c.conclusion in {"failure", "cancelled", "timed_out"}
+    ]
+    flaky_green_checks = [
+        c.name for c in snap.checks
+        if c.conclusion == "success" and c.flaky_history
+    ]
+    has_failure = any(
+        c.conclusion in {"failure", "cancelled", "timed_out"} for c in snap.checks
     )
 
-    if has_branch:
-        actions.append("patch_branch_failure")
-    if has_unknown:
-        actions.append("diagnose_unknown")
-    if flaky_greens:
-        actions.append("verify_flaky_green")
-    if has_retryable and not budget["any_budget_exhausted"] and not has_branch:
-        actions.append("retry_with_budget")
-    if budget["any_budget_exhausted"] and (has_failure or has_pending):
-        actions.append("budget_exhausted_surface")
-    if not actions and has_pending:
-        actions.append("idle_wait")
-    if not actions and not has_failure and not has_pending:
-        actions.append("all_green")
-    return actions
+    if branch_checks:
+        actions.append({"action": "diagnose_branch_failure", "checks": branch_checks})
+    if unknown_checks:
+        actions.append({"action": "diagnose_unknown", "checks": unknown_checks})
+    if flaky_green_checks:
+        actions.append({"action": "verify_flaky_green", "checks": flaky_green_checks})
+    if retryable_checks and not budget["any_budget_exhausted"] and not branch_checks:
+        actions.append({"action": "retry_failed_now"})
+
+    terminal: Optional[str] = None
+    if budget["any_budget_exhausted"] and has_failure:
+        terminal = "needs_help" if snap.quarantine_candidates else "budget_exhausted"
+
+    if terminal:
+        actions.append({"action": "stop", "reason": terminal})
+    elif not actions:
+        actions.append({"action": "idle"})
+
+    return actions, terminal
 
 
 def assemble_snapshot(pr: int, repo_root_path: Path) -> Snapshot:
@@ -508,9 +452,8 @@ def assemble_snapshot(pr: int, repo_root_path: Path) -> Snapshot:
         timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     )
 
-    # quarantine candidates from current ledger (cheap to compute)
     snapshot.quarantine_candidates = _quarantine_candidates(ledger)
-    snapshot.actions = derive_actions(snapshot, budget)
+    snapshot.actions, snapshot.terminal = decide_actions(snapshot, budget)
     return snapshot
 
 
@@ -519,7 +462,7 @@ def _quarantine_candidates(ledger: dict) -> list[dict]:
     for tid, entry in ledger.get("tests", {}).items():
         if entry.get("status") == "quarantined":
             continue
-        if entry.get("failure_count_30d", 0) >= 3 and entry.get("flake_rate", 0) >= 0.05:
+        if entry.get("failure_count_30d", 0) >= QUARANTINE_FAIL_THRESHOLD and entry.get("flake_rate", 0) >= QUARANTINE_RATE_THRESHOLD:
             out.append({
                 "test": tid,
                 "failure_count_30d": entry["failure_count_30d"],
@@ -534,16 +477,13 @@ def _quarantine_candidates(ledger: dict) -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 
-def retry_failed_now(pr: int, repo_root_path: Path) -> int:
-    cfg = load_config(repo_root_path)
-    state = load_state(repo_root_path)
-    snap = assemble_snapshot(pr, repo_root_path)
-    budget = snap.cost_summary
-
-    blockers = []
+def _gate_retry(
+    checks: list[CheckSnapshot], budget: dict
+) -> tuple[list[CheckSnapshot], list[dict]]:
+    """Split failed checks into retryable and blocked lists."""
     retryable: list[CheckSnapshot] = []
-
-    for c in snap.checks:
+    blockers: list[dict] = []
+    for c in checks:
         if c.conclusion not in {"failure", "cancelled", "timed_out"}:
             continue
         ok, reason = can_retry(c, budget)
@@ -552,6 +492,15 @@ def retry_failed_now(pr: int, repo_root_path: Path) -> int:
         else:
             blockers.append({"check": c.name, "reason": reason,
                              "category": c.classification.get("category")})
+    return retryable, blockers
+
+
+def retry_failed_now(pr: int, repo_root_path: Path) -> int:
+    cfg = load_config(repo_root_path)
+    state = load_state(repo_root_path)
+    snap = assemble_snapshot(pr, repo_root_path)
+
+    retryable, blockers = _gate_retry(snap.checks, snap.cost_summary)
 
     if blockers:
         sys.stderr.write(
@@ -560,33 +509,72 @@ def retry_failed_now(pr: int, repo_root_path: Path) -> int:
             + "\n"
         )
         print(json.dumps({"action": "retry_refused", "blockers": blockers,
-                          "would_retry": [c.name for c in retryable]},
-                         indent=2))
+                          "would_retry": [c.name for c in retryable]}, indent=2))
         return 1
 
     if not retryable:
         print(json.dumps({"action": "noop", "reason": "no failed checks eligible"}, indent=2))
         return 0
 
+    pr_key = str(pr)
+    pr_state = state["prs"].setdefault(pr_key, {
+        "retries_used": 0, "retries_per_job": {}, "minutes_spent": 0,
+    })
     triggered = []
     for c in retryable:
-        if c.run_id:
-            gh("run", "rerun", c.run_id, "--failed", check=False)
+        if not c.run_id:
+            continue
+        if _gh_returncode("run", "rerun", c.run_id, "--failed") == 0:
             triggered.append(c.name)
-
-            # update budget state
-            pr_key = str(pr)
-            pr_state = state["prs"].setdefault(pr_key, {
-                "retries_used": 0, "retries_per_job": {}, "minutes_spent": 0,
-            })
             pr_state["retries_used"] += 1
             pr_state["retries_per_job"][c.name] = pr_state["retries_per_job"].get(c.name, 0) + 1
+        else:
+            sys.stderr.write(f"ci-guard: rerun of {c.run_id} failed; budget unchanged.\n")
 
     save_state(repo_root_path, state)
     print(json.dumps({"action": "retried", "checks": triggered,
-                      "retries_used_pr": state["prs"][str(pr)]["retries_used"],
+                      "retries_used_pr": pr_state["retries_used"],
                       "retries_max_pr": cfg["retries_per_pr"]}, indent=2))
     return 0
+
+
+# --------------------------------------------------------------------------- #
+# Ledger auto-recording
+# --------------------------------------------------------------------------- #
+
+
+def _auto_record_events(snap: Snapshot, repo_root_path: Path, state: dict) -> None:
+    """Record test_flake failures and passes for ledger-tracked checks.
+
+    Deduplicates by run_id:check_name so repeated --once calls on the
+    same SHA don't double-count events.
+    """
+    ledger = load_ledger(repo_root_path)
+    ledger_path = repo_root_path / LEDGER_PATH
+    pr_key = str(snap.pr_number)
+    pr_state = state["prs"].setdefault(pr_key, {
+        "retries_used": 0, "retries_per_job": {}, "minutes_spent": 0,
+    })
+    recorded: set[str] = set(pr_state.setdefault("recorded_events", []))
+
+    for c in snap.checks:
+        if not c.run_id:
+            continue
+        event_key = f"{c.run_id}:{c.name}"
+        if event_key in recorded:
+            continue
+        if (c.conclusion in {"failure", "cancelled", "timed_out"}
+                and c.classification.get("category") == "test_flake"):
+            record_failure(c.name, sha=snap.head_sha, run_id=c.run_id,
+                           ledger_path=ledger_path)
+            recorded.add(event_key)
+        elif c.conclusion == "success" and c.name in ledger.get("tests", {}):
+            record_pass(c.name, sha=snap.head_sha, run_id=c.run_id,
+                        ledger_path=ledger_path)
+            recorded.add(event_key)
+
+    pr_state["recorded_events"] = list(recorded)
+    save_state(repo_root_path, state)
 
 
 # --------------------------------------------------------------------------- #
@@ -600,22 +588,67 @@ def emit(snap: Snapshot) -> None:
     sys.stdout.flush()
 
 
+def _terminal_exit_code(terminal: str) -> int:
+    return {"pr_merged": 0, "pr_closed": 0, "needs_help": 2, "budget_exhausted": 3}.get(
+        terminal, 0
+    )
+
+
 def cmd_once(pr: int, repo_root_path: Path) -> int:
-    emit(assemble_snapshot(pr, repo_root_path))
+    snap = assemble_snapshot(pr, repo_root_path)
+    emit(snap)
+    _auto_record_events(snap, repo_root_path, load_state(repo_root_path))
     return 0
 
 
 def cmd_watch(pr: int, repo_root_path: Path) -> int:
     cfg = load_config(repo_root_path)
-    interval = int(cfg.get("watch_interval_seconds", 60))
+    interval = int(cfg.get("watch_interval_seconds", DEFAULT_BUDGET["watch_interval_seconds"]))
+    pr_key = str(pr)
+
+    init_state = load_state(repo_root_path)
+    pr_entry = init_state.get("prs", {}).get(pr_key, {})
+
+    # Fast-path: already reached a terminal state in a previous run.
+    last_terminal = pr_entry.get("last_terminal")
+    if last_terminal:
+        sys.stderr.write(
+            f"ci-guard: PR #{pr} previously reached terminal '{last_terminal}'; exiting.\n"
+        )
+        return _terminal_exit_code(last_terminal)
+
+    # Seed cadence tracking from persisted state so restarts don't miss changes.
+    prev_sha: Optional[str] = pr_entry.get("last_seen_sha")
+    prev_check_states: dict = pr_entry.get("last_seen_check_states", {})
+
     while True:
         snap = assemble_snapshot(pr, repo_root_path)
-        # JSONL: one object per line
+
+        cur_check_states = {c.name: c.conclusion for c in snap.checks}
+        changed = snap.head_sha != prev_sha or cur_check_states != prev_check_states
+        prev_sha = snap.head_sha
+        prev_check_states = cur_check_states
+
         print(json.dumps(asdict(snap), default=str))
         sys.stdout.flush()
-        if "stop_pr_closed" in snap.actions:
-            return 0
-        time.sleep(interval)
+
+        # Mutate + save state: recorded_events, then tracking fields.
+        state = load_state(repo_root_path)
+        _auto_record_events(snap, repo_root_path, state)
+        _pr = state.setdefault("prs", {}).setdefault(pr_key, {
+            "retries_used": 0, "retries_per_job": {}, "minutes_spent": 0,
+        })
+        _pr["last_seen_sha"] = prev_sha
+        _pr["last_seen_check_states"] = prev_check_states
+        if snap.terminal:
+            _pr["last_terminal"] = snap.terminal
+        save_state(repo_root_path, state)
+
+        if snap.terminal:
+            return _terminal_exit_code(snap.terminal)
+
+        if not changed:
+            _sleep(interval)
 
 
 def main() -> int:

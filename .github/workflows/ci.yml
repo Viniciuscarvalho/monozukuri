@@ -141,6 +141,35 @@ jobs:
               --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
           fi
 
+  # ── ci-guard: classify failures, enforce retry budgets ───────────────────────
+  # Runs whenever any upstream job fails. Classifies each failure via ci_watch.py
+  # and exits non-zero on branch_failure or budget exhaustion so the PR cannot
+  # merge without a human triage decision.
+  classify-failures:
+    name: ci-guard / classify failures
+    runs-on: ubuntu-latest
+    needs: [lint-ui, unit, integration, conformance]
+    if: failure()
+    permissions:
+      checks: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Classify CI failures
+        run: |
+          python3 .ci-guard/scripts/ci_watch.py --pr auto --once
+        # Exit codes from ci_watch.py:
+        #   0 — all checks green or only flakes (retryable within budget)
+        #   2 — branch_failure detected or needs_help (blocks merge)
+        #   3 — retry budget exhausted (blocks merge)
+
   # ── Quarantine guard ─────────────────────────────────────────────────────────
   quarantine-guard:
     name: Quarantine guard
