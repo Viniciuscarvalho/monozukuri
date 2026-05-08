@@ -18,7 +18,7 @@ setup() {
   LIB_DIR="$REPO_ROOT/lib"
   FIXTURES="$BATS_FILE_TMPDIR"
   export LIB_DIR REPO_ROOT FIXTURES
-  source "$LIB_DIR/agent/conventions-promote.sh"
+  source "$LIB_DIR/agent/conventions.sh"
 }
 
 # ── conventions_list_candidates ───────────────────────────────────────────────

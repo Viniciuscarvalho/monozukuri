@@ -21,6 +21,11 @@ _MODULES_LIB_DIR=""
 # Must be called once before any module_require / module_optional call.
 modules_init() {
   _MODULES_LIB_DIR="$1"
+  # Source exit-codes once; guard against double-source via readonly check.
+  if ! declare -p EXIT_AGENT_BLOCKED &>/dev/null 2>&1; then
+    # shellcheck source=exit-codes.sh
+    source "${_MODULES_LIB_DIR}/core/exit-codes.sh" 2>/dev/null || true
+  fi
 }
 
 # _module_path <name>
@@ -31,7 +36,7 @@ _module_path() {
     echo "$_MODULES_LIB_DIR/$name.sh"
     return
   fi
-  for prefix in core memory plan run cli prompt config; do
+  for prefix in core memory ingest run cli prompt config; do
     local candidate="$_MODULES_LIB_DIR/$prefix/$name.sh"
     [ -f "$candidate" ] && echo "$candidate" && return
   done

@@ -241,7 +241,7 @@ run_backlog() {
           try {
             const d = JSON.parse(require('fs').readFileSync(
               '${STATE_DIR}/${feat_id_check}/cost.json','utf-8'));
-            d.cost_usd || 0;
+            d.cumulative_usd || 0;
           } catch(e) { 0; }
         " 2>/dev/null || echo 0)
         budget_record "$_feat_cost_usd"
@@ -561,7 +561,7 @@ EOPRD
   # MONOZUKURI_TASK_MEMORY, MONOZUKURI_TASK_FILE, MONOZUKURI_NEEDS_COMPACTION for the adapter and skill to read.
   # Called directly (not via $(...)) so exports propagate to the parent shell.
   if ! declare -f workflow_memory_prepare &>/dev/null; then
-    local _wfm_sh="$LIB_DIR/memory/workflow.sh"
+    local _wfm_sh="$LIB_DIR/run/workflow-scratchpad.sh"
     [[ -f "$_wfm_sh" ]] && source "$_wfm_sh"
   fi
   if declare -f workflow_memory_prepare &>/dev/null; then

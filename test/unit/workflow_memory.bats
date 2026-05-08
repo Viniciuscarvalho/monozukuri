@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test/unit/workflow_memory.bats — Tests for lib/memory/workflow.sh
+# test/unit/workflow_memory.bats — Tests for lib/run/workflow-scratchpad.sh
 
 REPO_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../" && pwd)"
 
@@ -7,7 +7,7 @@ setup() {
   TMPDIR="$(mktemp -d /tmp/wfm-test-XXXXX)"
   RUN_DIR="$TMPDIR/runs"
   mkdir -p "$RUN_DIR"
-  source "$REPO_ROOT/lib/memory/workflow.sh"
+  source "$REPO_ROOT/lib/run/workflow-scratchpad.sh"
 }
 
 teardown() {

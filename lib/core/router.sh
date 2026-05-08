@@ -36,8 +36,7 @@ router_init() {
 router_detect_stack_from_paths() {
   local paths_str="$1"
 
-  # Prefer stack_profile_primary when stack_profile_init has already run for this worktree.
-  # Fall back to extension counting so direct callers (e.g. tests) still work without a worktree.
+  # Use PROJECT_STACK when stack_profile_init has already run.
   if [ -n "${PROJECT_STACK:-}" ] && [ "${PROJECT_STACK}" != "unknown" ]; then
     # Normalise: stack-detector.sh uses "nodejs" but the router historically used "node"
     case "$PROJECT_STACK" in
@@ -47,7 +46,15 @@ router_detect_stack_from_paths() {
     return 0
   fi
 
-  # Extension-counting fallback (preserved for backward compatibility)
+  # PROJECT_STACK unset means stack_profile_init never ran — boot order is broken.
+  if [ -z "${PROJECT_STACK:-}" ]; then
+    err "[router] PROJECT_STACK is unset — stack_profile_init must run before routing. Check module load order."
+    echo "unknown"
+    return 1
+  fi
+
+  # PROJECT_STACK="unknown": detector ran but could not identify the stack.
+  # Extension counting over the feature's file paths is a legitimate refinement.
   local stack="unknown"
   local swift_count=0 node_count=0 python_count=0 rust_count=0 go_count=0
 

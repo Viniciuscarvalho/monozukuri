@@ -10,56 +10,56 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
 # ── A1: auth-expiry helpers ───────────────────────────────────────────────────
 
-@test "A1: _codex_auth_expired returns true on 'please run codex login'" {
+@test "A1: codex auth check returns true on 'please run codex login'" {
   source "$REPO_ROOT/lib/agent/adapter-codex.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "Error: please run codex login to continue" > "$tmp"
-  run _codex_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -eq 0 ]
 }
 
-@test "A1: _codex_auth_expired returns true on 'not authenticated'" {
+@test "A1: codex auth check returns true on 'not authenticated'" {
   source "$REPO_ROOT/lib/agent/adapter-codex.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "You are not authenticated. Please log in." > "$tmp"
-  run _codex_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -eq 0 ]
 }
 
-@test "A1: _codex_auth_expired returns false on normal output" {
+@test "A1: codex auth check returns false on normal output" {
   source "$REPO_ROOT/lib/agent/adapter-codex.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "Successfully created PR #42" > "$tmp"
-  run _codex_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -ne 0 ]
 }
 
-@test "A1: _gemini_auth_expired returns true on 'OAuth token expired'" {
+@test "A1: gemini auth check returns true on 'OAuth token expired'" {
   source "$REPO_ROOT/lib/agent/adapter-gemini.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "OAuth token expired, please authenticate again." > "$tmp"
-  run _gemini_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -eq 0 ]
 }
 
-@test "A1: _gemini_auth_expired returns true on '401'" {
+@test "A1: gemini auth check returns true on '401'" {
   source "$REPO_ROOT/lib/agent/adapter-gemini.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "HTTP 401: access denied" > "$tmp"
-  run _gemini_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -eq 0 ]
 }
 
-@test "A1: _gemini_auth_expired returns false on normal output" {
+@test "A1: gemini auth check returns false on normal output" {
   source "$REPO_ROOT/lib/agent/adapter-gemini.sh" 2>/dev/null || true
   local tmp; tmp=$(mktemp)
   echo "Task completed successfully." > "$tmp"
-  run _gemini_auth_expired "$tmp"
+  run _thin_shell_auth_check "$tmp"
   rm -f "$tmp"
   [ "$status" -ne 0 ]
 }

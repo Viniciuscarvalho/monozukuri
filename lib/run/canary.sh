@@ -170,9 +170,9 @@ canary_run() {
   if command -v modules_init &>/dev/null; then
     modules_init "$LIB_DIR"
     module_require core/util 2>/dev/null || true
-    module_require memory/metrics
+    module_require run/metrics
   else
-    source "$LIB_DIR/memory/metrics.sh"
+    source "$LIB_DIR/run/metrics.sh"
   fi
 
   echo "Starting canary benchmark run..." >&2

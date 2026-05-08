@@ -14,8 +14,8 @@ setup() {
 
   warn() { echo "WARN: $*" >&2; }
   info() { echo "INFO: $*" >&2; }
-  platform_claude() { :; }
-  export -f warn info platform_claude
+  agent_run_phase() { :; }
+  export -f warn info agent_run_phase
 
   source "$LIB_DIR/schema/validate.sh"
 

@@ -5,8 +5,8 @@
 # alias patterns are read from skills/mz-*/references/*-validation.md (PR2);
 # tasks.json is validated against its required JSON schema fields.
 #
-# One-reprompt rule: symmetric with CI reprompt (ADR-014) and phase reprompt
-# (ADR-013). Every reprompt trigger allows exactly one reprompt.
+# Reprompts are dispatched through agent_run_phase with MONOZUKURI_PHASE=fix-schema
+# (ADR-012). Each adapter owns its own CLI invocation; this module stays adapter-agnostic.
 #
 # Exit codes (schema_validate):
 #   0  artifact is structurally valid
@@ -217,14 +217,6 @@ schema_validate_with_reprompt() {
 
   local max_reprompts="${MONOZUKURI_SCHEMA_MAX_REPROMPTS:-3}"
 
-  local model_flag=""
-  local _fix_model="${MODEL_DEFAULT:-}"
-  [ "$_fix_model" = "opusplan" ] && _fix_model="opus"
-  [ -n "$_fix_model" ] && model_flag="--model $_fix_model"
-
-  local fix_perm_flag=""
-  [ "${AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
-
   local artifact_type artifact_file
   for artifact_type in prd techspec tasks; do
     case "$artifact_type" in
@@ -263,9 +255,9 @@ schema_validate_with_reprompt() {
           attempt "$attempt" max "$max_reprompts"
       local fix_prompt
       fix_prompt=$(schema_humanize_error "$artifact_type" "$error_msg")
-      (cd "$wt_path" && printf '%b' "$fix_prompt" |
-        platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" $model_flag $fix_perm_flag --print) \
-        2>/dev/null || true
+      MONOZUKURI_FEATURE_ID="$feat_id" MONOZUKURI_WORKTREE="$wt_path" \
+        MONOZUKURI_FIX_CONTEXT="$fix_prompt" MONOZUKURI_PHASE=fix-schema \
+        agent_run_phase 2>/dev/null || true
 
       if schema_validate "$artifact_type" "$artifact_file"; then
         info "Schema: $artifact_type valid after reprompt (attempt $attempt)"

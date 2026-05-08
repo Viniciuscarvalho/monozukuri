@@ -13,7 +13,7 @@ sub_metrics() {
   source "$LIB_DIR/core/modules.sh"
   modules_init "$LIB_DIR"
   module_require core/util
-  module_require memory/metrics
+  module_require run/metrics
 
   local history_file="${PROJECT_ROOT}/docs/canary-history.md"
 

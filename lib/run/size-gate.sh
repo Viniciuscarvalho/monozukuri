@@ -1,5 +1,5 @@
 #!/bin/bash
-# lib/size_gate.sh — Feature-sizing gate (ADR-008 PR-D)
+# lib/run/size-gate.sh — Feature-sizing gate (ADR-008 PR-D)
 #
 # Reads metrics from PRD/techspec/tasks files in the worktree and compares
 # them against configured thresholds. In supervised mode the user is prompted;

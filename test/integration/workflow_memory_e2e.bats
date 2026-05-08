@@ -11,7 +11,7 @@ setup() {
   export REPO_ROOT LIB_DIR
   TMPDIR_TEST="$(mktemp -d)"
   export TMPDIR_TEST
-  source "$LIB_DIR/memory/workflow.sh"
+  source "$LIB_DIR/run/workflow-scratchpad.sh"
 }
 
 teardown() {

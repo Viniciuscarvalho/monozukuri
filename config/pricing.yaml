@@ -1,5 +1,5 @@
 version: "1.0.0"
-updated_at: "2026-05-06"
+updated_at: "2026-05-08"
 # Pricing per 1M tokens (USD)
 providers:
   claude-code:

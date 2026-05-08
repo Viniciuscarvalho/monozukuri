@@ -16,7 +16,7 @@ setup() {
   LIB_DIR="$REPO_ROOT/lib"
   FIXTURES="$BATS_FILE_TMPDIR"
   export LIB_DIR REPO_ROOT FIXTURES
-  source "$LIB_DIR/agent/conventions-generate.sh"
+  source "$LIB_DIR/agent/conventions.sh"
   unset PROJECT_BUILD_CMD PROJECT_TEST_CMD
 }
 

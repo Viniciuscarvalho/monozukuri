@@ -12,8 +12,8 @@
   [ -d "$REPO_ROOT/lib/cli" ]
   [ -d "$REPO_ROOT/lib/config" ]
   [ -d "$REPO_ROOT/lib/core" ]
+  [ -d "$REPO_ROOT/lib/ingest" ]
   [ -d "$REPO_ROOT/lib/memory" ]
-  [ -d "$REPO_ROOT/lib/plan" ]
   [ -d "$REPO_ROOT/lib/prompt" ]
   [ -d "$REPO_ROOT/lib/run" ]
 }

@@ -9,7 +9,7 @@
 #   source "$LIB_DIR/run/conventions-sync.sh"
 #   conventions_auto_sync "$ROOT_DIR"   # or conventions_auto_sync (uses $ROOT_DIR)
 #
-# Dependencies: lib/agent/conventions-generate.sh, lib/agent/conventions-merge.sh, jq.
+# Dependencies: lib/agent/conventions.sh, jq.
 
 conventions_auto_sync() {
   local repo_root="${1:-${ROOT_DIR:-$(pwd)}}"
@@ -17,17 +17,14 @@ conventions_auto_sync() {
   # Gate: only run when explicitly opted in.
   [[ "${CONVENTIONS_AUTO_SYNC:-false}" == "true" ]] || return 0
 
-  local _gen_sh="$LIB_DIR/agent/conventions-generate.sh"
-  local _merge_sh="$LIB_DIR/agent/conventions-merge.sh"
+  local _conv_sh="$LIB_DIR/agent/conventions.sh"
 
-  if [[ ! -f "$_gen_sh" || ! -f "$_merge_sh" ]]; then
+  if [[ ! -f "$_conv_sh" ]]; then
     return 0
   fi
 
-  # shellcheck source=../agent/conventions-generate.sh
-  source "$_gen_sh" 2>/dev/null || return 0
-  # shellcheck source=../agent/conventions-merge.sh
-  source "$_merge_sh" 2>/dev/null || return 0
+  # shellcheck source=../agent/conventions.sh
+  source "$_conv_sh" 2>/dev/null || return 0
 
   # Skip when no non-archived learnings exist in either tier.
   local _project_path="$repo_root/.claude/feature-state/learned.json"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# lib/agent/adapter-kiro.sh — AWS Kiro adapter.
+# lib/agent/adapter-kiro.sh — AWS Kiro adapter manifest.
 #
 # Required env vars (set by pipeline.sh before calling agent_run_phase):
 #   MONOZUKURI_FEATURE_ID     feature being processed
@@ -15,17 +15,9 @@
 # Auth: AWS credentials via standard AWS SDK chain (env vars, ~/.aws/credentials,
 # instance profile). Verified via `aws sts get-caller-identity`.
 
-# op_timeout is sourced from lib/core/util.sh by pipeline.sh before this adapter loads.
-# Provide a no-op passthrough for environments that source this adapter directly (e.g. tests).
-if ! declare -f op_timeout &>/dev/null; then
-  op_timeout() { local _secs="$1"; shift; "$@"; }
-fi
-
-# adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
-# Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
-if ! declare -f adapter_tee &>/dev/null; then
-  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
-fi
+_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=thin-shell-base.sh
+source "${_ADAPTER_DIR}/thin-shell-base.sh"
 
 agent_name() { echo "kiro"; }
 
@@ -69,70 +61,32 @@ agent_doctor() {
 
 agent_login_hint() { printf 'aws configure\n'; }
 
-agent_estimate_tokens() {
-  local prompt; prompt=$(cat)
-  if declare -f cost_estimate_tokens &>/dev/null; then
-    cost_estimate_tokens "$prompt"
-  else
-    printf '%d\n' $(( ${#prompt} / 4 ))
-  fi
-}
-
-agent_run_phase() {
-  local feat_id="${MONOZUKURI_FEATURE_ID:?agent_run_phase: MONOZUKURI_FEATURE_ID not set}"
-  local wt_path="${MONOZUKURI_WORKTREE:?agent_run_phase: MONOZUKURI_WORKTREE not set}"
-  local log_file="${MONOZUKURI_LOG_FILE:-/tmp/monozukuri-${feat_id}-$(date +%s).log}"
-  local phase="${MONOZUKURI_PHASE:-prd}"
-
-  local use_native_specs="${KIRO_USE_NATIVE_SPECS:-false}"
-
-  # fix-retry: Phase 3 Ralph Loop — feed MONOZUKURI_FIX_CONTEXT directly to kiro.
-  if [[ "$phase" == "fix-retry" ]]; then
-    local fix_context="${MONOZUKURI_FIX_CONTEXT:-Fix the failing tests.}"
-    local exit_code=0
-    (cd "$wt_path" && printf '%s\n' "$fix_context" | \
-      adapter_tee "$log_file" -- \
+_thin_shell_invoke() {
+  local _prompt="$1" log_file="$2" feat_id="$3" wt_path="$4"
+  (cd "$wt_path" && printf '%s\n' "$_prompt" | \
+    adapter_tee "$log_file" -- \
+      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
         kiro agent run \
           --feature "$feat_id" \
           ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          -) || exit_code=$?
-    return "$exit_code"
-  fi
+          -)
+}
 
-  # For prd/techspec phases, optionally use kiro's native spec workflow
+# Kiro native-spec workflow: handle prd/techspec via `kiro spec create` when enabled.
+# Returns 0 (handled+success), non-zero non-99 (handled+failed), or 99 (not handled).
+_thin_shell_pre_phase() {
+  local feat_id="$1" wt_path="$2" log_file="$3" phase="$4"
+  local use_native_specs="${KIRO_USE_NATIVE_SPECS:-false}"
   if [ "$use_native_specs" = "true" ] && { [ "$phase" = "prd" ] || [ "$phase" = "techspec" ]; }; then
     local exit_code=0
     (cd "$wt_path" && adapter_tee "$log_file" -- \
-      kiro spec create \
-        --feature "$feat_id" \
-        --phase "$phase") || exit_code=$?
+      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
+        kiro spec create \
+          --feature "$feat_id" \
+          --phase "$phase") || exit_code=$?
     return "$exit_code"
   fi
-
-  # All other phases (and prd/techspec when native specs disabled): agent run
-  local rendered_prompt
-  if declare -f render_phase_prompt &>/dev/null; then
-    rendered_prompt=$(render_phase_prompt "$phase")
-  else
-    rendered_prompt="Implement feature ${feat_id}."
-  fi
-
-  local exit_code=0
-  (cd "$wt_path" && printf '%s\n' "$rendered_prompt" | \
-    adapter_tee "$log_file" -- \
-      kiro agent run \
-        --feature "$feat_id" \
-        ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-        -) || exit_code=$?
-  return "$exit_code"
-}
-
-agent_report_cost() {
-  if declare -f cost_report &>/dev/null; then
-    cost_report
-  else
-    echo "0.00"
-  fi
+  return 99
 }
 
 agent_native_context_files() {
