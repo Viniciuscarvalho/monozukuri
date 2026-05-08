@@ -134,7 +134,7 @@ OPT_SETUP_YES=false
 OPT_TELEMETRY_ACTION=""
 OPT_RETRY_ALL=false
 OPT_RETRY_FEATS=""
-OPT_RETRY_REASON="schema"
+OPT_RETRY_REASON=""
 OPT_NO_UI=false
 
 while [ $# -gt 0 ]; do

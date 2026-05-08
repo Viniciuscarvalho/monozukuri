@@ -124,7 +124,7 @@ _cc_invoke_claude() {
     (
       set -o pipefail
       cd "$wt_path" && platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
-        "$@" --output-format stream-json 2>&1 \
+        "$@" --output-format stream-json --verbose 2>&1 \
         | tee "$sj_log" \
         | node -e "$_extract_text" \
         | tee "$log_file" >/dev/null
@@ -237,7 +237,7 @@ agent_run_phase() {
           platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
             ${fix_model:+--model "$fix_model"} \
             $fix_perm_flag \
-            --print --output-format stream-json 2>&1 \
+            --print --output-format stream-json --verbose 2>&1 \
           | tee "$_fs_sj_log" | node -e "$_extract_text" | tee "$log_file" >/dev/null
       ) || exit_code=$?
       stream_parse_emit_file "$feat_id" "fix-schema" "$_fs_sj_log" || true
@@ -277,7 +277,7 @@ agent_run_phase() {
           platform_claude "${SKILL_TIMEOUT_SECONDS:-1800}" \
             ${fix_model:+--model "$fix_model"} \
             $fix_perm_flag \
-            --print --output-format stream-json 2>&1 \
+            --print --output-format stream-json --verbose 2>&1 \
           | tee "$_fr_sj_log" | node -e "$_extract_text" | tee "$log_file" >/dev/null
       ) || exit_code=$?
       stream_parse_emit_file "$feat_id" "fix-retry" "$_fr_sj_log" || true
