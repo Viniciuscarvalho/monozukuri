@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.8](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.7...v1.37.8) (2026-05-08)
+
+
+### Bug Fixes
+
+* **tui:** stop EIO crash on exit and mislabeled paused runs ([#150](https://github.com/Viniciuscarvalho/monozukuri/issues/150)) ([9856ecf](https://github.com/Viniciuscarvalho/monozukuri/commit/9856ecfa10de0ec569c9a8ac23fbb67963c380ee))
+
 ## [1.37.7](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.6...v1.37.7) (2026-05-08)
 
 
