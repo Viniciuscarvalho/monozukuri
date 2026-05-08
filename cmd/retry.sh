@@ -193,6 +193,23 @@ sub_retry() {
         2>/dev/null || echo "$fid")
     fi
 
+    # Budget pre-check: if cumulative lifetime spend still exceeds the ceiling,
+    # skip rather than entering run_feature where the budget guard would
+    # immediately re-pause and return 0, making retry falsely report success.
+    local _budget_limit="${MONOZUKURI_MAX_FEATURE_TOKENS:-80000}"
+    local _cost_file="$STATE_DIR/$fid/cost.json"
+    if [ -f "$_cost_file" ]; then
+      local _lifetime_tokens
+      _lifetime_tokens=$(node -p \
+        "try{JSON.parse(require('fs').readFileSync('$_cost_file','utf-8')).cumulative_tokens||0}catch(e){0}" \
+        2>/dev/null || echo 0)
+      if (( _lifetime_tokens > _budget_limit )); then
+        warn "retry: $fid skipped — still over budget (${_lifetime_tokens} tokens > MONOZUKURI_MAX_FEATURE_TOKENS=${_budget_limit}); raise the limit to override"
+        failed=$((failed + 1))
+        continue
+      fi
+    fi
+
     # Re-enter run_feature directly. Planning artifact cache checks ([ -f "$_af" ])
     # skip already-generated phases, so only code + schema validation re-run.
     local _retry_exit=0
@@ -203,13 +220,21 @@ sub_retry() {
     monozukuri_emit feature.retry_completed \
       feature_id "$fid" new_status "$new_status" exit_code "$_retry_exit"
 
-    if [ "$_retry_exit" -eq 0 ]; then
-      succeeded=$((succeeded + 1))
-      info "retry: $fid succeeded (status: $new_status)"
-    else
-      failed=$((failed + 1))
-      warn "retry: $fid still failing (status: $new_status, exit: $_retry_exit)"
-    fi
+    # Use final status to determine outcome, not exit code. The budget guard
+    # (pipeline.sh) returns 0 even when transitioning to paused, so exit code
+    # alone cannot distinguish a genuine success from a silent re-pause.
+    case "$new_status" in
+      done|pr-created)
+        succeeded=$((succeeded + 1))
+        info "retry: $fid succeeded (status: $new_status)"
+        ;;
+      *)
+        failed=$((failed + 1))
+        local _detail=""
+        [ "$_retry_exit" -ne 0 ] && _detail=", exit: $_retry_exit"
+        warn "retry: $fid still not done (status: $new_status${_detail})"
+        ;;
+    esac
   done
 
   echo ""

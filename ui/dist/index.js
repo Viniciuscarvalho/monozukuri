@@ -15392,6 +15392,12 @@ import { ReadStream } from "tty";
 var import_react25 = __toESM(require_react(), 1);
 import { writeFileSync } from "fs";
 
+// src/runtime.ts
+var cleanup = null;
+function registerCleanup(fn) {
+  cleanup = fn;
+}
+
 // src/components/CostMeter.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 function formatCost(usd) {
@@ -16275,7 +16281,10 @@ function App2() {
         writeFileSync("/dev/tty", summary);
       } catch {
       }
-      setTimeout(() => process.exit(0), 200);
+      setTimeout(() => {
+        cleanup?.();
+        process.exit(0);
+      }, 200);
     }
   }, [state.current, state.totals]);
   if (done) {
@@ -16370,6 +16379,8 @@ if (!process.stdout.isTTY) {
   try {
     const fd = openSync("/dev/tty", "r+");
     const stream = new ReadStream(fd);
+    stream.on("error", () => {
+    });
     stream.setRawMode(true);
     stream.setRawMode(false);
     ttyStdin = stream;
@@ -16378,7 +16389,12 @@ if (!process.stdout.isTTY) {
   if (!ttyStdin) {
     process.stdin.pipe(process.stdout);
   } else {
-    render_default(/* @__PURE__ */ (0, import_jsx_runtime10.jsx)(App2, {}), { stdin: ttyStdin });
+    const inkInstance = render_default(/* @__PURE__ */ (0, import_jsx_runtime10.jsx)(App2, {}), { stdin: ttyStdin });
+    const capturedStdin = ttyStdin;
+    registerCleanup(() => {
+      inkInstance.unmount();
+      capturedStdin.destroy();
+    });
   }
 }
 /*! Bundled license information:

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { writeFileSync } from 'node:fs';
 import { Box, Text, useStdout } from 'ink';
+import { cleanup } from './runtime.js';
 import { Header } from './components/Header.js';
 import { FeatureCard } from './components/FeatureCard.js';
 import { FeatureList } from './components/FeatureList.js';
@@ -48,7 +49,7 @@ export default function App(): React.ReactElement {
       } catch {
         // /dev/tty may not be writable in some environments
       }
-      setTimeout(() => process.exit(0), 200);
+      setTimeout(() => { cleanup?.(); process.exit(0); }, 200);
     }
   }, [state.current, state.totals]);
 
