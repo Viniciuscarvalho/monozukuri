@@ -214,9 +214,33 @@ sub_run() {
   # Execute
   run_backlog "$backlog_file"
 
+  # Count per-feature outcomes to derive correct manifest status and telemetry.
+  # Done early (before finalize) so both blocks share one pass over status.json.
+  local _done_count=0 _paused_count=0 _failed_count=0
+  if [ -d "${STATE_DIR:-}" ]; then
+    # grep -c exits 1 when count is 0; use { ... || true; } to avoid double-printing.
+    _done_count=$(find "$STATE_DIR" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));['done','pr-created'].includes(d.status)?'1':''}catch(e){''}" \; \
+      2>/dev/null | { grep -c "^1$" || true; })
+    _paused_count=$(find "$STATE_DIR" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='paused'?'1':''}catch(e){''}" \; \
+      2>/dev/null | { grep -c "^1$" || true; })
+    _failed_count=$(find "$STATE_DIR" -name status.json -exec \
+      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='failed'?'1':''}catch(e){''}" \; \
+      2>/dev/null | { grep -c "^1$" || true; })
+  fi
+
+  # Derive aggregate run status: failed > paused-only > completed.
+  local _run_final="completed"
+  if (( _failed_count > 0 )); then
+    _run_final="failed"
+  elif (( _done_count == 0 && _paused_count > 0 )); then
+    _run_final="paused"
+  fi
+
   # Finalize manifest
   if declare -f manifest_finalize &>/dev/null && [ -n "${MANIFEST_RUN_ID:-}" ]; then
-    manifest_finalize "$MANIFEST_RUN_ID" "completed"
+    manifest_finalize "$MANIFEST_RUN_ID" "$_run_final"
   fi
 
   # Auto-sync AGENTS.md from learning store (opt-in via conventions.auto_sync: true)
@@ -227,18 +251,11 @@ sub_run() {
 
   # E3: Send anonymous telemetry (best-effort, background, no retries)
   if declare -f telemetry_send &>/dev/null && declare -f telemetry_build_payload &>/dev/null; then
-    local _state_dir="$STATE_DIR"
     export TELEMETRY_AGENT="${ADAPTER:-unknown}"
     export TELEMETRY_COMPLETED TELEMETRY_PAUSED TELEMETRY_FAILED
-    TELEMETRY_COMPLETED=$(find "$_state_dir" -name status.json -exec \
-      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));['done','pr-created'].includes(d.status)?'1':''}catch(e){''}" \; \
-      2>/dev/null | grep -c "^1$" || echo "0")
-    TELEMETRY_PAUSED=$(find "$_state_dir" -name status.json -exec \
-      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='paused'?'1':''}catch(e){''}" \; \
-      2>/dev/null | grep -c "^1$" || echo "0")
-    TELEMETRY_FAILED=$(find "$_state_dir" -name status.json -exec \
-      node -p "try{const d=JSON.parse(require('fs').readFileSync('{}','utf-8'));d.status==='failed'?'1':''}catch(e){''}" \; \
-      2>/dev/null | grep -c "^1$" || echo "0")
+    TELEMETRY_COMPLETED="$_done_count"
+    TELEMETRY_PAUSED="$_paused_count"
+    TELEMETRY_FAILED="$_failed_count"
     export TELEMETRY_TOP_ERROR="${MONOZUKURI_TOP_ERROR_CLASS:-none}"
     export TELEMETRY_COST_USD="${MONOZUKURI_RUN_COST_USD:-0}"
     local _payload

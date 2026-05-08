@@ -3,6 +3,7 @@ import { render } from 'ink';
 import { openSync } from 'node:fs';
 import { ReadStream } from 'node:tty';
 import App from './App.js';
+import { registerCleanup } from './runtime.js';
 
 // process.stdin is always a pipe (orchestrator JSONL), never a real TTY.
 // Ink needs a TTY for raw-mode keyboard input, so we open /dev/tty directly.
@@ -16,6 +17,9 @@ if (!process.stdout.isTTY) {
   try {
     const fd = openSync('/dev/tty', 'r+');
     const stream = new ReadStream(fd);
+    // Swallow EIO that fires during teardown when the controlling terminal fd
+    // is closed by the parent before Node finishes draining the stream.
+    stream.on('error', () => {});
     // Probe raw mode before handing to Ink — setRawMode throws EIO when the
     // controlling terminal is owned by a parent process (e.g. Claude Code).
     stream.setRawMode(true);
@@ -28,6 +32,11 @@ if (!process.stdout.isTTY) {
   if (!ttyStdin) {
     process.stdin.pipe(process.stdout);
   } else {
-    render(<App />, { stdin: ttyStdin });
+    const inkInstance = render(<App />, { stdin: ttyStdin });
+    const capturedStdin = ttyStdin;
+    registerCleanup(() => {
+      inkInstance.unmount();
+      capturedStdin.destroy();
+    });
   }
 }
