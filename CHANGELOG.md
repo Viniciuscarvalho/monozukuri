@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.2...v1.37.3) (2026-05-08)
+
+
+### Bug Fixes
+
+* symlink .claude/skills into worktrees and wire Ink TUI ([#139](https://github.com/Viniciuscarvalho/monozukuri/issues/139)) ([b7e05e6](https://github.com/Viniciuscarvalho/monozukuri/commit/b7e05e6d7bc2bb625a9e9f18a8531d9cb16f89e0))
+
 ## [1.37.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.1...v1.37.2) (2026-05-08)
 
 
