@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.5](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.4...v1.37.5) (2026-05-08)
+
+
+### Bug Fixes
+
+* stream-json --verbose and retry --all reason filter ([#144](https://github.com/Viniciuscarvalho/monozukuri/issues/144)) ([9f639f0](https://github.com/Viniciuscarvalho/monozukuri/commit/9f639f07b0dbb58c5eea80bed4292d2b3d29e3dc))
+
 ## [1.37.4](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.3...v1.37.4) (2026-05-08)
 
 
