@@ -106,10 +106,14 @@ EOF
   fi
 
   # ── 1d. monozukuri doctor ────────────────────────────────────────────────────
-  local tmp_proj
-  tmp_proj=$(mktemp -d)
-  mkdir -p "$tmp_proj/.monozukuri"
-  cat > "$tmp_proj/.monozukuri/config.yaml" <<'EOCFG'
+  # Skip on CI: gh auth and claude CLI are developer tools absent from runners.
+  if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+    printf '  ~ monozukuri doctor skipped in CI (gh/claude not available on runner)\n'
+  else
+    local tmp_proj
+    tmp_proj=$(mktemp -d)
+    mkdir -p "$tmp_proj/.monozukuri"
+    cat > "$tmp_proj/.monozukuri/config.yaml" <<'EOCFG'
 source:
   adapter: markdown
   markdown:
@@ -118,22 +122,23 @@ autonomy: checkpoint
 execution:
   base_branch: main
 EOCFG
-  git -C "$tmp_proj" init -b main -q 2>/dev/null \
-    || git -C "$tmp_proj" init -q 2>/dev/null || true
+    git -C "$tmp_proj" init -b main -q 2>/dev/null \
+      || git -C "$tmp_proj" init -q 2>/dev/null || true
 
-  local doctor_rc=0
-  (
-    cd "$tmp_proj"
-    MONOZUKURI_HOME="$REPO_ROOT" timeout 15 bash "$REPO_ROOT/orchestrate.sh" doctor 2>&1
-  ) || doctor_rc=$?
+    local doctor_rc=0
+    (
+      cd "$tmp_proj"
+      MONOZUKURI_HOME="$REPO_ROOT" timeout 15 bash "$REPO_ROOT/orchestrate.sh" doctor 2>&1
+    ) || doctor_rc=$?
 
-  if [ "$doctor_rc" -eq 0 ]; then
-    _qa_pass "monozukuri doctor passes on clean fixture"
-  else
-    _qa_fail "monozukuri doctor failed (exit $doctor_rc)" \
-      || failures=$((failures + 1))
+    if [ "$doctor_rc" -eq 0 ]; then
+      _qa_pass "monozukuri doctor passes on clean fixture"
+    else
+      _qa_fail "monozukuri doctor failed (exit $doctor_rc)" \
+        || failures=$((failures + 1))
+    fi
+    rm -rf "$tmp_proj"
   fi
-  rm -rf "$tmp_proj"
 
   # ── 1e. Homebrew formula syntax (macOS only) ────────────────────────────────
   if command -v brew &>/dev/null; then
