@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.4](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.3...v1.37.4) (2026-05-08)
+
+
+### Bug Fixes
+
+* **ci:** use PAT for release-please to trigger Actions on release commits ([#141](https://github.com/Viniciuscarvalho/monozukuri/issues/141)) ([a561359](https://github.com/Viniciuscarvalho/monozukuri/commit/a5613596df4e26145157ddb3cc86503a92f3e565))
+
 ## [1.37.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.2...v1.37.3) (2026-05-08)
 
 
