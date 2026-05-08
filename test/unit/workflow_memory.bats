@@ -4,14 +4,14 @@
 REPO_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../" && pwd)"
 
 setup() {
-  TMPDIR="$(mktemp -d /tmp/wfm-test-XXXXX)"
-  RUN_DIR="$TMPDIR/runs"
+  WFM_TEST_DIR="$(mktemp -d /tmp/wfm-test-XXXXX)"
+  RUN_DIR="$WFM_TEST_DIR/runs"
   mkdir -p "$RUN_DIR"
   source "$REPO_ROOT/lib/run/workflow-scratchpad.sh"
 }
 
 teardown() {
-  rm -rf "$TMPDIR"
+  rm -rf "$WFM_TEST_DIR"
 }
 
 # ── 1. workflow_memory_dir returns correct path ───────────────────────────────
@@ -211,7 +211,7 @@ teardown() {
 # ── 21. _wfm_next_task_file returns task_01.md when no task files exist ───────
 
 @test "_wfm_next_task_file returns task_01.md when no task files exist" {
-  local mem_dir="$TMPDIR/empty-mem"
+  local mem_dir="$WFM_TEST_DIR/empty-mem"
   mkdir -p "$mem_dir"
   run _wfm_next_task_file "$mem_dir"
   [ "$status" -eq 0 ]
@@ -221,7 +221,7 @@ teardown() {
 # ── 22. _wfm_next_task_file returns task_03.md when task_01 and task_02 exist ─
 
 @test "_wfm_next_task_file returns task_03.md when task_01 and task_02 exist" {
-  local mem_dir="$TMPDIR/two-tasks"
+  local mem_dir="$WFM_TEST_DIR/two-tasks"
   mkdir -p "$mem_dir"
   touch "$mem_dir/task_01.md"
   touch "$mem_dir/task_02.md"
