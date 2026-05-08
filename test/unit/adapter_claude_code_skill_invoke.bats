@@ -181,7 +181,13 @@ _install_skill() {
   local args_file="$wt/platform-args"
   _install_skill "$wt" "mz-create-prd"
 
-  PLATFORM_ARGS_FILE="$args_file" \
+  # Pre-condition: skill must be findable — diagnoses skill_installed separately from
+  # args-capture failures if this test ever breaks again.
+  skill_installed "claude-code" "mz-create-prd" "$wt"
+
+  # Export explicitly so PLATFORM_ARGS_FILE is in the actual env and propagates
+  # through the nested (...)  and pipeline subshells inside _cc_invoke_claude.
+  export PLATFORM_ARGS_FILE="$args_file"
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
   MONOZUKURI_LOG_FILE="$wt/run.log" \
