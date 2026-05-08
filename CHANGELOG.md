@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.6](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.5...v1.37.6) (2026-05-08)
+
+
+### Bug Fixes
+
+* **qa:** fix release gate layer 2 failures ([#146](https://github.com/Viniciuscarvalho/monozukuri/issues/146)) ([097504b](https://github.com/Viniciuscarvalho/monozukuri/commit/097504b0817319ff17dfdee3e7dac7b31dac6e18))
+
 ## [1.37.5](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.4...v1.37.5) (2026-05-08)
 
 
