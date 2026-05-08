@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.7](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.6...v1.37.7) (2026-05-08)
+
+
+### Bug Fixes
+
+* **qa:** skip doctor check in CI — gh/claude absent on runners ([#148](https://github.com/Viniciuscarvalho/monozukuri/issues/148)) ([0e9fb20](https://github.com/Viniciuscarvalho/monozukuri/commit/0e9fb2020482dfbf6c97d5b52da9a6883be98b1c))
+
 ## [1.37.6](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.5...v1.37.6) (2026-05-08)
 
 
