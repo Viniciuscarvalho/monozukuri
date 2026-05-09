@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.8...v1.38.0) (2026-05-09)
+
+
+### Features
+
+* **v1:** launch-prep gap fixes — doctor, skill overrides, design tokens, web log pane ([#152](https://github.com/Viniciuscarvalho/monozukuri/issues/152)) ([bbeef30](https://github.com/Viniciuscarvalho/monozukuri/commit/bbeef30004fa47e7dd5c4f20219185a6e76f2b07))
+
 ## [1.37.8](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.7...v1.37.8) (2026-05-08)
 
 
