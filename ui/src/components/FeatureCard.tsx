@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { PhaseTimeline } from './PhaseTimeline.js';
 import type { Feature } from '../types.js';
+import { tokens } from '../tokens.js';
 
 interface FeatureCardProps {
   feature: Feature | null;
@@ -36,7 +37,7 @@ interface WaitingCardProps {
 function WaitingCard(_props: WaitingCardProps): React.ReactElement {
   return (
     <Box flexDirection="column" paddingLeft={2} paddingY={1}>
-      <Text dimColor>waiting for run...</Text>
+      <Text color={tokens.dim}>waiting for run...</Text>
     </Box>
   );
 }
@@ -52,15 +53,15 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
       <Box flexDirection="column" paddingLeft={1}>
         <Box>
           <Text>│ </Text>
-          <Text color="yellow">⏸ </Text>
-          <Text bold color="yellow">{feature.id}</Text>
+          <Text color={tokens.warning}>⏸ </Text>
+          <Text bold color={tokens.warning}>{feature.id}</Text>
           <Text>  </Text>
-          <Text dimColor>{truncate(feature.title || feature.id, 42)}</Text>
+          <Text color={tokens.dim}>{truncate(feature.title || feature.id, 42)}</Text>
           <Text> │</Text>
         </Box>
         <Box>
           <Text>│   </Text>
-          <Text color="yellow">deferred: </Text>
+          <Text color={tokens.warning}>deferred: </Text>
           <Text>{truncate(reason, 50)}</Text>
           <Text> │</Text>
         </Box>
@@ -69,7 +70,7 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
   }
 
   const elapsed = formatElapsed(feature.startedAt, now);
-  const tokens = formatTokens(feature.tokens);
+  const tokenCount = formatTokens(feature.tokens);
   const estTokens = feature.estimatedTokens ? formatTokens(feature.estimatedTokens) : '~?';
   const title = truncate(feature.title || feature.id, 42);
   const spinnerText = spinner ? truncate(spinner, 50) : '';
@@ -79,12 +80,12 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
       {/* Feature header line */}
       <Box>
         <Text>│ </Text>
-        <Text color="cyan">▸ </Text>
-        <Text bold color="cyan">{feature.id}</Text>
+        <Text color={tokens.brand}>▸ </Text>
+        <Text bold color={tokens.brand}>{feature.id}</Text>
         <Text>  </Text>
         <Text>{title}</Text>
-        <Text dimColor>  elapsed: </Text>
-        <Text color="yellow">{elapsed}</Text>
+        <Text color={tokens.dim}>  elapsed: </Text>
+        <Text color={tokens.warning}>{elapsed}</Text>
         <Text> │</Text>
       </Box>
 
@@ -92,14 +93,14 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
       {feature.currentSkill && (
         <Box>
           <Text>│   </Text>
-          <Text dimColor>{'skill: '}</Text>
-          <Text color={feature.compaction && feature.compaction !== 'none' ? 'yellow' : 'green'}>
+          <Text color={tokens.dim}>{'skill: '}</Text>
+          <Text color={feature.compaction && feature.compaction !== 'none' ? tokens.warning : tokens.success}>
             {feature.currentSkill}
           </Text>
-          <Text dimColor>{' · tier '}</Text>
+          <Text color={tokens.dim}>{' · tier '}</Text>
           <Text>{feature.currentTier ?? '—'}</Text>
-          <Text dimColor>{' · mem: '}</Text>
-          <Text color={feature.compaction && feature.compaction !== 'none' ? 'yellow' : 'green'}>
+          <Text color={tokens.dim}>{' · mem: '}</Text>
+          <Text color={feature.compaction && feature.compaction !== 'none' ? tokens.warning : tokens.success}>
             {feature.compaction && feature.compaction !== 'none'
               ? `compaction:${feature.compaction}`
               : 'ok'}
@@ -118,12 +119,12 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
       {/* Tokens + spinner */}
       <Box>
         <Text>│   </Text>
-        <Text dimColor>tokens: </Text>
-        <Text>{tokens}</Text>
-        <Text dimColor> / {estTokens} est.</Text>
+        <Text color={tokens.dim}>tokens: </Text>
+        <Text>{tokenCount}</Text>
+        <Text color={tokens.dim}> / {estTokens} est.</Text>
         {spinnerText ? (
           <>
-            <Text dimColor>   </Text>
+            <Text color={tokens.dim}>   </Text>
             <Text color="yellow">{spinnerText}</Text>
           </>
         ) : null}

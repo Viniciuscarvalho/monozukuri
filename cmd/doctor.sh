@@ -4,15 +4,19 @@
 
 set -euo pipefail
 
-_doctor_pass() { printf "  \033[32m✓\033[0m %s\n" "$1"; }
+_doctor_pass() { printf "  %s✓%s %s\n" "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}" "$1"; }
 _doctor_fail() {
-  printf "  \033[31m✗\033[0m %s\n    → %s\n" "$1" "$2" >&2
+  printf "  %s✗%s %s\n    → %s\n" "${T_DANGER:-\033[0;31m}" "${T_RESET:-\033[0m}" "$1" "$2" >&2
 }
 
 sub_doctor() {
   local failed=0
 
-  printf "\033[1mMonozukuri — pre-flight checks\033[0m\n\n"
+  # Source semantic tokens if not already loaded
+  [ -z "${T_RESET:-}" ] && [ -f "${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")/../lib}/cli/colors.sh" ] && \
+    source "${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")/../lib}/cli/colors.sh"
+
+  printf "%sMonozukuri — pre-flight checks%s\n\n" "${T_BOLD:-\033[1m}" "${T_RESET:-\033[0m}"
 
   # node >= 18
   if command -v node >/dev/null 2>&1; then
@@ -72,16 +76,78 @@ sub_doctor() {
   if command -v gum >/dev/null 2>&1; then
     _doctor_pass "gum $(gum --version 2>/dev/null | head -1) (interactive mode enabled)"
   else
-    printf "  \033[33m~\033[0m gum not found (optional — enables interactive prompts)\n"
+    printf "  %s~%s gum not found (optional — enables interactive prompts)\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
     printf "    → brew install gum\n"
+  fi
+
+  # mz-* skills — check all installed agents have the full skill set
+  if [ -n "${LIB_DIR:-}" ] && [ -f "${LIB_DIR}/setup/detect.sh" ] && [ -f "${LIB_DIR}/setup/install.sh" ]; then
+    # shellcheck source=/dev/null
+    source "${LIB_DIR}/setup/detect.sh"
+    source "${LIB_DIR}/setup/install.sh"
+    source "${LIB_DIR}/agent/skill-detect.sh"
+    local detected_agents total_skills ag ok missing_list skill
+    detected_agents="$(setup_detected_agents)"
+    total_skills="$(setup_skills_list | wc -l | tr -d ' ')"
+    if [ -z "$detected_agents" ]; then
+      printf "  %s~%s mz-* skills: no agents detected\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
+    else
+      for ag in $detected_agents; do
+        ok=0; missing_list=""
+        while IFS= read -r skill; do
+          if skill_installed "$ag" "$skill"; then
+            ok=$((ok + 1))
+          else
+            missing_list="${missing_list:+$missing_list, }$skill"
+          fi
+        done < <(setup_skills_list)
+        if [ -z "$missing_list" ]; then
+          _doctor_pass "$(setup_agent_name "$ag") skills: ${ok}/${total_skills} installed"
+        else
+          _doctor_fail "$(setup_agent_name "$ag") skills: missing — $missing_list" \
+                       "monozukuri setup --agent $ag"
+          failed=1
+        fi
+      done
+    fi
+  else
+    printf "  %s~%s mz-* skills: skipped (library path unavailable)\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
+  fi
+
+  # Optional adapter CLIs (codex/gemini/kiro/aider — claude already checked above)
+  local _pair _cli _cli_bin
+  for _pair in "codex:codex" "gemini:gemini" "kiro:kiro" "aider:aider"; do
+    _cli="${_pair%%:*}"; _cli_bin="${_pair##*:}"
+    if command -v "$_cli_bin" >/dev/null 2>&1; then
+      _doctor_pass "${_cli} CLI found"
+    else
+      printf "  %s-%s %s CLI not installed (optional)\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}" "$_cli"
+    fi
+  done
+
+  # Project-local agents (.claude/agents/)
+  if [ -d ".claude/agents" ]; then
+    local _agent_count=0 _f
+    while IFS= read -r _f; do
+      [ -n "$_f" ] && _agent_count=$((_agent_count + 1))
+    done < <(find .claude/agents -maxdepth 1 \( -name '*.md' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | sort)
+    if [ "$_agent_count" -gt 0 ]; then
+      _doctor_pass ".claude/agents/: ${_agent_count} project-local agent(s)"
+      find .claude/agents -maxdepth 1 \( -name '*.md' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | sort \
+        | while IFS= read -r _f; do printf "    %s\n" "$(basename "$_f")"; done
+    else
+      printf "  %s~%s .claude/agents/ exists but no agent files found\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
+    fi
+  else
+    printf "  %s-%s .claude/agents/ not present\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
   fi
 
   echo ""
   if [ "$failed" -eq 0 ]; then
-    printf "\033[32m✓ All checks passed — ready to run\033[0m\n"
+    printf "%s✓ All checks passed — ready to run%s\n" "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}"
     return 0
   else
-    printf "\033[31m✗ One or more checks failed — fix the issues above and re-run\033[0m\n"
+    printf "%s✗ One or more checks failed — fix the issues above and re-run%s\n" "${T_DANGER:-\033[0;31m}" "${T_RESET:-\033[0m}"
     exit 11
   fi
 }

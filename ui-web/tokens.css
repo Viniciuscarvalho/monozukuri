@@ -1,0 +1,66 @@
+/* Compozy-aligned design tokens for the monozukuri web dashboard.
+   Mirrors lib/cli/tokens.sh and ui/src/tokens.ts. */
+:root {
+  /* Brand */
+  --brand: #d6f24a;
+  --brand-700: #9fb526;
+  --brand-950: #17220a;
+
+  /* Stone palette */
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+  --stone-950: #0c0a09;
+
+  /* Semantic status */
+  --success: #31d58b;
+  --success-dim: #065f46;
+  --danger: #ff6b63;
+  --danger-dim: #7f1d1d;
+  --warning: #f59e0b;
+  --warning-dim: #78350f;
+  --info: #3b82f6;
+  --info-dim: #1e3a8a;
+  --accent: #a78bfa;
+  --accent-dim: #4c1d95;
+
+  /* Surfaces */
+  --surface-base: var(--stone-950);
+  --surface-raised: var(--stone-900);
+  --surface-inset: #080807;
+  --card: var(--stone-900);
+  --border: var(--stone-700);
+  --border-subtle: var(--stone-800);
+  --border-strong: var(--stone-600);
+
+  /* Text */
+  --text-primary: var(--stone-50);
+  --text-secondary: var(--stone-400);
+  --text-dim: var(--stone-600);
+  --text-brand: var(--brand);
+
+  /* Typography */
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: system-ui, -apple-system, sans-serif;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Feature status colors */
+  --status-done: var(--success);
+  --status-failed: var(--danger);
+  --status-paused: var(--warning);
+  --status-retrying: var(--accent);
+  --status-running: var(--brand);
+  --status-queued: var(--stone-500);
+  --status-skipped: var(--stone-600);
+}

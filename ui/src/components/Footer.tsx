@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { tokens } from '../tokens.js';
 
 interface FooterProps {
   terminalWidth?: number;

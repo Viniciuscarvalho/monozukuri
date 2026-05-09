@@ -244,8 +244,19 @@ _render_sed_escape() {
 
 render_phase_prompt() {
   local phase="${1:-${MONOZUKURI_PHASE:-prd}}"
+  local override="${2:-}"
   local prompt_dir="${PROMPT_PHASES_DIR:-${_RENDER_SH_DIR}/phases}"
   local tmpl="${prompt_dir}/${phase}.tmpl.md"
+
+  if [[ -n "$override" ]]; then
+    local _override_tmpl="${prompt_dir}/${override}.tmpl.md"
+    if [[ -f "$_override_tmpl" ]]; then
+      tmpl="$_override_tmpl"
+    else
+      printf 'render_phase_prompt: override template "%s" not found in %s — falling back to %s\n' \
+        "$override" "$prompt_dir" "${phase}.tmpl.md" >&2
+    fi
+  fi
 
   if [[ ! -f "$tmpl" ]]; then
     printf 'render_phase_prompt: no template for phase "%s" (looked in %s)\n' \

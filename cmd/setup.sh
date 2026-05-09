@@ -17,11 +17,12 @@
 source "$LIB_DIR/setup/detect.sh"
 source "$LIB_DIR/setup/install.sh"
 source "$LIB_DIR/cli/colors.sh" 2>/dev/null || true
+source "$LIB_DIR/cli/output.sh" 2>/dev/null || true
 source "$LIB_DIR/cli/emit.sh" 2>/dev/null || true
 
-_setup_pass() { printf "  ${C_GREEN:-}✓${C_NC:-} %s\n" "$1"; }
-_setup_info() { printf "  ${C_DIM:-}→${C_NC:-} %s\n" "$1"; }
-_setup_warn() { printf "  ${C_YELLOW:-}⚠${C_NC:-} %s\n" "$*" >&2; }
+_setup_pass() { _status_line pass "$@"; }
+_setup_warn() { _status_line warn "$@"; }
+_setup_info() { _status_line info "$@"; }
 
 sub_setup() {
   # ── action: --list ────────────────────────────────────────────────────

@@ -15,3 +15,8 @@ elif [[ -t 1 ]] || [[ "${FM_FORCE_COLOR:-}" == "1" ]]; then
   C_NC=$'\033[0m'
 fi
 export C_RED C_GREEN C_YELLOW C_BLUE C_CYAN C_DIM C_BOLD C_NC
+
+# Source semantic token layer
+_COLORS_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+[ -f "${_COLORS_SH_DIR}/tokens.sh" ] && source "${_COLORS_SH_DIR}/tokens.sh"

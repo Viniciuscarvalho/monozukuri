@@ -17,8 +17,8 @@
 
 monozukuri_error() {
   local what="${1:-}" why="${2:-}" fix="${3:-}" code="${4:-1}"
-  printf "\033[31m❌\033[0m %s\n" "$what" >&2
-  [ -n "$why" ] && printf "   \033[2mWhy:\033[0m %s\n" "$why" >&2
-  [ -n "$fix" ] && printf "   \033[2mFix:\033[0m %s\n" "$fix" >&2
+  printf "%s✗%s %s\n" "${T_DANGER:-\033[0;31m}" "${T_RESET:-\033[0m}" "$what" >&2
+  [ -n "$why" ] && printf "   %sWhy:%s %s\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}" "$why" >&2
+  [ -n "$fix" ] && printf "   %sFix:%s %s\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}" "$fix" >&2
   exit "$code"
 }

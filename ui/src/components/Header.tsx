@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { CostMeter } from './CostMeter.js';
 import type { AppState } from '../types.js';
+import { tokens } from '../tokens.js';
 
 interface HeaderProps {
   state: AppState;
@@ -29,8 +30,8 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
     <Box flexDirection="column">
       {/* Top border with title */}
       <Box>
-        <Text>┌─</Text>
-        <Text bold>{titleLeft}</Text>
+        <Text color={tokens.dim}>┌─</Text>
+        <Text bold color={tokens.brand}>{titleLeft}</Text>
         <Text dimColor>{dashes}</Text>
         <Text>{titleRight}</Text>
         <Text>──┐</Text>
@@ -40,13 +41,13 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
       <Box paddingLeft={1} paddingRight={1}>
         <Text>│</Text>
         <Text> autonomy: </Text>
-        <Text color="cyan">{autonomy || '—'}</Text>
+        <Text color={tokens.brand}>{autonomy || '—'}</Text>
         <Text>   model: </Text>
-        <Text color="yellow">{model || '—'}</Text>
+        <Text color={tokens.warning}>{model || '—'}</Text>
         <Text>   agent: </Text>
-        <Text color="green">{agent || '—'}</Text>
+        <Text color={tokens.success}>{agent || '—'}</Text>
         <Text>   source: </Text>
-        <Text color="magenta">{sourceLabel}</Text>
+        <Text color={tokens.info}>{sourceLabel}</Text>
         <Text> │</Text>
       </Box>
 
