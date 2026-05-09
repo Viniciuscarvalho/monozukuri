@@ -26,6 +26,9 @@ teardown() {
   unset MONOZUKURI_PHASE CONTEXT_JSON MONOZUKURI_FEATURE_ID \
         MONOZUKURI_WORKTREE MONOZUKURI_LOG_FILE MONOZUKURI_ERROR_FILE \
         PLATFORM_ARGS_FILE 2>/dev/null || true
+}
+
+teardown_file() {
   rm -rf /tmp/cc-skill-test-* 2>/dev/null || true
 }
 

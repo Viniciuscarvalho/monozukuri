@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { Phase, PhaseStatus } from '../types.js';
+import { tokens } from '../tokens.js';
 
 const PHASE_LABELS: Record<Phase, string> = {
   prd: 'PRD',
@@ -23,30 +24,30 @@ function PhaseDot({ status, label }: PhaseDotProps): React.ReactElement {
     case 'done':
       return (
         <Box marginRight={1}>
-          <Text color="green">● </Text>
+          <Text color={tokens.success}>● </Text>
           <Text>{label}</Text>
         </Box>
       );
     case 'in_progress':
       return (
         <Box marginRight={1}>
-          <Text color="yellow">◐ </Text>
-          <Text color="yellow">{label}</Text>
+          <Text color={tokens.brand}>◐ </Text>
+          <Text color={tokens.brand}>{label}</Text>
         </Box>
       );
     case 'failed':
       return (
         <Box marginRight={1}>
-          <Text color="red">✗ </Text>
-          <Text color="red">{label}</Text>
+          <Text color={tokens.danger}>✗ </Text>
+          <Text color={tokens.danger}>{label}</Text>
         </Box>
       );
     case 'pending':
     default:
       return (
         <Box marginRight={1}>
-          <Text dimColor>○ </Text>
-          <Text dimColor>{label}</Text>
+          <Text color={tokens.dim}>○ </Text>
+          <Text color={tokens.dim}>{label}</Text>
         </Box>
       );
   }

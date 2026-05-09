@@ -253,3 +253,17 @@ display_live_phase() {
   printf "  ${C_CYAN:-}→${C_NC:-}  %s  •  Phase %s%s  •  %s tokens%s\n" \
     "$feat_id" "${phase:-?}" "$task_seg" "$tokens" "$elapsed"
 }
+
+# _status_line <level> <msg> [hint]
+# level: pass | fail | warn | info | skip
+_status_line() {
+  local level="$1" msg="$2" hint="${3:-}"
+  case "$level" in
+    pass)  printf "  %s✓%s %s\n"     "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}" "$msg" ;;
+    fail)  printf "  %s✗%s %s\n"     "${T_DANGER:-\033[0;31m}"  "${T_RESET:-\033[0m}" "$msg" >&2
+           [ -n "$hint" ] && printf "    %s→%s %s\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}" "$hint" >&2 ;;
+    warn)  printf "  %s~%s %s\n"     "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}" "$msg" ;;
+    info)  printf "  %s·%s %s\n"     "${T_MUTED:-\033[2m}"      "${T_RESET:-\033[0m}" "$msg" ;;
+    skip)  printf "  %s-%s %s\n"     "${T_DIM:-\033[2m}"        "${T_RESET:-\033[0m}" "$msg" ;;
+  esac
+}

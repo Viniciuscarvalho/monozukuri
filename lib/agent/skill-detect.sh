@@ -10,8 +10,14 @@
 
 # Map pipeline phase name to its mz-* skill name.
 # Returns empty string for unknown or unmapped phases.
+# Config override: agents.claude-code.skills.<phase> in config.yaml takes precedence
+# over the hardcoded map below (produces CFG_AGENTS_CLAUDE_CODE_SKILLS_<PHASE>).
 phase_to_skill() {
-  case "$1" in
+  local phase="$1"
+  local cfg_var="CFG_AGENTS_CLAUDE_CODE_SKILLS_${phase^^}"
+  local override="${!cfg_var:-}"
+  [ -n "$override" ] && { echo "$override"; return; }
+  case "$phase" in
     prd)      echo "mz-create-prd" ;;
     techspec) echo "mz-create-techspec" ;;
     tasks)    echo "mz-create-tasks" ;;

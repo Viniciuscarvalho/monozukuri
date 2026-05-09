@@ -437,6 +437,146 @@ _layer2_schema_render_parity() {
   return "$failures"
 }
 
+# ── 2f. Skill config override (Gap 2) ────────────────────────────────────────
+
+_layer2_skill_config_override() {
+  local failures=0
+  local skill_detect_sh="$REPO_ROOT/lib/agent/skill-detect.sh"
+  local parse_config_js="$REPO_ROOT/scripts/parse-config.js"
+
+  assert_file_exists "skill-detect.sh exists" "$skill_detect_sh" || return 1
+  assert_file_exists "parse-config.js exists" "$parse_config_js" || return 1
+
+  local tmpdir; tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  cat > "$tmpdir/config.yaml" <<'YAML'
+agent: claude-code
+agents:
+  claude-code:
+    skills:
+      prd: my-custom-prd
+YAML
+
+  local result
+  result=$(node "$parse_config_js" "$tmpdir/config.yaml" 2>/dev/null || true)
+  if echo "$result" | grep -q 'CFG_AGENTS_CLAUDE_CODE_SKILLS_PRD.*my-custom-prd'; then
+    _qa_pass "parse-config.js exports CFG_AGENTS_CLAUDE_CODE_SKILLS_PRD for override"
+  else
+    _qa_fail "parse-config.js did not export CFG_AGENTS_CLAUDE_CODE_SKILLS_PRD=my-custom-prd" \
+             "Check scripts/parse-config.js 4-level nesting support" \
+      || failures=$((failures + 1))
+  fi
+
+  local skill_result
+  skill_result=$(
+    eval "$(node "$parse_config_js" "$tmpdir/config.yaml" 2>/dev/null)"
+    source "$skill_detect_sh"
+    phase_to_skill "prd" 2>/dev/null || true
+  )
+  if [[ "$skill_result" == "my-custom-prd" ]]; then
+    _qa_pass "phase_to_skill respects CFG_AGENTS_CLAUDE_CODE_SKILLS_PRD override"
+  else
+    _qa_fail "phase_to_skill returned '${skill_result}' instead of 'my-custom-prd'" \
+             "Check phase_to_skill in lib/agent/skill-detect.sh reads CFG_AGENTS_* first" \
+      || failures=$((failures + 1))
+  fi
+
+  return "$failures"
+}
+
+# ── 2g. Thin-shell template override (Gap 2b) ─────────────────────────────────
+
+_layer2_thin_shell_template_override() {
+  local failures=0
+  local render_sh="$REPO_ROOT/lib/prompt/render.sh"
+
+  assert_file_exists "render.sh exists" "$render_sh" || return 1
+
+  local tmpdir; tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  local phases_dir="$tmpdir/phases"
+  mkdir -p "$phases_dir"
+  printf '# Sentinel: CUSTOM_OVERRIDE_PRESENT\nFeature: {{feature_id}}\n' \
+    > "$phases_dir/custom-codex-prd.tmpl.md"
+  printf '# Default prd template\nFeature: {{feature_id}}\n' \
+    > "$phases_dir/prd.tmpl.md"
+
+  local rendered
+  rendered=$(
+    MONOZUKURI_AGENT=codex \
+    MONOZUKURI_PHASE=prd \
+    MONOZUKURI_FEATURE_ID=test-001 \
+    PROMPT_PHASES_DIR="$phases_dir" \
+    bash -c "source '$render_sh'; render_phase_prompt prd 'custom-codex-prd'" 2>/dev/null || true
+  )
+  if echo "$rendered" | grep -q 'CUSTOM_OVERRIDE_PRESENT'; then
+    _qa_pass "render_phase_prompt uses custom template when override file exists"
+  else
+    _qa_fail "render_phase_prompt did not use custom template" \
+             "Check render_phase_prompt second arg handling in lib/prompt/render.sh" \
+      || failures=$((failures + 1))
+  fi
+
+  local warn_output
+  warn_output=$(
+    MONOZUKURI_AGENT=codex \
+    MONOZUKURI_PHASE=prd \
+    MONOZUKURI_FEATURE_ID=test-001 \
+    PROMPT_PHASES_DIR="$phases_dir" \
+    bash -c "source '$render_sh'; render_phase_prompt prd 'nonexistent-override'" 2>&1 >/dev/null || true
+  )
+  if echo "$warn_output" | grep -qi 'falling back\|not found\|override'; then
+    _qa_pass "render_phase_prompt warns when override template missing"
+  else
+    _qa_fail "render_phase_prompt did not warn about missing override template" \
+             "Check stderr warning in render_phase_prompt for missing override file" \
+      || failures=$((failures + 1))
+  fi
+
+  return "$failures"
+}
+
+# ── 2h. NO_COLOR respected (Gap 4b) ──────────────────────────────────────────
+
+_layer2_no_color_respected() {
+  local failures=0
+  local doctor_cmd="$REPO_ROOT/orchestrate.sh"
+
+  assert_file_exists "orchestrate.sh exists" "$doctor_cmd" || return 1
+
+  local out
+  out=$(NO_COLOR=1 "$doctor_cmd" doctor 2>/dev/null || true)
+  if printf '%s' "$out" | grep -qP '\033\['; then
+    _qa_fail "NO_COLOR=1 monozukuri doctor still emits ANSI escape sequences" \
+             "Check lib/cli/tokens.sh and cmd/doctor.sh NO_COLOR handling" \
+      || failures=$((failures + 1))
+  else
+    _qa_pass "NO_COLOR=1 monozukuri doctor: no ANSI escape sequences in stdout"
+  fi
+
+  return "$failures"
+}
+
+# ── 2i. Status icons consistent — no ❌ (Gap 4b) ─────────────────────────────
+
+_layer2_status_icons_consistent() {
+  local failures=0
+
+  local found
+  found=$(grep -rn $'❌' "$REPO_ROOT/cmd/" "$REPO_ROOT/lib/cli/" 2>/dev/null | grep -v '.DS_Store' || true)
+  if [[ -n "$found" ]]; then
+    _qa_fail "Found ❌ icon in cmd/ or lib/cli/ — use ✗ for consistency" \
+             "$found" \
+      || failures=$((failures + 1))
+  else
+    _qa_pass "No ❌ icons found in cmd/ or lib/cli/ (all use ✗)"
+  fi
+
+  return "$failures"
+}
+
 # ── entry point ───────────────────────────────────────────────────────────────
 
 run_layer2() {
@@ -444,11 +584,15 @@ run_layer2() {
 
   echo "Layer 2: Loop integrity"
 
-  _layer2_adapter_conformance       || failures=$((failures + 1))
-  _layer2_adapter_syntax             || failures=$((failures + 1))
-  _layer2_loop_run                   || failures=$((failures + 1))
-  _layer2_phase_a_safety             || failures=$((failures + 1))
-  _layer2_schema_render_parity       || failures=$((failures + 1))
+  _layer2_adapter_conformance          || failures=$((failures + 1))
+  _layer2_adapter_syntax               || failures=$((failures + 1))
+  _layer2_loop_run                     || failures=$((failures + 1))
+  _layer2_phase_a_safety               || failures=$((failures + 1))
+  _layer2_schema_render_parity         || failures=$((failures + 1))
+  _layer2_skill_config_override        || failures=$((failures + 1))
+  _layer2_thin_shell_template_override || failures=$((failures + 1))
+  _layer2_no_color_respected           || failures=$((failures + 1))
+  _layer2_status_icons_consistent      || failures=$((failures + 1))
 
   return "$failures"
 }
