@@ -39,16 +39,14 @@ pricing_load() {
   elif [ -f "${_self_dir}/../../config/pricing.yaml" ]; then
     pricing_file="${_self_dir}/../../config/pricing.yaml"
   else
-    printf "[pricing] WARNING: pricing.yaml not found — budget checks will use $0 cost estimates\n" >&2
-    printf "[pricing]   Checked: \$PROJECT_ROOT/config/, \$SCRIPT_DIR/config/, and install-relative path\n" >&2
+    warn "pricing.yaml not found — budget checks will use \$0 cost estimates"
     _PRICING_LOADED=true
     return 1
   fi
 
   # Check yq availability
   if ! command -v yq &>/dev/null; then
-    printf "[pricing] WARNING: yq not installed — USD cost calculation disabled; budget ceiling non-functional\n" >&2
-    printf "[pricing]   Install yq: brew install yq\n" >&2
+    warn "yq not installed — USD cost calculation disabled; install with: brew install yq"
     _PRICING_LOADED=true
     return 1
   fi

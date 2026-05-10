@@ -1,6 +1,7 @@
 ---
 name: mz-validate-artifact
 description: Validate a generated artifact (PRD, TechSpec, or Tasks) against its skill's validation rules before claiming the phase is complete. Use when the orchestrator runs schema_validate_with_reprompt or after any manual artifact edit. Do not use for runtime test validation (mz-run-tests handles that).
+version: 1.0.0
 ---
 
 You are enforcing artifact quality for monozukuri's planning phases.
