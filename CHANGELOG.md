@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.39.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.39.0...v1.39.1) (2026-05-10)
+
+
+### Documentation
+
+* unify on AGENTS.md (symlink CLAUDE/GEMINI) + verified content ([#163](https://github.com/Viniciuscarvalho/monozukuri/issues/163)) ([7cdb12a](https://github.com/Viniciuscarvalho/monozukuri/commit/7cdb12a97d407efde8502e6e4b468c332b65a0e2))
+
 ## [1.39.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.38.0...v1.39.0) (2026-05-10)
 
 
