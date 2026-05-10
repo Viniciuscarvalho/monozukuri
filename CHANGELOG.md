@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.39.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.38.0...v1.39.0) (2026-05-10)
+
+
+### Features
+
+* **qa:** replay-based mock infra + property tests + Layer 7 conformance (no CI cost) ([#161](https://github.com/Viniciuscarvalho/monozukuri/issues/161)) ([8edde0a](https://github.com/Viniciuscarvalho/monozukuri/commit/8edde0aa8df97a32f92bc65c274066f337733e7d))
+* **v1.0:** hardening — full_auto contract, crash recovery, skill versioning, CI gate, cosmetic fixes ([#159](https://github.com/Viniciuscarvalho/monozukuri/issues/159)) ([1635003](https://github.com/Viniciuscarvalho/monozukuri/commit/163500306dcc08c55b1015f090b6c7b03e36a78b))
+
+
+### Bug Fixes
+
+* **qa:** unblock Release gate — three pre-existing Layer 2 bugs ([#162](https://github.com/Viniciuscarvalho/monozukuri/issues/162)) ([e2f406e](https://github.com/Viniciuscarvalho/monozukuri/commit/e2f406e28ad66a3a48387e43c338c9a7832ea34b))
+
 ## [1.38.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.37.8...v1.38.0) (2026-05-09)
 
 
