@@ -4,7 +4,7 @@
 #
 # Every user-facing error in Monozukuri goes through monozukuri_error.
 # Format:
-#   ❌ <what>
+#   ✗ <what>
 #      Why: <one-sentence cause>
 #      Fix: <literal command or imperative action>
 #
