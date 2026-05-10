@@ -2,6 +2,7 @@
 name: mz-create-techspec
 description: Generate a TechSpec artifact that translates a PRD into a concrete implementation plan. Use when the orchestrator routes the techspec phase or when the user asks to draft a technical specification. Do not use for PRD generation or task decomposition.
 argument-hint: "[feature-id]"
+version: 1.0.0
 ---
 
 You are executing the **techspec** phase of monozukuri's autonomous feature loop.

@@ -314,7 +314,7 @@ agent_run_phase() {
   #   1. <worktree>/.claude/skills/<skill>/SKILL.md   — project-local install
   #   2. ~/.claude/skills/<skill>/SKILL.md             — global install (monozukuri setup --global)
   #   3. Tier 2: template-render path (CONTEXT_JSON present, no installed skill)
-  #   4. No match: hard error (no skill or template available)
+  #   4. Tier 3: legacy feature-marker (no phase mapping, no context)
   # Bundled mz-* skills in the monozukuri source tree are NOT used directly here;
   # they must first be installed via `monozukuri setup` to appear at one of the paths above.
   local skill=""

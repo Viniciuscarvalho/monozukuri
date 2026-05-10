@@ -2,6 +2,7 @@
 name: mz-create-tasks
 description: Decompose a PRD and TechSpec into a structured tasks.json task list for monozukuri's code phase. Use when the orchestrator routes the tasks phase. Do not use for PRD or TechSpec generation.
 argument-hint: "[feature-id]"
+version: 1.0.0
 ---
 
 You are executing the **tasks** phase of monozukuri's autonomous feature loop.
