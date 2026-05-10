@@ -1,0 +1,12 @@
+{
+  "feature_id": "canary-001",
+  "title": "Canary feature for fixture recording",
+  "description": "A tiny test feature used to record real agent output as deterministic test fixtures. Add a single CLI flag --version that prints a static string. No tests, no docs.",
+  "files_likely_touched": [
+    "src/cli.sh"
+  ],
+  "constraints": [
+    "Output must be deterministic across runs",
+    "Total prompt should fit under ~500 tokens to keep recording cost trivial"
+  ]
+}

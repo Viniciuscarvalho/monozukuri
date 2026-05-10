@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "agents": {
+    "claude-code": {
+      "captured_at": null,
+      "captured_with": "seed",
+      "model": null,
+      "recorder_version": "0.1.0",
+      "note": "Initial seed values. Run `make rerecord-fixtures` locally with claude CLI authenticated to replace with real captures."
+    },
+    "codex": {
+      "captured_at": null,
+      "captured_with": "seed",
+      "model": null,
+      "recorder_version": "0.1.0",
+      "note": "Seeded from claude-code recordings. Re-record with real codex CLI to capture agent-specific shape."
+    },
+    "gemini": {
+      "captured_at": null,
+      "captured_with": "seed",
+      "model": null,
+      "recorder_version": "0.1.0",
+      "note": "Seeded from claude-code recordings. Re-record with real gemini CLI to capture agent-specific shape."
+    }
+  }
+}

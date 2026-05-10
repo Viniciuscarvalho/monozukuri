@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# .qa/fixtures/mocks/replay-claude — replay-based mock for claude CLI.
+#
+# Reads recordings from MONOZUKURI_FIXTURES_DIR (default
+# .qa/fixtures/recordings) keyed by MONOZUKURI_AGENT and MONOZUKURI_PHASE.
+# Behaviour switches on MOCK_CLAUDE_MODE:
+#
+#   normal        Replay the recording verbatim.
+#   hang          Sleep (simulates hung process; expect op_timeout to kill).
+#   auth-expired  Emit auth-error and exit 1 → adapter classifies as transient.
+#   diverge       Emit recording with one structural drift (drops a heading).
+#   build-fail    Replay normally but write no artifacts (silent failure shape).
+#
+# Also handles --version and `auth status` so agent_doctor passes.
+
+set -euo pipefail
+
+# ── --version ────────────────────────────────────────────────────────────────
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-replay-mock"
+    exit 0
+  fi
+done
+
+# ── auth status ──────────────────────────────────────────────────────────────
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as replay-mock@example.com"
+  exit 0
+fi
+
+agent="${MONOZUKURI_AGENT:-claude-code}"
+phase="${MONOZUKURI_PHASE:-prd}"
+mode="${MOCK_CLAUDE_MODE:-normal}"
+feat_id="${MONOZUKURI_FEATURE_ID:-feat-qa-001}"
+wt_path="${MONOZUKURI_WORKTREE:-}"
+
+# Resolve fixtures dir — default to repo's recordings, but allow override.
+if [ -n "${MONOZUKURI_FIXTURES_DIR:-}" ]; then
+  fixtures_dir="$MONOZUKURI_FIXTURES_DIR"
+else
+  mock_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  fixtures_dir="$(cd "$mock_dir/../recordings" && pwd)"
+fi
+
+agent_dir="$fixtures_dir/$agent"
+
+# Map phase → recording file. Tasks is JSON; the rest are markdown.
+case "$phase" in
+  tasks) artifact_ext="json" ;;
+  *)     artifact_ext="md" ;;
+esac
+
+artifact_file="$agent_dir/${phase}.${artifact_ext}"
+
+# ── mode handling ────────────────────────────────────────────────────────────
+case "$mode" in
+  hang)
+    sleep 3600
+    exit 0
+    ;;
+  auth-expired)
+    cat <<'EOF' >&2
+Authentication required: OAuth token has expired.
+Please run `claude auth login` and retry.
+EOF
+    exit 1
+    ;;
+esac
+
+# Helper: write Tier 1 artifact files (--agent invocation)
+_write_artifacts() {
+  local task_dir="$wt_path/tasks/prd-$feat_id"
+  mkdir -p "$task_dir"
+
+  case "$phase" in
+    prd)
+      cp "$agent_dir/prd.md" "$task_dir/prd.md"
+      ;;
+    techspec)
+      cp "$agent_dir/techspec.md" "$task_dir/techspec.md"
+      ;;
+    tasks)
+      cp "$agent_dir/tasks.json" "$task_dir/tasks.json"
+      ;;
+    code|tests|implementation)
+      mkdir -p "$wt_path/src"
+      printf '# replay-mock implementation stub for %s\n' "$feat_id" \
+        > "$wt_path/src/feature-qa.md"
+      ;;
+    *)
+      cp "$agent_dir/prd.md"      "$task_dir/prd.md"
+      cp "$agent_dir/techspec.md" "$task_dir/techspec.md"
+      cp "$agent_dir/tasks.json"  "$task_dir/tasks.json"
+      mkdir -p "$wt_path/src"
+      printf '# replay-mock implementation stub for %s\n' "$feat_id" \
+        > "$wt_path/src/feature-qa.md"
+      ;;
+  esac
+}
+
+# Detect Tier 1 (--agent flag) vs Tier 2 (-p render) — same logic as the
+# original mock binary so this drops in transparently.
+has_agent=false
+for arg in "$@"; do
+  [ "$arg" = "--agent" ] && has_agent=true && break
+done
+
+# build-fail: replay stdout but skip artifact writes (silent-failure shape).
+if [ "$mode" = "build-fail" ]; then
+  if [ -f "$artifact_file" ]; then
+    cat "$artifact_file"
+  fi
+  exit 0
+fi
+
+# diverge: drop the first `## ` heading from the recording (structural drift).
+_replay_with_diverge() {
+  local f="$1"
+  awk 'BEGIN{dropped=0} /^## / && dropped==0 {dropped=1; next} {print}' "$f"
+}
+
+# Tier 1 ── --agent flag → write files into worktree, no stdout output needed
+if [ "$has_agent" = "true" ]; then
+  if [ -z "$wt_path" ]; then
+    echo "replay-mock: --agent invoked without MONOZUKURI_WORKTREE" >&2
+    exit 1
+  fi
+  if [ ! -f "$artifact_file" ]; then
+    echo "replay-mock: no recording for $agent/$phase at $artifact_file" >&2
+    exit 1
+  fi
+  _write_artifacts
+  exit 0
+fi
+
+# Tier 2 ── -p render path → print artifact to stdout
+if [ -n "$wt_path" ] && [ -n "${MONOZUKURI_FEATURE_ID:-}" ]; then
+  if [ ! -f "$artifact_file" ]; then
+    case "$phase" in
+      code|tests|implementation)
+        # Code/tests phases don't have a recording — emit a stub.
+        mkdir -p "$wt_path/src"
+        printf '# replay-mock implementation stub for %s\n' "$feat_id" \
+          > "$wt_path/src/feature-qa.md"
+        cat "$wt_path/src/feature-qa.md"
+        exit 0
+        ;;
+      *)
+        echo "replay-mock: no recording for $agent/$phase at $artifact_file" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  if [ "$mode" = "diverge" ]; then
+    _replay_with_diverge "$artifact_file"
+  else
+    cat "$artifact_file"
+  fi
+  exit 0
+fi
+
+# ── everything else (reprompts, -p without worktree, etc.) ────────────────────
+exit 0

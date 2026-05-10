@@ -52,9 +52,24 @@ make test
 # Run a specific suite
 bats test/unit
 bats test/integration
+bats test/properties        # structural assertions on agent recording fixtures
 ```
 
 New behavior should ship with a test. Aim to keep coverage above 80%.
+
+### Working with agent fixtures
+
+Mocks for the AI agents are *recordings* of real CLI output, not hand-written
+canned text. They live in `.qa/fixtures/recordings/<agent>/`. If you change a
+phase's required headings or schema, re-record the fixtures locally:
+
+```bash
+make rerecord-fixtures              # claude-code (~$0.50)
+make rerecord-fixtures AGENT=all    # every agent
+```
+
+This costs real money against your own API key and **never runs in CI**. See
+[docs/test-strategy.md](docs/test-strategy.md) for the full pattern.
 
 ---
 

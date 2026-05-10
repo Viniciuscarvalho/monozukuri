@@ -42,6 +42,7 @@ source "$QA_DIR/layers/03-schema-integrity.sh"
 source "$QA_DIR/layers/04-backwards-compat.sh"
 source "$QA_DIR/layers/05-live-canary.sh"
 source "$QA_DIR/layers/06-scale-soak.sh"
+source "$QA_DIR/layers/07-conformance.sh"
 
 cd "$REPO_ROOT"
 GATE_START=$(date +%s)
@@ -78,6 +79,7 @@ else
   _run_layer 4 "backwards-compat"  run_layer4
   _run_layer 5 "live-canary"       run_layer5 "$VERSION"
   _run_layer 6 "scale-soak"        run_layer6
+  _run_layer 7 "conformance"       run_layer7 "$VERSION"
 fi
 
 GATE_END=$(date +%s)

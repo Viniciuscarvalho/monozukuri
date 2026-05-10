@@ -1,0 +1,40 @@
+[
+  {
+    "id": "task-canary-001",
+    "title": "Wire replay mock binary into Layer 2",
+    "description": "Replace direct calls to canned/ with MONOZUKURI_FIXTURES_DIR-aware replay-claude.",
+    "files_touched": [
+      ".qa/fixtures/mocks/replay-claude",
+      ".qa/layers/02-loop-integrity.sh"
+    ],
+    "acceptance_criteria": [
+      "MOCK_CLAUDE_MODE=normal replays recording verbatim",
+      "Existing Layer 2 tests pass unchanged"
+    ]
+  },
+  {
+    "id": "task-canary-002",
+    "title": "Property assertions over recordings",
+    "description": "Add bats tests verifying every recording satisfies validator-relevant structural properties.",
+    "files_touched": [
+      "test/properties/agent_output.bats"
+    ],
+    "acceptance_criteria": [
+      "Every recording has the required headings for its phase",
+      "Tests run in under 1s with zero network calls"
+    ]
+  },
+  {
+    "id": "task-canary-003",
+    "title": "Local-only Layer 7 conformance",
+    "description": "Add release-gate Layer 7 that compares replay output to live agent output. Skipped in CI by default.",
+    "files_touched": [
+      ".qa/layers/07-conformance.sh",
+      ".qa/release-gate.sh"
+    ],
+    "acceptance_criteria": [
+      "MONOZUKURI_SKIP_CONFORMANCE=1 short-circuits the layer cleanly",
+      "No GitHub Actions workflow invokes the layer"
+    ]
+  }
+]

@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts
 LIB_DIR := scripts/lib
 
-.PHONY: help install lint test verify fmt doctor clean
+.PHONY: help install lint test test-properties verify fmt doctor clean rerecord-fixtures conformance
 
 help: ## Show available targets
 	@awk '/^[a-zA-Z_-]+:.*?## .*/{printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -24,7 +24,22 @@ lint: ## Run shellcheck on all shell scripts
 	@shellcheck $(SCRIPTS_DIR)/*.sh
 
 test: ## Run bats test suites
-	@bats test/unit test/integration test/conformance 2>/dev/null || echo "No tests yet"
+	@bats test/unit test/integration test/conformance test/properties 2>/dev/null || echo "No tests yet"
+
+test-properties: ## Run only the recording-property assertions (free, fast)
+	@bats test/properties
+
+rerecord-fixtures: ## Re-record agent fixtures (LOCAL ONLY — costs ~$$0.50/agent). AGENT=claude-code|codex|gemini|all
+	@AGENT="$${AGENT:-claude-code}"; \
+	echo "Re-recording fixtures for: $$AGENT"; \
+	$(SCRIPTS_DIR)/rerecord-fixtures.sh --agent "$$AGENT"
+
+conformance: ## Run Layer 7 conformance against live agent (LOCAL ONLY — costs ~$$0.30)
+	@MONOZUKURI_SKIP_CONFORMANCE=0 bash -c '\
+		source .qa/lib/assert.sh; \
+		source .qa/lib/semver.sh; \
+		source .qa/layers/07-conformance.sh; \
+		run_layer7 "v0.0.0-conformance"'
 
 verify: lint test ## Run lint then test
 

@@ -1,0 +1,6 @@
+{"type":"message_start","message":{"id":"msg_seed_tasks","role":"assistant","model":"claude-sonnet-4-6"}}
+{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+{"type":"text_delta","delta":{"text":"## Output contract\n\nA tasks.json array with id, title, description, files_touched, acceptance_criteria."}}
+{"type":"content_block_stop","index":0}
+{"type":"tool_use","id":"toolu_seed_3","name":"Write","input":{"file_path":"tasks/prd-canary-001/tasks.json","content":"[{...}]"}}
+{"type":"message_stop"}
