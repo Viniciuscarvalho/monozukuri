@@ -448,7 +448,8 @@ _layer2_skill_config_override() {
   assert_file_exists "parse-config.js exists" "$parse_config_js" || return 1
 
   local tmpdir; tmpdir=$(mktemp -d)
-  trap 'rm -rf "$tmpdir"' RETURN
+  # Expand $tmpdir at trap-set time so the cleanup survives `set -u` after locals release.
+  trap "rm -rf '$tmpdir'" RETURN
 
   cat > "$tmpdir/config.yaml" <<'YAML'
 agent: claude-code
@@ -494,7 +495,8 @@ _layer2_thin_shell_template_override() {
   assert_file_exists "render.sh exists" "$render_sh" || return 1
 
   local tmpdir; tmpdir=$(mktemp -d)
-  trap 'rm -rf "$tmpdir"' RETURN
+  # Expand $tmpdir at trap-set time so the cleanup survives `set -u` after locals release.
+  trap "rm -rf '$tmpdir'" RETURN
 
   local phases_dir="$tmpdir/phases"
   mkdir -p "$phases_dir"
