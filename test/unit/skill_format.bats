@@ -71,11 +71,11 @@ frontmatter_has_key() {
   [[ "$failed" -eq 0 ]]
 }
 
-@test "no SKILL.md contains a version field (drift signal)" {
+@test "all mz-* SKILL.md files contain a version field (contract enforcement)" {
   local failed=0
-  for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
-    if frontmatter_has_key "$skill_md" "version"; then
-      echo "UNEXPECTED version field: $skill_md" >&3
+  for skill_md in "$SKILLS_DIR"/mz-*/SKILL.md; do
+    if ! frontmatter_has_key "$skill_md" "version"; then
+      echo "MISSING version field: $skill_md" >&3
       failed=1
     fi
   done

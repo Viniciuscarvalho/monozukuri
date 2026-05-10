@@ -216,7 +216,7 @@ run_backlog() {
         break
       fi
       while [ "${MONOZUKURI_PAUSE_REQUESTED:-0}" = "1" ]; do
-        monozukuri_emit log.line ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" feature_id "" phase "" level "info" text "paused — send SIGUSR2 to resume"
+        monozukuri_emit log.line ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" run_id "${MONOZUKURI_RUN_ID:-}" level "info" text "paused — send SIGUSR2 to resume"
         sleep 1
       done
 

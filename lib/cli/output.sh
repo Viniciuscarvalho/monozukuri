@@ -68,7 +68,7 @@ display_backlog_table() {
     // icon() returns a single colored glyph (1 visible char + ANSI codes).
     // Status cell = icon(1) + space(1) + label(≤10 padded) = 12 visible chars.
     const icon = f => {
-      if (f.id===active||f.status==='in-progress') return CY+'→'+NC;
+      if (f.id===active||f.status==='in-progress') return CY+'▶'+NC;
       if (f.status==='done'||f.status==='pr-created') return G+'✓'+NC;
       if (f.status==='failed') return R+'✗'+NC;
       if (f.status==='paused') return Y+'⏸'+NC;
@@ -86,7 +86,8 @@ display_backlog_table() {
     for (const f of features) {
       const ico = icon(f);
       const statusLabel = (f.status==='pr-created'?'pr-created':f.status).substring(0,10).padEnd(10);
-      const pl = (f.phase).substring(0,12).padEnd(12);
+      const phaseCode = {prd:'PRD',techspec:'TSP',tasks:'TSK',code:'EXE',pr:'PR'};
+      const pl = (phaseCode[f.phase]||f.phase).substring(0,12).padEnd(12);
       const tl = String(fmtTok(f.tokens)).padStart(14);
       console.log('  │  '+pad(f.id,14)+'│  '+ico+' '+statusLabel+'│  '+pl+'│  '+tl+'  │');
     }
