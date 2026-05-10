@@ -58,6 +58,10 @@ jobs:
         env:
           MONOZUKURI_SKIP_LIVE_CANARY: "1"
           MONOZUKURI_SKIP_SCALE_SOAK_LIVE: "1"
+          # Layer 7 makes live `claude --print` calls. Keep it off in CI to
+          # honour the zero-CI-cost discipline; maintainers run it locally
+          # pre-release via `make conformance` or an unset env var.
+          MONOZUKURI_SKIP_CONFORMANCE: "1"
         run: .qa/release-gate.sh "${{ steps.version.outputs.version }}"
 
       - name: Skip (not a release PR)
