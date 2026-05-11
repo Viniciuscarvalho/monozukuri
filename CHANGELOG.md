@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.44.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.43.0...v1.44.0) (2026-05-11)
+
+
+### Features
+
+* **agent:** record allowed-tools in manifest and log at invocation ([#172](https://github.com/Viniciuscarvalho/monozukuri/issues/172)) ([115f25c](https://github.com/Viniciuscarvalho/monozukuri/commit/115f25cfc9ba9bd3258803c40077907c89d13773))
+* **cli:** TUI Day 1 — emit phase.token_update + phase.completed from stream-parse ([#176](https://github.com/Viniciuscarvalho/monozukuri/issues/176)) ([c399003](https://github.com/Viniciuscarvalho/monozukuri/commit/c3990034bb01be9f4e36f414c9ff3d126b2ac0b3))
+
 ## [1.43.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.42.0...v1.43.0) (2026-05-11)
 
 
