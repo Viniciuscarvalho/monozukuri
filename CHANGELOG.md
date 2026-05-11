@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.46.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.0...v1.46.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* **prompt:** add MONOZUKURI_WORKTREE, _AUTONOMY, _FEATURE_ID to context pack ([#189](https://github.com/Viniciuscarvalho/monozukuri/issues/189)) ([72d9398](https://github.com/Viniciuscarvalho/monozukuri/commit/72d93984b687f9170bb9adbf52edd17912c833c7))
+
 ## [1.46.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.45.1...v1.46.0) (2026-05-11)
 
 
