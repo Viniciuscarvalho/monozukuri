@@ -37,7 +37,7 @@ function truncate(str: string, maxLen: number): string {
 }
 
 export function LogPane({ log, terminalWidth }: LogPaneProps): React.ReactElement {
-  const tail = log.slice(-5);
+  const tail = log.slice(-12);
   const maxTextLen = Math.max(20, terminalWidth - 42);
 
   // Section header
