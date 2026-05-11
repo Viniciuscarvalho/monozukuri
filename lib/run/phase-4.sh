@@ -173,5 +173,9 @@ run_pr_creation() {
     printf "  │      %-*s│\n" "$((inner - 6))" "--title \"feat: $title\""
     printf "  └%s┘\n" "$(printf '─%.0s' $(seq 1 $W))"
     echo ""
+    local _pr_fail_reason="gh_pr_create_failed"
+    [ $push_exit -ne 0 ] && _pr_fail_reason="git_push_failed"
+    warn "PR creation failed for $feat_id ($branch) — code preserved in worktree, create PR manually"
+    monozukuri_emit feature.pr_failed feature_id "$feat_id" reason "$_pr_fail_reason"
   fi
 }
