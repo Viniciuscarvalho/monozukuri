@@ -150,6 +150,12 @@ sub_run() {
     bash "$SCRIPTS_DIR/agent-discovery.sh" "$ROOT_DIR" "$manifest_file" 2>&1
   fi
 
+  local skills_manifest_file="$CONFIG_DIR/skills-manifest.json"
+  if [ "${SKILL_DISCOVERY:-true}" = "true" ] && [ -f "$SCRIPTS_DIR/skill-discovery.sh" ]; then
+    bash "$SCRIPTS_DIR/skill-discovery.sh" "$ROOT_DIR" "$skills_manifest_file" 2>&1
+    export MONOZUKURI_SKILLS_MANIFEST="$skills_manifest_file"
+  fi
+
   # Environment discovery
   mem_refresh_env
 
