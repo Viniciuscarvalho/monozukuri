@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.45.0...v1.45.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* three bugs in orchestrator ↔ skill contract (diff gate, path alignment, doctor warning) ([#185](https://github.com/Viniciuscarvalho/monozukuri/issues/185)) ([e47371c](https://github.com/Viniciuscarvalho/monozukuri/commit/e47371cf68ade19069381293920bbafeeab1e180))
+
 ## [1.45.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.44.0...v1.45.0) (2026-05-11)
 
 
