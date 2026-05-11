@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { Feature } from '../types.js';
+import { tokens } from '../tokens.js';
 
 interface FeatureListProps {
   features: Record<string, Feature>;
@@ -51,7 +52,7 @@ function DoneItem({ feature, maxTitleLen }: DoneItemProps): React.ReactElement {
       {!isDone && feature.error ? (
         <Box>
           <Text>│     </Text>
-          <Text color="red" dimColor>
+          <Text color={tokens.danger} dimColor>
             ({truncate(feature.error, maxTitleLen + 8)})
           </Text>
         </Box>
