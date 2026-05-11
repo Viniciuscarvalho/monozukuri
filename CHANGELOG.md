@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.39.1...v1.40.0) (2026-05-11)
+
+
+### Features
+
+* **agent:** scan GEMINI.md as a project-conventions source ([#165](https://github.com/Viniciuscarvalho/monozukuri/issues/165)) ([ecb5633](https://github.com/Viniciuscarvalho/monozukuri/commit/ecb5633fdf6a828cc1571039ed4023af6581ae5a))
+
 ## [1.39.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.39.0...v1.39.1) (2026-05-10)
 
 
