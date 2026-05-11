@@ -5,18 +5,53 @@
 # or fall back to the template-render path.
 #
 # Public functions:
-#   phase_to_skill <phase>                       → mz-* skill name or ""
+#   phase_to_skill <phase> [agent_id]            → skill name or ""
 #   skill_installed <agent-id> <skill> <wt-path> → exit 0 if installed, 1 otherwise
 
-# Map pipeline phase name to its mz-* skill name.
+# Look up a project-installed skill mapped to the given phase.
+# Reads MONOZUKURI_SKILLS_MANIFEST (or .monozukuri/skills-manifest.json under
+# ROOT_DIR / PWD) produced by scripts/skill-discovery.sh. First skill whose
+# `phases` array contains the requested phase wins.
+# Empty output means "no matching skill in manifest" — callers fall through.
+_skill_lookup_in_manifest() {
+  local phase="$1" agent_id="${2:-claude-code}"
+  local manifest="${MONOZUKURI_SKILLS_MANIFEST:-${ROOT_DIR:-$PWD}/.monozukuri/skills-manifest.json}"
+  [ -f "$manifest" ] || return 0
+  command -v node >/dev/null 2>&1 || return 0
+  node -e "
+    const fs = require('fs');
+    let m;
+    try { m = JSON.parse(fs.readFileSync('$manifest','utf-8')); } catch { process.exit(0); }
+    const skills = Array.isArray(m.skills) ? m.skills : [];
+    const phase = '$phase';
+    const agent = '$agent_id';
+    const match = skills.find(s =>
+      Array.isArray(s.phases) && s.phases.includes(phase) &&
+      (s.agent === agent || s.agent === 'any' || !s.agent)
+    );
+    if (match) process.stdout.write(match.name);
+  " 2>/dev/null
+}
+
+# Map pipeline phase name to a skill name.
+# Precedence (highest to lowest):
+#   1. CFG_AGENTS_<AGENT>_SKILLS_<PHASE> config override
+#   2. Project skill manifest (.monozukuri/skills-manifest.json)
+#   3. Hardcoded mz-* defaults
 # Returns empty string for unknown or unmapped phases.
-# Config override: agents.claude-code.skills.<phase> in config.yaml takes precedence
-# over the hardcoded map below (produces CFG_AGENTS_CLAUDE_CODE_SKILLS_<PHASE>).
 phase_to_skill() {
-  local phase="$1"
-  local cfg_var="CFG_AGENTS_CLAUDE_CODE_SKILLS_${phase^^}"
+  local phase="$1" agent_id="${2:-claude-code}"
+
+  local agent_norm="${agent_id//-/_}"
+  agent_norm="${agent_norm^^}"
+  local cfg_var="CFG_AGENTS_${agent_norm}_SKILLS_${phase^^}"
   local override="${!cfg_var:-}"
   [ -n "$override" ] && { echo "$override"; return; }
+
+  local from_manifest
+  from_manifest=$(_skill_lookup_in_manifest "$phase" "$agent_id")
+  [ -n "$from_manifest" ] && { echo "$from_manifest"; return; }
+
   case "$phase" in
     prd)      echo "mz-create-prd" ;;
     techspec) echo "mz-create-techspec" ;;
