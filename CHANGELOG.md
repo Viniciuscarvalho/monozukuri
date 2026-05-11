@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.42.0...v1.43.0) (2026-05-11)
+
+
+### Features
+
+* **cli:** surface skills manifest in doctor + status ([#171](https://github.com/Viniciuscarvalho/monozukuri/issues/171)) ([0cf8de2](https://github.com/Viniciuscarvalho/monozukuri/commit/0cf8de289fddb02e9918af4d5ec6834d2bebf698))
+
 ## [1.42.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.41.0...v1.42.0) (2026-05-11)
 
 
