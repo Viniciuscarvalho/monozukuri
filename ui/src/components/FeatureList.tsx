@@ -6,7 +6,7 @@ import { statusColor, statusSymbol } from '../tokens.js';
 interface FeatureListProps {
   features: Record<string, Feature>;
   order: string[];
-  terminalWidth: number;
+  terminalWidth?: number;
 }
 
 const PHASES: Phase[] = ['prd', 'techspec', 'tasks', 'code', 'tests', 'pr'];
@@ -84,7 +84,7 @@ function FeatureRow({ feature, titleLen }: FeatureRowProps): React.ReactElement 
 export function FeatureList({
   features,
   order,
-  terminalWidth,
+  terminalWidth = 80,
 }: FeatureListProps): React.ReactElement {
   const all: Feature[] = order.map((id) => features[id]).filter(Boolean) as Feature[];
 

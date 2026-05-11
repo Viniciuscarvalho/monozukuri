@@ -15803,7 +15803,7 @@ function FeatureRow({ feature, titleLen }) {
 function FeatureList({
   features,
   order,
-  terminalWidth
+  terminalWidth = 80
 }) {
   const all = order.map((id) => features[id]).filter(Boolean);
   const FIXED_COLS = 49;
