@@ -25,6 +25,19 @@ function formatTokens(tokens: number | undefined): string {
   return String(tokens);
 }
 
+function formatRate(rate: number | undefined): string | null {
+  if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) return null;
+  if (rate >= 1000) return `${(rate / 1000).toFixed(1)}k/min`;
+  return `${Math.round(rate)}/min`;
+}
+
+function formatRelativeTime(ts: number, now: Date): string {
+  const elapsed = Math.max(0, Math.floor((now.getTime() - ts) / 1000));
+  if (elapsed < 60) return `${elapsed}s`;
+  const m = Math.floor(elapsed / 60);
+  return `${m}m`;
+}
+
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen - 1) + '…';
@@ -70,10 +83,15 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
   }
 
   const elapsed = formatElapsed(feature.startedAt, now);
-  const tokenCount = formatTokens(feature.tokens);
+  // Prefer the live cumulative output counter from phase.token_update; fall
+  // back to the legacy aggregate `tokens` field for back-compat.
+  const liveTokens = feature.tokensOut ?? feature.tokens;
+  const tokenCount = formatTokens(liveTokens);
   const estTokens = feature.estimatedTokens ? formatTokens(feature.estimatedTokens) : '~?';
+  const rateLabel = formatRate(feature.tokenRate);
   const title = truncate(feature.title || feature.id, 42);
   const spinnerText = spinner ? truncate(spinner, 50) : '';
+  const recentEvents = feature.recentEvents ?? [];
 
   return (
     <Box flexDirection="column" paddingLeft={1}>
@@ -116,12 +134,18 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
         <Text> │</Text>
       </Box>
 
-      {/* Tokens + spinner */}
+      {/* Tokens + rate + spinner */}
       <Box>
         <Text>│   </Text>
         <Text color={tokens.dim}>tokens: </Text>
         <Text>{tokenCount}</Text>
         <Text color={tokens.dim}> / {estTokens} est.</Text>
+        {rateLabel ? (
+          <>
+            <Text color={tokens.dim}> · </Text>
+            <Text color={tokens.brand}>{rateLabel}</Text>
+          </>
+        ) : null}
         {spinnerText ? (
           <>
             <Text color={tokens.dim}>   </Text>
@@ -130,6 +154,36 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
         ) : null}
         <Text> │</Text>
       </Box>
+
+      {/* Recent activity tree — last 3 tool/file events */}
+      {recentEvents.length > 0 ? (
+        <Box flexDirection="column">
+          <Box>
+            <Text>│   </Text>
+            <Text color={tokens.dim}>recent activity</Text>
+            <Text> │</Text>
+          </Box>
+          {recentEvents.slice(-3).map((ev, i, arr) => (
+            <Box key={`${ev.ts}-${i}`}>
+              <Text>│   </Text>
+              <Text color={tokens.dim}>
+                {i === arr.length - 1 ? tokens.tree.last : tokens.tree.branch}
+                {' '}
+                {formatRelativeTime(ev.ts, now)}
+                {'  '}
+              </Text>
+              <Text color={tokens.textSecondary}>{ev.tool}</Text>
+              {ev.target ? (
+                <>
+                  <Text color={tokens.dim}>{' '}</Text>
+                  <Text color={tokens.dim}>{truncate(ev.target, 40)}</Text>
+                </>
+              ) : null}
+              <Text> │</Text>
+            </Box>
+          ))}
+        </Box>
+      ) : null}
     </Box>
   );
 }
