@@ -29,6 +29,7 @@ _CONVENTIONS_SCAN_ORDER=(
   "docs/AGENTS.md"
   "CLAUDE.md"
   ".claude/CLAUDE.md"
+  "GEMINI.md"
   ".cursorrules"
   ".aiderrules"
   ".windsurfrules"
