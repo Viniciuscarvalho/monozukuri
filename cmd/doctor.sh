@@ -142,6 +142,38 @@ sub_doctor() {
     printf "  %s-%s .claude/agents/ not present\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
   fi
 
+  # Project-local skills (.claude/skills/ — user-installed, beyond mz-*)
+  if [ -d ".claude/skills" ]; then
+    local _skill_count=0 _sd
+    while IFS= read -r _sd; do
+      [ -n "$_sd" ] && [ -f "$_sd/SKILL.md" ] && _skill_count=$((_skill_count + 1))
+    done < <(find .claude/skills -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
+    if [ "$_skill_count" -gt 0 ]; then
+      _doctor_pass ".claude/skills/: ${_skill_count} project-local skill(s)"
+      find .claude/skills -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort \
+        | while IFS= read -r _sd; do
+            [ -f "$_sd/SKILL.md" ] && printf "    %s\n" "$(basename "$_sd")"
+          done
+    else
+      printf "  %s~%s .claude/skills/ exists but no SKILL.md files found\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
+    fi
+  else
+    printf "  %s-%s .claude/skills/ not present\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
+  fi
+
+  # Discovered skills manifest (written by `monozukuri run` via skill-discovery.sh)
+  local _skills_manifest=".monozukuri/skills-manifest.json"
+  if [ -f "$_skills_manifest" ] && command -v jq >/dev/null 2>&1; then
+    local _total _proj _glob
+    _total=$(jq '.skills | length' "$_skills_manifest" 2>/dev/null || echo 0)
+    _proj=$(jq '[.skills[] | select(.scope == "project")] | length' "$_skills_manifest" 2>/dev/null || echo 0)
+    _glob=$(jq '[.skills[] | select(.scope == "global")]  | length' "$_skills_manifest" 2>/dev/null || echo 0)
+    _doctor_pass "skills-manifest.json: ${_total} skill(s) discovered (${_proj} project, ${_glob} global)"
+  else
+    printf "  %s-%s skills-manifest.json: not yet built (run \`monozukuri run\` to populate)\n" \
+      "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
+  fi
+
   echo ""
   if [ "$failed" -eq 0 ]; then
     printf "%s✓ All checks passed — ready to run%s\n" "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}"
