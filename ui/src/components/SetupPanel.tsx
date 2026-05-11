@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { AppState } from '../types.js';
+import { tokens } from '../tokens.js';
 
 interface SetupPanelProps {
   state: AppState;
@@ -40,7 +41,7 @@ export function SetupPanel({ state }: SetupPanelProps): React.ReactElement {
               <Text bold dimColor>Skills installed</Text>
               {skills.map((s, i) => (
                 <Box key={i}>
-                  <Text color="green">✓</Text>
+                  <Text color={tokens.success}>✓</Text>
                   <Text>  {s.skill}</Text>
                   <Text dimColor>  → {s.agent}</Text>
                 </Box>

@@ -13827,12 +13827,12 @@ function undoAnsiCodes(codes) {
   return endCodes.reverse().join("");
 }
 function sliceAnsi2(string, start, end) {
-  const tokens = tokenize(string, end);
+  const tokens2 = tokenize(string, end);
   let activeCodes = [];
   let position = 0;
   let returnValue = "";
   let include = false;
-  for (const token of tokens) {
+  for (const token of tokens2) {
     if (end !== void 0 && position >= end) {
       break;
     }
@@ -13933,10 +13933,10 @@ function diffAnsiCodes(from, to) {
 }
 
 // node_modules/@alcalzone/ansi-tokenize/build/styledChars.js
-function styledCharsFromTokens(tokens) {
+function styledCharsFromTokens(tokens2) {
   let codes = [];
   const ret = [];
-  for (const token of tokens) {
+  for (const token of tokens2) {
     if (token.type === "ansi") {
       codes = reduceAnsiCodesIncremental(codes, [token]);
     } else if (token.type === "char") {
@@ -15398,6 +15398,83 @@ function registerCleanup(fn) {
   cleanup = fn;
 }
 
+// src/tokens.ts
+var tokens = {
+  brand: "#d6f24a",
+  success: "#31d58b",
+  danger: "#ff6b63",
+  warning: "#f59e0b",
+  info: "#3b82f6",
+  muted: "#a8a29e",
+  dim: "#57534e",
+  border: "#292524",
+  surfaceBase: "#1c1917",
+  surfaceRaised: "#292524",
+  // Text
+  textPrimary: "#fafaf9",
+  textSecondary: "#a8a29e",
+  // Status tonal triplets (bg not applicable in terminal; use fg color)
+  statusColor: {
+    done: "#31d58b",
+    "pr-created": "#31d58b",
+    succeeded: "#31d58b",
+    completed: "#31d58b",
+    failed: "#ff6b63",
+    failure: "#ff6b63",
+    paused: "#f59e0b",
+    deferred: "#f59e0b",
+    retrying: "#a78bfa",
+    running: "#d6f24a",
+    in_progress: "#d6f24a",
+    active: "#d6f24a",
+    queued: "#a8a29e",
+    pending: "#a8a29e",
+    skipped: "#57534e"
+  },
+  // Status symbols — used together with statusColor() to render a single
+  // glyph + colour for any feature/phase status.
+  statusSymbol: {
+    done: "\u2713",
+    "pr-created": "\u2713",
+    succeeded: "\u2713",
+    completed: "\u2713",
+    failed: "\u2717",
+    failure: "\u2717",
+    paused: "\u23F8",
+    deferred: "\u23F8",
+    retrying: "\u21BB",
+    running: "\u25B6",
+    in_progress: "\u25D0",
+    active: "\u25B6",
+    queued: "\u25CB",
+    pending: "\u25CB",
+    skipped: "\u2298"
+  },
+  // Phase-pipeline symbols (used by the active feature panel).
+  phaseSymbol: {
+    done: "\u25CF",
+    active: "\u25D0",
+    pending: "\u25CB"
+  },
+  // Charm-style Braille spinner — same family Bubble Tea uses.
+  spinner: {
+    frames: ["\u280B", "\u2819", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"],
+    intervalMs: 80
+  },
+  // Tree-drawing characters for recent-activity lists.
+  tree: {
+    branch: "\u251C\u2500",
+    last: "\u2514\u2500",
+    vertical: "\u2502 "
+  },
+  // Decorative separators / arrows.
+  glyphs: {
+    bullet: "\xB7",
+    arrow: "\u2192",
+    middot: "\xB7"
+  }
+};
+
 // src/components/CostMeter.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 function formatCost(usd) {
@@ -15443,8 +15520,8 @@ function Header({ state, terminalWidth }) {
   const dashes = "\u2500".repeat(Math.max(0, innerWidth - titleLeft.length - titleRight.length));
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { flexDirection: "column", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u250C\u2500" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { bold: true, children: titleLeft }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: tokens.dim, children: "\u250C\u2500" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { bold: true, color: tokens.brand, children: titleLeft }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { dimColor: true, children: dashes }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: titleRight }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u2500\u2500\u2510" })
@@ -15452,13 +15529,13 @@ function Header({ state, terminalWidth }) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { paddingLeft: 1, paddingRight: 1, children: [
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "\u2502" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: " autonomy: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "cyan", children: autonomy || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: tokens.brand, children: autonomy || "\u2014" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   model: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "yellow", children: model || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: tokens.warning, children: model || "\u2014" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   agent: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "green", children: agent || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: tokens.success, children: agent || "\u2014" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: "   source: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: "magenta", children: sourceLabel }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { color: tokens.info, children: sourceLabel }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Text, { children: " \u2502" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Box_default, { paddingLeft: 1, children: [
@@ -15493,24 +15570,24 @@ function PhaseDot({ status, label }) {
   switch (status) {
     case "done":
       return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "green", children: "\u25CF " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.success, children: "\u25CF " }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { children: label })
       ] });
     case "in_progress":
       return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: "\u25D0 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "yellow", children: label })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.brand, children: "\u25D0 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.brand, children: label })
       ] });
     case "failed":
       return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "red", children: "\u2717 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: "red", children: label })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.danger, children: "\u2717 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.danger, children: label })
       ] });
     case "pending":
     default:
       return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Box_default, { marginRight: 1, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: "\u25CB " }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { dimColor: true, children: label })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.dim, children: "\u25CB " }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Text, { color: tokens.dim, children: label })
       ] });
   }
 }
@@ -15528,17 +15605,28 @@ function formatElapsed(startedAt, now) {
   const s = elapsed % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
-function formatTokens(tokens) {
-  if (tokens === void 0) return "\u2014";
-  if (tokens >= 1e3) return `${Math.round(tokens / 1e3)}k`;
-  return String(tokens);
+function formatTokens(tokens2) {
+  if (tokens2 === void 0) return "\u2014";
+  if (tokens2 >= 1e3) return `${Math.round(tokens2 / 1e3)}k`;
+  return String(tokens2);
+}
+function formatRate(rate) {
+  if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return null;
+  if (rate >= 1e3) return `${(rate / 1e3).toFixed(1)}k/min`;
+  return `${Math.round(rate)}/min`;
+}
+function formatRelativeTime(ts, now) {
+  const elapsed = Math.max(0, Math.floor((now.getTime() - ts) / 1e3));
+  if (elapsed < 60) return `${elapsed}s`;
+  const m = Math.floor(elapsed / 60);
+  return `${m}m`;
 }
 function truncate(str, maxLen) {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen - 1) + "\u2026";
 }
 function WaitingCard(_props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Box_default, { flexDirection: "column", paddingLeft: 2, paddingY: 1, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "waiting for run..." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Box_default, { flexDirection: "column", paddingLeft: 2, paddingY: 1, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "waiting for run..." }) });
 }
 function FeatureCard({ feature, spinner, now }) {
   if (!feature) {
@@ -15549,44 +15637,47 @@ function FeatureCard({ feature, spinner, now }) {
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: "\u23F8 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: "yellow", children: feature.id }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.warning, children: "\u23F8 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: tokens.warning, children: feature.id }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "  " }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: truncate(feature.title || feature.id, 42) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: truncate(feature.title || feature.id, 42) }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: "deferred: " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.warning, children: "deferred: " }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: truncate(reason, 50) }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
       ] })
     ] });
   }
   const elapsed = formatElapsed(feature.startedAt, now);
-  const tokens = formatTokens(feature.tokens);
+  const liveTokens = feature.tokensOut ?? feature.tokens;
+  const tokenCount = formatTokens(liveTokens);
   const estTokens = feature.estimatedTokens ? formatTokens(feature.estimatedTokens) : "~?";
+  const rateLabel = formatRate(feature.tokenRate);
   const title = truncate(feature.title || feature.id, 42);
   const spinnerText = spinner ? truncate(spinner, 50) : "";
+  const recentEvents = feature.recentEvents ?? [];
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", paddingLeft: 1, children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502 " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "cyan", children: "\u25B8 " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: "cyan", children: feature.id }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.brand, children: "\u25B8 " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { bold: true, color: tokens.brand, children: feature.id }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "  " }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "  elapsed: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: elapsed }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "  elapsed: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.warning, children: elapsed }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] }),
     feature.currentSkill && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "skill: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.currentSkill }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: " \xB7 tier " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "skill: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? tokens.warning : tokens.success, children: feature.currentSkill }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: " \xB7 tier " }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: feature.currentTier ?? "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: " \xB7 mem: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? "yellow" : "green", children: feature.compaction && feature.compaction !== "none" ? `compaction:${feature.compaction}` : "ok" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: " \xB7 mem: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: feature.compaction && feature.compaction !== "none" ? tokens.warning : tokens.success, children: feature.compaction && feature.compaction !== "none" ? `compaction:${feature.compaction}` : "ok" }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
@@ -15596,19 +15687,45 @@ function FeatureCard({ feature, spinner, now }) {
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "tokens: " }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: tokens }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { dimColor: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "tokens: " }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: tokenCount }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { color: tokens.dim, children: [
         " / ",
         estTokens,
         " est."
       ] }),
+      rateLabel ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: " \xB7 " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.brand, children: rateLabel })
+      ] }) : null,
       spinnerText ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { dimColor: true, children: "   " }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: "yellow", children: spinnerText })
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "   " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.warning, children: spinnerText })
       ] }) : null,
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
-    ] })
+    ] }),
+    recentEvents.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { flexDirection: "column", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: "recent activity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
+      ] }),
+      recentEvents.slice(-3).map((ev, i, arr) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Box_default, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: "\u2502   " }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(Text, { color: tokens.dim, children: [
+          i === arr.length - 1 ? tokens.tree.last : tokens.tree.branch,
+          " ",
+          formatRelativeTime(ev.ts, now),
+          "  "
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.textSecondary, children: ev.tool }),
+        ev.target ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: " " }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { color: tokens.dim, children: truncate(ev.target, 40) })
+        ] }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Text, { children: " \u2502" })
+      ] }, `${ev.ts}-${i}`))
+    ] }) : null
   ] });
 }
 
@@ -15767,21 +15884,21 @@ function LogPane({ log, terminalWidth }) {
 
 // src/components/Footer.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+var PRIMARY_KEYS = " q quit \xB7 p pause \xB7 ? help";
 function Footer({ terminalWidth = 70 }) {
-  const keysLine = "  q quit  p pause  l learnings  f filter  / search  ?  help";
-  const innerWidth = Math.max(keysLine.length, terminalWidth - 2);
-  const padded = keysLine.padEnd(innerWidth);
-  const bottomDashes = "\u2500".repeat(terminalWidth - 2);
+  const innerWidth = Math.max(PRIMARY_KEYS.length, terminalWidth - 2);
+  const padded = PRIMARY_KEYS.padEnd(innerWidth);
+  const bottomDashes = "\u2500".repeat(Math.max(0, terminalWidth - 2));
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { flexDirection: "column", children: [
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2502" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: padded }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { color: tokens.dim, children: padded }),
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2502" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "\u2514" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2514" }),
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: bottomDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { children: "\u2518" })
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Text, { dimColor: true, children: "\u2518" })
     ] })
   ] });
 }
@@ -15813,7 +15930,7 @@ function SetupPanel({ state }) {
       skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { bold: true, dimColor: true, children: "Skills installed" }),
         skills.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Box_default, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { color: "green", children: "\u2713" }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Text, { color: tokens.success, children: "\u2713" }),
           /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Text, { children: [
             "  ",
             s.skill
@@ -15833,6 +15950,7 @@ var import_react22 = __toESM(require_react(), 1);
 
 // src/reducer.ts
 var PHASES2 = ["prd", "techspec", "tasks", "code", "tests", "pr"];
+var RECENT_EVENT_CAP = 8;
 var LOG_CAP = 200;
 function makeDefaultPhases() {
   return {
@@ -15989,16 +16107,59 @@ function reducer(state, event) {
       };
     }
     case "phase.completed": {
-      const { feature_id, phase, tokens_used, cost_usd } = event;
+      const {
+        feature_id,
+        phase,
+        tokens_used,
+        cost_usd,
+        tokens_in,
+        tokens_out,
+        tokens_total,
+        cache_creation_input_tokens,
+        cache_read_input_tokens
+      } = event;
       const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
       const phases = { ...prev.phases, [phase]: "done" };
+      const resolvedTokens = tokens_total ?? tokens_used ?? prev.tokens;
       const features = {
         ...state.features,
         [feature_id]: {
           ...prev,
           phases,
-          tokens: tokens_used,
-          costUsd: (prev.costUsd ?? 0) + (cost_usd ?? 0)
+          tokens: resolvedTokens,
+          tokensIn: tokens_in ?? prev.tokensIn,
+          tokensOut: tokens_out ?? prev.tokensOut,
+          tokensTotal: tokens_total ?? prev.tokensTotal,
+          cacheCreationTokens: cache_creation_input_tokens ?? prev.cacheCreationTokens,
+          cacheReadTokens: cache_read_input_tokens ?? prev.cacheReadTokens,
+          costUsd: (prev.costUsd ?? 0) + (cost_usd ?? 0),
+          // Phase ended — clear the live rate so the UI stops showing it.
+          tokenRate: void 0,
+          tokensSampledAt: void 0
+        }
+      };
+      return { ...state, features };
+    }
+    case "phase.token_update": {
+      const { feature_id, tokens_out, tokens_in } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      const now = Date.now();
+      let tokenRate = prev.tokenRate;
+      if (typeof prev.tokensOut === "number" && typeof prev.tokensSampledAt === "number") {
+        const dtMs = now - prev.tokensSampledAt;
+        const dTokens = tokens_out - prev.tokensOut;
+        if (dtMs > 0 && dtMs < 6e4 && dTokens > 0) {
+          tokenRate = dTokens / dtMs * 6e4;
+        }
+      }
+      const features = {
+        ...state.features,
+        [feature_id]: {
+          ...prev,
+          tokensOut: tokens_out,
+          tokensIn: tokens_in ?? prev.tokensIn,
+          tokensSampledAt: now,
+          tokenRate
         }
       };
       return { ...state, features };
@@ -16077,6 +16238,40 @@ function reducer(state, event) {
     case "learning.captured": {
       return state;
     }
+    case "tool.invoked": {
+      const { feature_id, tool, input_summary } = event;
+      if (!feature_id) return state;
+      const prev = state.features[feature_id];
+      if (!prev) return state;
+      const next = {
+        ts: Date.now(),
+        tool: tool ?? "",
+        target: input_summary ?? void 0
+      };
+      const recent = [...prev.recentEvents ?? [], next].slice(-RECENT_EVENT_CAP);
+      return {
+        ...state,
+        features: { ...state.features, [feature_id]: { ...prev, recentEvents: recent } }
+      };
+    }
+    case "file.touched": {
+      const { feature_id, path, op } = event;
+      if (!feature_id) return state;
+      const prev = state.features[feature_id];
+      if (!prev) return state;
+      const next = {
+        ts: Date.now(),
+        tool: op ? op.charAt(0).toUpperCase() + op.slice(1) : "File",
+        target: path ?? void 0
+      };
+      const recent = [...prev.recentEvents ?? [], next].slice(-RECENT_EVENT_CAP);
+      return {
+        ...state,
+        features: { ...state.features, [feature_id]: { ...prev, recentEvents: recent } }
+      };
+    }
+    case "tool.completed":
+      return state;
     case "log.line": {
       const { feature_id, stream, text, ts } = event;
       const entry = {
@@ -16289,16 +16484,16 @@ function App2() {
   }, [state.current, state.totals]);
   if (done) {
     return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Box_default, { flexDirection: "column", paddingY: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, color: "green", children: "Run complete" }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Text, { bold: true, color: tokens.success, children: "Run complete" }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { children: [
         "  ",
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: "green", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: tokens.success, children: [
           "\u2713 ",
           state.totals.succeeded,
           " done"
         ] }),
         "  ",
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: "red", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Text, { color: tokens.danger, children: [
           "\u2717 ",
           state.totals.failed,
           " failed"
