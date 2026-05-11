@@ -125,7 +125,7 @@ export function FeatureCard({ feature, spinner, now }: FeatureCardProps): React.
         {spinnerText ? (
           <>
             <Text color={tokens.dim}>   </Text>
-            <Text color="yellow">{spinnerText}</Text>
+            <Text color={tokens.warning}>{spinnerText}</Text>
           </>
         ) : null}
         <Text> │</Text>
