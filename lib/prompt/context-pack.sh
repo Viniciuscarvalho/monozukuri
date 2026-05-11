@@ -99,34 +99,40 @@ context_pack_build() {
   fi
 
   jq -n \
-    --arg FEATURE_ID      "$feat_id" \
-    --arg FEATURE_TITLE   "${FEATURE_TITLE:-}" \
-    --arg SOURCE_REF      "${SOURCE_REF:-${ADAPTER:-features.md}}" \
-    --arg DATE            "$(date +%Y-%m-%d)" \
-    --arg STATUS          "draft" \
-    --arg STACK           "${PROJECT_STACK:-${DETECTED_STACK:-unknown}}" \
-    --arg LANGUAGES       "${PROJECT_LANGUAGES:-${STACK_LANGUAGES:-}}" \
-    --arg FRAMEWORKS      "${PROJECT_FRAMEWORKS:-${STACK_FRAMEWORKS:-}}" \
-    --arg PACKAGE_MANAGER "${PACKAGE_MANAGER:-npm}" \
-    --arg TEST_FRAMEWORK  "${TEST_FRAMEWORK:-}" \
-    --arg ENTRY_POINTS    "${ENTRY_POINTS:-}" \
-    --arg ORIGINAL_PROMPT "${FEATURE_DESCRIPTION:-${FEATURE_TITLE:-}}" \
-    --arg MAX_FILES       "${MAX_FILE_CHANGES:-8}" \
-    --argjson project_learnings "$learnings_json" \
+    --arg FEATURE_ID             "$feat_id" \
+    --arg MONOZUKURI_FEATURE_ID  "$feat_id" \
+    --arg MONOZUKURI_WORKTREE    "${MONOZUKURI_WORKTREE:-}" \
+    --arg MONOZUKURI_AUTONOMY    "${MONOZUKURI_AUTONOMY:-supervised}" \
+    --arg FEATURE_TITLE          "${FEATURE_TITLE:-}" \
+    --arg SOURCE_REF             "${SOURCE_REF:-${ADAPTER:-features.md}}" \
+    --arg DATE                   "$(date +%Y-%m-%d)" \
+    --arg STATUS                 "draft" \
+    --arg STACK                  "${PROJECT_STACK:-${DETECTED_STACK:-unknown}}" \
+    --arg LANGUAGES              "${PROJECT_LANGUAGES:-${STACK_LANGUAGES:-}}" \
+    --arg FRAMEWORKS             "${PROJECT_FRAMEWORKS:-${STACK_FRAMEWORKS:-}}" \
+    --arg PACKAGE_MANAGER        "${PACKAGE_MANAGER:-npm}" \
+    --arg TEST_FRAMEWORK         "${TEST_FRAMEWORK:-}" \
+    --arg ENTRY_POINTS           "${ENTRY_POINTS:-}" \
+    --arg ORIGINAL_PROMPT        "${FEATURE_DESCRIPTION:-${FEATURE_TITLE:-}}" \
+    --arg MAX_FILES              "${MAX_FILE_CHANGES:-8}" \
+    --argjson project_learnings  "$learnings_json" \
     '{
-      FEATURE_ID:      $FEATURE_ID,
-      FEATURE_TITLE:   $FEATURE_TITLE,
-      SOURCE_REF:      $SOURCE_REF,
-      DATE:            $DATE,
-      STATUS:          $STATUS,
-      STACK:           $STACK,
-      LANGUAGES:       $LANGUAGES,
-      FRAMEWORKS:      $FRAMEWORKS,
-      PACKAGE_MANAGER: $PACKAGE_MANAGER,
-      TEST_FRAMEWORK:  $TEST_FRAMEWORK,
-      ENTRY_POINTS:    $ENTRY_POINTS,
-      ORIGINAL_PROMPT: $ORIGINAL_PROMPT,
-      MAX_FILES:       $MAX_FILES,
-      project_learnings: $project_learnings
+      FEATURE_ID:             $FEATURE_ID,
+      MONOZUKURI_FEATURE_ID:  $MONOZUKURI_FEATURE_ID,
+      MONOZUKURI_WORKTREE:    $MONOZUKURI_WORKTREE,
+      MONOZUKURI_AUTONOMY:    $MONOZUKURI_AUTONOMY,
+      FEATURE_TITLE:          $FEATURE_TITLE,
+      SOURCE_REF:             $SOURCE_REF,
+      DATE:                   $DATE,
+      STATUS:                 $STATUS,
+      STACK:                  $STACK,
+      LANGUAGES:              $LANGUAGES,
+      FRAMEWORKS:             $FRAMEWORKS,
+      PACKAGE_MANAGER:        $PACKAGE_MANAGER,
+      TEST_FRAMEWORK:         $TEST_FRAMEWORK,
+      ENTRY_POINTS:           $ENTRY_POINTS,
+      ORIGINAL_PROMPT:        $ORIGINAL_PROMPT,
+      MAX_FILES:              $MAX_FILES,
+      project_learnings:      $project_learnings
     }' > "$out_file"
 }
