@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.41.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.40.0...v1.41.0) (2026-05-11)
+
+
+### Features
+
+* **agent:** discover project + global skills, route phase_to_skill via manifest ([#167](https://github.com/Viniciuscarvalho/monozukuri/issues/167)) ([aa03ee8](https://github.com/Viniciuscarvalho/monozukuri/commit/aa03ee8a9e5d59ed0334f5b265b36896d3fa26d1))
+* **agent:** walk nested AGENTS.md in subpackages (depth ≤ 3) ([#166](https://github.com/Viniciuscarvalho/monozukuri/issues/166)) ([46f87ac](https://github.com/Viniciuscarvalho/monozukuri/commit/46f87acef552c6713d574b71e0dd89396f9e397f))
+
 ## [1.40.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.39.1...v1.40.0) (2026-05-11)
 
 
