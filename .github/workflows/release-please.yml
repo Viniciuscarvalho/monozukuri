@@ -2,7 +2,7 @@ name: Release Please
 
 on:
   push:
-    branches: [main]
+    branches: [main, "hotfix/v*"]
 
 permissions:
   contents: write
@@ -21,6 +21,7 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
       - name: Enable auto-merge on release PR
         if: ${{ steps.release.outputs.pr }}
         run: gh pr merge --auto --squash --repo "${{ github.repository }}" "${{ fromJSON(steps.release.outputs.pr).number }}"
