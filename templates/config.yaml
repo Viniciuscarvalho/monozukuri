@@ -4,7 +4,7 @@
 # Keys are loaded from .env at runtime.
 
 # Which coding agent to invoke (claude-code | codex | gemini | kiro)
-# legacy: skill.command: feature-marker still works via back-compat shim
+# Deprecated: skill.command is no longer supported — use agents.claude-code.skills.<phase>
 agent: claude-code
 
 source:
@@ -111,9 +111,23 @@ discovery:
   scan_only_threshold: 0 # Min agents required to run split mode (0 = always if any)
 
 routing:
-  prefer_agents: true # Prefer discovered agents over feature-marker
-  fallback: feature-marker # "fallback" tagged tasks to feature-marker regardless of agents
+  prefer_agents: true # Prefer discovered .claude/agents/ definitions over the generic fallback
+  fallback: mz-execute-task # tasks tagged "fallback" go here; must be an installed mz-* skill
   force_review: false # Force all "review" tagged tasks to a specific agent
+
+# Phase-to-skill overrides for Claude Code.
+# Omit this section to use the built-in mz-* defaults (recommended).
+# WARNING: setting any phase to 'feature-marker' will be rejected at run-time —
+#          it violates the autonomy contract (see docs/adapter-contract.md#8).
+# agents:
+#   claude-code:
+#     skills:
+#       prd: mz-create-prd
+#       techspec: mz-create-techspec
+#       tasks: mz-create-tasks
+#       code: mz-execute-task
+#       tests: mz-run-tests
+#       pr: mz-open-pr
 
 # Layered learning (ADR-008 PR-C)
 learning:

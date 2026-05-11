@@ -4,6 +4,46 @@
 # SCRIPTS_DIR, TEMPLATES_DIR, PROJECT_ROOT, ROOT_DIR, CONFIG_DIR,
 # STATE_DIR, RESULTS_DIR, and all OPT_* variables.
 
+# _run_check_incompatible_skills — hard block before any worktree is created.
+# Reads CFG_AGENTS_<AGENT>_SKILLS_<PHASE> env vars (set by parse-config.js from
+# agents.<agent>.skills.<phase> in config.yaml) and exits EXIT_CONFIG_INVALID=10
+# when any explicit phase override maps to a known-incompatible skill.
+#
+# Uses tr for case conversion (bash 3.2-safe; avoids the ${^^} bash 4 operator
+# in skill-detect.sh which silently degrades on macOS system bash).
+# Only explicit config overrides are checked — hardcoded mz-* defaults are always safe.
+_run_check_incompatible_skills() {
+  local _ki_sh="${LIB_DIR}/agent/known-incompatible.sh"
+  [ -f "$_ki_sh" ] || return 0
+
+  if ! declare -f is_skill_known_incompatible &>/dev/null; then
+    # shellcheck source=../lib/agent/known-incompatible.sh
+    source "$_ki_sh"
+  fi
+
+  # Build agent-norm (uppercase, hyphens→underscores) using tr — bash 3.2 safe.
+  local agent_norm
+  agent_norm=$(printf '%s' "${MONOZUKURI_AGENT:-claude-code}" | tr '[:lower:]-' '[:upper:]_')
+
+  local phase phase_upper cfg_var skill reason found=0
+  for phase in prd techspec tasks code tests pr; do
+    phase_upper=$(printf '%s' "$phase" | tr '[:lower:]' '[:upper:]')
+    cfg_var="CFG_AGENTS_${agent_norm}_SKILLS_${phase_upper}"
+    skill="${!cfg_var:-}"
+    [ -z "$skill" ] && continue
+    if is_skill_known_incompatible "$skill"; then
+      reason="$(known_incompatible_reason "$skill")"
+      err "Incompatible skill '${skill}' configured for phase '${phase}': ${reason}"
+      found=1
+    fi
+  done
+  if [ "$found" -eq 1 ]; then
+    printf "   Fix: remove agents.claude-code.skills overrides from .monozukuri/config.yaml\n" >&2
+    printf "        or run: monozukuri setup to install the mz-* replacement skills\n" >&2
+    exit "${EXIT_CONFIG_INVALID}"
+  fi
+}
+
 sub_run() {
   # Load event emitter (no-ops gracefully when absent or jq missing)
   if [ -f "$LIB_DIR/cli/emit.sh" ]; then
@@ -155,6 +195,10 @@ sub_run() {
     bash "$SCRIPTS_DIR/skill-discovery.sh" "$ROOT_DIR" "$skills_manifest_file" 2>&1
     export MONOZUKURI_SKILLS_MANIFEST="$skills_manifest_file"
   fi
+
+  # Hard block — refuse to start when any configured phase skill is known-incompatible.
+  # Must run after skill discovery so the manifest is populated for phase_to_skill.
+  _run_check_incompatible_skills
 
   # Environment discovery
   mem_refresh_env
