@@ -1,12 +1,28 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { Feature } from '../types.js';
-import { tokens } from '../tokens.js';
+import type { Feature, Phase, PhaseStatus } from '../types.js';
+import { statusColor, statusSymbol } from '../tokens.js';
 
 interface FeatureListProps {
   features: Record<string, Feature>;
   order: string[];
-  terminalWidth: number;
+  terminalWidth?: number;
+}
+
+const PHASES: Phase[] = ['prd', 'techspec', 'tasks', 'code', 'tests', 'pr'];
+
+function phaseChar(ps: PhaseStatus): string {
+  if (ps === 'done') return '●';
+  if (ps === 'in_progress') return '◐';
+  if (ps === 'failed') return '✗';
+  return '○';
+}
+
+function phaseCharColor(ps: PhaseStatus): string {
+  if (ps === 'done') return '#31d58b';
+  if (ps === 'in_progress') return '#d6f24a';
+  if (ps === 'failed') return '#ff6b63';
+  return '#57534e';
 }
 
 function truncate(str: string, maxLen: number): string {
@@ -14,47 +30,51 @@ function truncate(str: string, maxLen: number): string {
   return str.slice(0, maxLen - 1) + '…';
 }
 
-interface QueueItemProps {
+function pad(str: string, len: number): string {
+  if (str.length >= len) return str.slice(0, len - 1) + '…';
+  return str + ' '.repeat(len - str.length);
+}
+
+interface FeatureRowProps {
   feature: Feature;
-  maxTitleLen: number;
+  titleLen: number;
 }
 
-function QueueItem({ feature, maxTitleLen }: QueueItemProps): React.ReactElement {
-  return (
-    <Box>
-      <Text>│  </Text>
-      <Text dimColor>{feature.id}</Text>
-      <Text>  </Text>
-      <Text dimColor>{truncate(feature.title || feature.id, maxTitleLen)}</Text>
-    </Box>
-  );
-}
-
-interface DoneItemProps {
-  feature: Feature;
-  maxTitleLen: number;
-}
-
-function DoneItem({ feature, maxTitleLen }: DoneItemProps): React.ReactElement {
-  const isDone = feature.status === 'done';
-  const icon = isDone ? '✓' : '✗';
-  const iconColor = isDone ? 'green' : 'red';
+function FeatureRow({ feature, titleLen }: FeatureRowProps): React.ReactElement {
+  const { id, title, status, phases, currentPhase, error } = feature;
+  const icon = statusSymbol(status);
+  const color = statusColor(status);
+  const isActive = status === 'active';
+  const idLabel = pad(id, 18);
+  const titleLabel = pad(title || id, titleLen);
 
   return (
     <Box flexDirection="column">
       <Box>
         <Text>│  </Text>
-        <Text color={iconColor}>{icon} </Text>
-        <Text dimColor={!isDone}>{feature.id}</Text>
-        <Text>  </Text>
-        <Text dimColor={!isDone}>{truncate(feature.title || feature.id, maxTitleLen)}</Text>
+        <Text color={color} bold={isActive}>{icon}{' '}</Text>
+        <Text color={isActive ? '#fafaf9' : '#a8a29e'}>{idLabel}</Text>
+        <Text color="#57534e">{'  '}</Text>
+        <Text color={isActive ? '#fafaf9' : '#a8a29e'}>{titleLabel}</Text>
+        <Text color="#57534e">{'  '}</Text>
+        {PHASES.map((ph) => {
+          const ps: PhaseStatus = phases?.[ph] ?? 'pending';
+          return (
+            <Text key={ph} color={phaseCharColor(ps)}>{phaseChar(ps)}</Text>
+          );
+        })}
+        <Text color="#57534e">{'  '}</Text>
+        <Text color={color} bold={isActive}>{status}</Text>
+        {isActive && currentPhase ? (
+          <Text color="#57534e"> [{currentPhase}]</Text>
+        ) : null}
+        <Text> │</Text>
       </Box>
-      {!isDone && feature.error ? (
+      {(status === 'failed' || status === 'skipped' || status === 'pr_failed' || status === 'deferred') && error ? (
         <Box>
           <Text>│     </Text>
-          <Text color={tokens.danger} dimColor>
-            ({truncate(feature.error, maxTitleLen + 8)})
-          </Text>
+          <Text color={color} dimColor>{truncate(error, Math.max(10, titleLen + 20))}</Text>
+          <Text> │</Text>
         </Box>
       ) : null}
     </Box>
@@ -64,106 +84,36 @@ function DoneItem({ feature, maxTitleLen }: DoneItemProps): React.ReactElement {
 export function FeatureList({
   features,
   order,
-  terminalWidth,
+  terminalWidth = 80,
 }: FeatureListProps): React.ReactElement {
-  const queued: Feature[] = [];
-  const done: Feature[] = [];
+  const all: Feature[] = order.map((id) => features[id]).filter(Boolean) as Feature[];
 
-  for (const id of order) {
-    const f = features[id];
-    if (!f) continue;
-    if (f.status === 'queued') {
-      queued.push(f);
-    } else if (f.status === 'done' || f.status === 'failed' || f.status === 'skipped' || f.status === 'deferred') {
-      done.push(f);
-    }
-  }
+  // Fixed columns: │  [icon] [id:18] [2sp] [title] [2sp] [dots:6] [2sp] [status] │
+  // Fixed cost: 3 + 2 + 18 + 2 + 2 + 6 + 2 + 12 + 2 = 49
+  const FIXED_COLS = 49;
+  const titleLen = Math.max(10, terminalWidth - FIXED_COLS);
 
-  // Half-width for each column, accounting for border chars and padding
-  const halfWidth = Math.max(10, Math.floor((terminalWidth - 4) / 2));
-  const maxTitleLen = Math.max(8, halfWidth - 20);
+  const headerDashes = '─'.repeat(Math.max(0, terminalWidth - 16));
 
-  const maxRows = Math.max(queued.length, done.length, 1);
-  const rows: React.ReactElement[] = [];
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text>├─ features </Text>
+        <Text dimColor>{headerDashes}</Text>
+        <Text>┤</Text>
+      </Box>
 
-  // Separator row with section headers
-  const queueDashes = '─'.repeat(Math.max(0, halfWidth - 8));
-  const doneDashes = '─'.repeat(Math.max(0, halfWidth - 8));
-  rows.push(
-    <Box key="header">
-      <Text>├─ queue </Text>
-      <Text dimColor>{queueDashes}</Text>
-      <Text>┬─ done </Text>
-      <Text dimColor>{doneDashes}</Text>
-      <Text>──┤</Text>
+      {all.length === 0 ? (
+        <Box>
+          <Text>│  </Text>
+          <Text dimColor>(no features loaded)</Text>
+          <Text> │</Text>
+        </Box>
+      ) : (
+        all.map((f) => (
+          <FeatureRow key={f.id} feature={f} titleLen={titleLen} />
+        ))
+      )}
     </Box>
   );
-
-  for (let i = 0; i < maxRows; i++) {
-    const qf = queued[i];
-    const df = done[i];
-
-    rows.push(
-      <Box key={`row-${i}`}>
-        {/* Queue column */}
-        {qf ? (
-          <Box width={halfWidth}>
-            <Text>│  </Text>
-            <Text dimColor>{truncate(qf.id, 10)}</Text>
-            <Text>  </Text>
-            <Text dimColor>{truncate(qf.title || qf.id, maxTitleLen)}</Text>
-          </Box>
-        ) : (
-          <Box width={halfWidth}>
-            <Text>│</Text>
-            <Text>{' '.repeat(halfWidth - 1)}</Text>
-          </Box>
-        )}
-
-        {/* Done column */}
-        {df ? (
-          <Box flexDirection="column">
-            <Box>
-              <Text>│  </Text>
-              <Text color={df.status === 'done' ? 'green' : df.status === 'deferred' ? 'yellow' : 'red'}>
-                {df.status === 'done' ? '✓' : df.status === 'deferred' ? '⏸' : '✗'}{' '}
-              </Text>
-              <Text dimColor={df.status !== 'done'}>
-                {truncate(`${df.id}  ${df.title || df.id}`, maxTitleLen + 8)}
-              </Text>
-            </Box>
-            {df.status !== 'done' && df.error ? (
-              <Box>
-                <Text>│     </Text>
-                <Text color={df.status === 'deferred' ? 'yellow' : 'red'} dimColor>
-                  ({df.status === 'deferred' ? 'deferred: ' : ''}{truncate(df.error, maxTitleLen)})
-                </Text>
-              </Box>
-            ) : null}
-          </Box>
-        ) : (
-          <Box>
-            <Text>│</Text>
-          </Box>
-        )}
-      </Box>
-    );
-  }
-
-  if (queued.length === 0 && done.length === 0) {
-    rows.push(
-      <Box key="empty">
-        <Box width={halfWidth}>
-          <Text>│</Text>
-          <Text dimColor>  (empty)</Text>
-        </Box>
-        <Box>
-          <Text>│</Text>
-          <Text dimColor>  (empty)</Text>
-        </Box>
-      </Box>
-    );
-  }
-
-  return <Box flexDirection="column">{rows}</Box>;
 }

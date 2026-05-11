@@ -11,7 +11,7 @@ export interface RecentEvent {
 
 export type Phase = 'prd' | 'techspec' | 'tasks' | 'code' | 'tests' | 'pr';
 export type PhaseStatus = 'pending' | 'in_progress' | 'done' | 'failed';
-export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped' | 'deferred';
+export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped' | 'deferred' | 'pr_failed';
 
 export interface Feature {
   id: string;
@@ -286,6 +286,22 @@ export interface SetupCompletedEvent extends BaseEvent {
   action: string;
 }
 
+export interface CycleGateSkippedEvent extends BaseEvent {
+  type: 'cycle_gate.skipped';
+  feature_id: string;
+}
+
+export interface CycleGatePassedEvent extends BaseEvent {
+  type: 'cycle_gate.passed';
+  feature_id: string;
+}
+
+export interface FeaturePrFailedEvent extends BaseEvent {
+  type: 'feature.pr_failed';
+  feature_id: string;
+  reason: string;
+}
+
 export interface ToolInvokedEvent extends BaseEvent {
   type: 'tool.invoked';
   feature_id: string;
@@ -338,6 +354,9 @@ export type MonozukuriEvent =
   | SetupStartedEvent
   | SetupAgentProgressEvent
   | SetupSkillInstalledEvent
-  | SetupCompletedEvent;
+  | SetupCompletedEvent
+  | CycleGateSkippedEvent
+  | CycleGatePassedEvent
+  | FeaturePrFailedEvent;
 
 export type ViewMode = 'main' | 'learnings' | 'filter' | 'search' | 'help';

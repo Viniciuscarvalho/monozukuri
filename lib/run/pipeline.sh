@@ -285,16 +285,12 @@ run_backlog() {
       if [ "${OPT_SKIP_CYCLE_CHECK:-false}" != "true" ]; then
         if ! cycle_gate_check "$feat_id_check"; then
           cycle_gate_report "$feat_id_check"
-          echo ""
-          echo "  ⚠  Cycle gate: $feat_id_check did not complete a full cycle."
-          echo "     The feature has no merged PR or incomplete phase checkpoints."
-          echo "     Stopping to protect downstream features from running on a broken base."
-          echo ""
-          local _gate_cmd="monozukuri run --autonomy ${AUTONOMY:-full_auto} --skip-cycle-check"
-          echo "     To skip: $_gate_cmd"
-          echo ""
-          break
+          warn "Cycle gate: $feat_id_check did not complete a full cycle — skipping to next feature"
+          warn "  (use --skip-cycle-check to process anyway)"
+          monozukuri_emit cycle_gate.skipped feature_id "$feat_id_check"
+          continue
         fi
+        monozukuri_emit cycle_gate.passed feature_id "$feat_id_check"
       fi
     done
   fi

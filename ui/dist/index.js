@@ -15424,6 +15424,7 @@ var tokens = {
     paused: "#f59e0b",
     deferred: "#f59e0b",
     retrying: "#a78bfa",
+    pr_failed: "#a78bfa",
     running: "#d6f24a",
     in_progress: "#d6f24a",
     active: "#d6f24a",
@@ -15443,6 +15444,7 @@ var tokens = {
     paused: "\u23F8",
     deferred: "\u23F8",
     retrying: "\u21BB",
+    pr_failed: "\u26A0",
     running: "\u25B6",
     in_progress: "\u25D0",
     active: "\u25B6",
@@ -15474,6 +15476,14 @@ var tokens = {
     middot: "\xB7"
   }
 };
+function statusColor(status) {
+  if (!status) return tokens.muted;
+  return tokens.statusColor[status] ?? tokens.muted;
+}
+function statusSymbol(status) {
+  if (!status) return tokens.statusSymbol.pending;
+  return tokens.statusSymbol[status] ?? tokens.statusSymbol.pending;
+}
 
 // src/components/CostMeter.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -15731,92 +15741,86 @@ function FeatureCard({ feature, spinner, now }) {
 
 // src/components/FeatureList.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+var PHASES2 = ["prd", "techspec", "tasks", "code", "tests", "pr"];
+function phaseChar(ps) {
+  if (ps === "done") return "\u25CF";
+  if (ps === "in_progress") return "\u25D0";
+  if (ps === "failed") return "\u2717";
+  return "\u25CB";
+}
+function phaseCharColor(ps) {
+  if (ps === "done") return "#31d58b";
+  if (ps === "in_progress") return "#d6f24a";
+  if (ps === "failed") return "#ff6b63";
+  return "#57534e";
+}
 function truncate2(str, maxLen) {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen - 1) + "\u2026";
 }
+function pad(str, len) {
+  if (str.length >= len) return str.slice(0, len - 1) + "\u2026";
+  return str + " ".repeat(len - str.length);
+}
+function FeatureRow({ feature, titleLen }) {
+  const { id, title, status, phases, currentPhase, error } = feature;
+  const icon = statusSymbol(status);
+  const color = statusColor(status);
+  const isActive = status === "active";
+  const idLabel = pad(id, 18);
+  const titleLabel = pad(title || id, titleLen);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { flexDirection: "column", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color, bold: isActive, children: [
+        icon,
+        " "
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: isActive ? "#fafaf9" : "#a8a29e", children: idLabel }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: "#57534e", children: "  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: isActive ? "#fafaf9" : "#a8a29e", children: titleLabel }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: "#57534e", children: "  " }),
+      PHASES2.map((ph) => {
+        const ps = phases?.[ph] ?? "pending";
+        return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: phaseCharColor(ps), children: phaseChar(ps) }, ph);
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color: "#57534e", children: "  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color, bold: isActive, children: status }),
+      isActive && currentPhase ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: "#57534e", children: [
+        " [",
+        currentPhase,
+        "]"
+      ] }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: " \u2502" })
+    ] }),
+    (status === "failed" || status === "skipped" || status === "pr_failed" || status === "deferred") && error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502     " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { color, dimColor: true, children: truncate2(error, Math.max(10, titleLen + 20)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: " \u2502" })
+    ] }) : null
+  ] });
+}
 function FeatureList({
   features,
   order,
-  terminalWidth
+  terminalWidth = 80
 }) {
-  const queued = [];
-  const done = [];
-  for (const id of order) {
-    const f = features[id];
-    if (!f) continue;
-    if (f.status === "queued") {
-      queued.push(f);
-    } else if (f.status === "done" || f.status === "failed" || f.status === "skipped" || f.status === "deferred") {
-      done.push(f);
-    }
-  }
-  const halfWidth = Math.max(10, Math.floor((terminalWidth - 4) / 2));
-  const maxTitleLen = Math.max(8, halfWidth - 20);
-  const maxRows = Math.max(queued.length, done.length, 1);
-  const rows = [];
-  const queueDashes = "\u2500".repeat(Math.max(0, halfWidth - 8));
-  const doneDashes = "\u2500".repeat(Math.max(0, halfWidth - 8));
-  rows.push(
+  const all = order.map((id) => features[id]).filter(Boolean);
+  const FIXED_COLS = 49;
+  const titleLen = Math.max(10, terminalWidth - FIXED_COLS);
+  const headerDashes = "\u2500".repeat(Math.max(0, terminalWidth - 16));
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { flexDirection: "column", children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u251C\u2500 queue " }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: queueDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u252C\u2500 done " }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: doneDashes }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2500\u2500\u2524" })
-    ] }, "header")
-  );
-  for (let i = 0; i < maxRows; i++) {
-    const qf = queued[i];
-    const df = done[i];
-    rows.push(
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-        qf ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: truncate2(qf.id, 10) }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "  " }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: truncate2(qf.title || qf.id, maxTitleLen) })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: " ".repeat(halfWidth - 1) })
-        ] }),
-        df ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { flexDirection: "column", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: df.status === "done" ? "green" : df.status === "deferred" ? "yellow" : "red", children: [
-              df.status === "done" ? "\u2713" : df.status === "deferred" ? "\u23F8" : "\u2717",
-              " "
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: df.status !== "done", children: truncate2(`${df.id}  ${df.title || df.id}`, maxTitleLen + 8) })
-          ] }),
-          df.status !== "done" && df.error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502     " }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Text, { color: df.status === "deferred" ? "yellow" : "red", dimColor: true, children: [
-              "(",
-              df.status === "deferred" ? "deferred: " : "",
-              truncate2(df.error, maxTitleLen),
-              ")"
-            ] })
-          ] }) : null
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Box_default, { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }) })
-      ] }, `row-${i}`)
-    );
-  }
-  if (queued.length === 0 && done.length === 0) {
-    rows.push(
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { width: halfWidth, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "  (empty)" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "  (empty)" })
-        ] })
-      ] }, "empty")
-    );
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Box_default, { flexDirection: "column", children: rows });
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u251C\u2500 features " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: headerDashes }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2524" })
+    ] }),
+    all.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(Box_default, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: "\u2502  " }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { dimColor: true, children: "(no features loaded)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Text, { children: " \u2502" })
+    ] }) : all.map((f) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FeatureRow, { feature: f, titleLen }, f.id))
+  ] });
 }
 
 // src/components/LogPane.tsx
@@ -15846,7 +15850,7 @@ function truncate3(str, maxLen) {
   return str.slice(0, maxLen - 1) + "\u2026";
 }
 function LogPane({ log, terminalWidth }) {
-  const tail = log.slice(-5);
+  const tail = log.slice(-12);
   const maxTextLen = Math.max(20, terminalWidth - 42);
   const headerDashes = "\u2500".repeat(Math.max(0, terminalWidth - 16));
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Box_default, { flexDirection: "column", children: [
@@ -15949,7 +15953,7 @@ function SetupPanel({ state }) {
 var import_react22 = __toESM(require_react(), 1);
 
 // src/reducer.ts
-var PHASES2 = ["prd", "techspec", "tasks", "code", "tests", "pr"];
+var PHASES3 = ["prd", "techspec", "tasks", "code", "tests", "pr"];
 var RECENT_EVENT_CAP = 8;
 var LOG_CAP = 200;
 function makeDefaultPhases() {
@@ -16062,7 +16066,7 @@ function reducer(state, event) {
       const { feature_id, phase } = event;
       const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
       const phases = { ...prev.phases };
-      for (const p of PHASES2) {
+      for (const p of PHASES3) {
         if (p === phase) {
           phases[p] = "in_progress";
           break;
@@ -16182,7 +16186,7 @@ function reducer(state, event) {
       const { feature_id, pr_url, total_tokens, total_cost_usd } = event;
       const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
       const phases = Object.fromEntries(
-        PHASES2.map((p) => [p, "done"])
+        PHASES3.map((p) => [p, "done"])
       );
       const features = {
         ...state.features,
@@ -16339,6 +16343,38 @@ function reducer(state, event) {
     }
     case "setup.completed": {
       return state;
+    }
+    case "cycle_gate.skipped": {
+      const { feature_id } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: {
+            ...prev,
+            status: "skipped",
+            error: prev.error ?? "cycle-gate: skipped this run"
+          }
+        }
+      };
+    }
+    case "cycle_gate.passed":
+      return state;
+    case "feature.pr_failed": {
+      const { feature_id, reason } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: {
+            ...prev,
+            status: "pr_failed",
+            error: reason
+          }
+        }
+      };
     }
     default:
       return state;

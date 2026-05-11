@@ -446,6 +446,41 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
       return state;  // just keep the accumulated state visible
     }
 
+    case 'cycle_gate.skipped': {
+      const { feature_id } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: {
+            ...prev,
+            status: 'skipped' as const,
+            error: prev.error ?? 'cycle-gate: skipped this run',
+          },
+        },
+      };
+    }
+
+    case 'cycle_gate.passed':
+      return state;
+
+    case 'feature.pr_failed': {
+      const { feature_id, reason } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      return {
+        ...state,
+        features: {
+          ...state.features,
+          [feature_id]: {
+            ...prev,
+            status: 'pr_failed' as const,
+            error: reason,
+          },
+        },
+      };
+    }
+
     default:
       return state;
   }

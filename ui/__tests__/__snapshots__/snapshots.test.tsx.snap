@@ -22,9 +22,11 @@ exports[`snapshots — FeatureCard renders waiting card when feature is null 1`]
 `;
 
 exports[`snapshots — FeatureList renders a small backlog with mixed statuses 1`] = `
-"├─ queue ┬─ done ──┤
-│  feat-004  …│  ✓ …
-││  ✓ …"
+"├─ features ────────────────────────────────────────────────────────────────┤
+│  ✓ feat-001            Add error logging                ○○○○○○  done │
+│  ✓ feat-002            Add input validation             ○○○○○○  done │
+│  ▶  feat-003            Add greeting custom              ○○○○○○  active │
+│  ○ feat-004            Add config loading               ○○○○○○  queued │"
 `;
 
 exports[`snapshots — Footer renders minimal 3-key footer at width=80 1`] = `
