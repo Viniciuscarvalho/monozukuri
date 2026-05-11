@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.44.0...v1.45.0) (2026-05-11)
+
+
+### Features
+
+* **ui:** consolidate TUI Days 2-5 + composite screenshot into main ([#182](https://github.com/Viniciuscarvalho/monozukuri/issues/182)) ([e7a0c64](https://github.com/Viniciuscarvalho/monozukuri/commit/e7a0c64948345fff758e05946b0f6640ea480d13))
+
 ## [1.44.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.43.0...v1.44.0) (2026-05-11)
 
 
