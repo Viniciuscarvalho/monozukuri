@@ -1,0 +1,7 @@
+{"type":"message_start","message":{"id":"msg_01","model":"claude-sonnet-4-6","usage":{"input_tokens":1234,"cache_creation_input_tokens":500,"cache_read_input_tokens":2000,"output_tokens":0}}}
+{"type":"tool_use","name":"Read","input":{"file_path":"src/api.ts"}}
+{"type":"message_delta","usage":{"output_tokens":50}}
+{"type":"tool_use","name":"Edit","input":{"file_path":"src/api.ts","old_string":"foo","new_string":"bar"}}
+{"type":"message_delta","usage":{"output_tokens":120}}
+{"type":"message_delta","usage":{"output_tokens":180}}
+{"type":"message_stop"}
