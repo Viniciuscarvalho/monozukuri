@@ -159,6 +159,18 @@ _cc_run_phase_skill() {
   mkdir -p "$artifact_dir"
   local artifact_file="$artifact_dir/${phase}.md"
 
+  # Observability: surface allowed-tools so users see the skill's tool budget
+  # before invocation. Claude Code itself enforces the SKILL.md frontmatter;
+  # this only logs what the skill *declares*. No-op when the skill isn't in
+  # the manifest or declares no tools.
+  if declare -f skill_allowed_tools &>/dev/null; then
+    local _tools
+    _tools=$(skill_allowed_tools "$skill")
+    if [ -n "$_tools" ] && declare -f info &>/dev/null; then
+      info "skill $skill declares allowed-tools: $_tools"
+    fi
+  fi
+
   local exit_code=0
   _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
     ${effective_model:+--model "$effective_model"} \

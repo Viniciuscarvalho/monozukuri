@@ -7,6 +7,7 @@
 # Public functions:
 #   phase_to_skill <phase> [agent_id]            → skill name or ""
 #   skill_installed <agent-id> <skill> <wt-path> → exit 0 if installed, 1 otherwise
+#   skill_allowed_tools <skill-name>             → comma-separated tools or ""
 
 # Look up a project-installed skill mapped to the given phase.
 # Reads MONOZUKURI_SKILLS_MANIFEST (or .monozukuri/skills-manifest.json under
@@ -61,6 +62,29 @@ phase_to_skill() {
     pr)       echo "mz-open-pr" ;;
     *)        echo "" ;;
   esac
+}
+
+# skill_allowed_tools <skill-name>
+# Returns the comma-separated allowed-tools list from the skill's manifest
+# entry, or empty if the skill isn't in the manifest or declares no tools.
+# Reads MONOZUKURI_SKILLS_MANIFEST (or .monozukuri/skills-manifest.json under
+# ROOT_DIR / PWD). Useful for adapters / logging that want to show which
+# tools a skill is authorised to use.
+skill_allowed_tools() {
+  local skill_name="$1"
+  local manifest="${MONOZUKURI_SKILLS_MANIFEST:-${ROOT_DIR:-$PWD}/.monozukuri/skills-manifest.json}"
+  [ -f "$manifest" ] || return 0
+  command -v node >/dev/null 2>&1 || return 0
+  node -e "
+    const fs = require('fs');
+    let m;
+    try { m = JSON.parse(fs.readFileSync('$manifest','utf-8')); } catch { process.exit(0); }
+    const skills = Array.isArray(m.skills) ? m.skills : [];
+    const match = skills.find(s => s.name === '$skill_name');
+    if (match && Array.isArray(match.allowed_tools) && match.allowed_tools.length > 0) {
+      process.stdout.write(match.allowed_tools.join(','));
+    }
+  " 2>/dev/null
 }
 
 # skill_installed <agent-id> <skill-name> <wt-path>

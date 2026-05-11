@@ -117,6 +117,10 @@ for (const src of SCAN) {
     const phaseList = Array.isArray(phaseRaw) ? phaseRaw :
                       (phaseRaw ? [phaseRaw] : []);
 
+    const toolsRaw = fm['allowed-tools'] || fm.allowed_tools || '';
+    const toolsList = Array.isArray(toolsRaw) ? toolsRaw :
+                      (toolsRaw ? [toolsRaw] : []);
+
     skills.push({
       name,
       description: fm.description || '',
@@ -125,6 +129,7 @@ for (const src of SCAN) {
       agent: fm.agent || src.agent,
       phase: phaseList.length > 0 ? phaseList.join(',') : '',
       phases: phaseList,
+      allowed_tools: toolsList,
       source: src.scope + ':' + src.agent
     });
   }
