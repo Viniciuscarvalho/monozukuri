@@ -5,9 +5,11 @@ import type {
   MonozukuriEvent,
   Phase,
   PhaseStatus,
+  RecentEvent,
 } from './types.js';
 
 const PHASES: Phase[] = ['prd', 'techspec', 'tasks', 'code', 'tests', 'pr'];
+const RECENT_EVENT_CAP = 8;
 const LOG_CAP = 200;
 
 function makeDefaultPhases(): Record<Phase, PhaseStatus> {
@@ -325,6 +327,45 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
       // No state change needed; could extend to show learning count
       return state;
     }
+
+    case 'tool.invoked': {
+      const { feature_id, tool, input_summary } = event;
+      if (!feature_id) return state;
+      const prev = state.features[feature_id];
+      if (!prev) return state;
+      const next: RecentEvent = {
+        ts: Date.now(),
+        tool: tool ?? '',
+        target: input_summary ?? undefined,
+      };
+      const recent = [...(prev.recentEvents ?? []), next].slice(-RECENT_EVENT_CAP);
+      return {
+        ...state,
+        features: { ...state.features, [feature_id]: { ...prev, recentEvents: recent } },
+      };
+    }
+
+    case 'file.touched': {
+      const { feature_id, path, op } = event;
+      if (!feature_id) return state;
+      const prev = state.features[feature_id];
+      if (!prev) return state;
+      const next: RecentEvent = {
+        ts: Date.now(),
+        tool: op ? op.charAt(0).toUpperCase() + op.slice(1) : 'File',
+        target: path ?? undefined,
+      };
+      const recent = [...(prev.recentEvents ?? []), next].slice(-RECENT_EVENT_CAP);
+      return {
+        ...state,
+        features: { ...state.features, [feature_id]: { ...prev, recentEvents: recent } },
+      };
+    }
+
+    case 'tool.completed':
+      // We synthesise completion at invocation time; the upstream signal is
+      // currently redundant. Keep the case to satisfy exhaustiveness.
+      return state;
 
     case 'log.line': {
       const { feature_id, stream, text, ts } = event;

@@ -225,3 +225,104 @@ describe('reducer phase.completed (PR #176 extended fields)', () => {
     expect(state.features[FEAT_ID].tokensSampledAt).toBeUndefined();
   });
 });
+
+describe('reducer tool.invoked / file.touched (Day 4 activity tree)', () => {
+  const FEAT_ID = 'feat-001';
+
+  const seedWithFeature = () => {
+    let state = reducer(initialState(), {
+      type: 'run.started',
+      ts: '2026-05-11T00:00:00Z',
+      run_id: 'run-1',
+      autonomy: 'checkpoint',
+      model: 'claude-sonnet-4-6',
+      agent: 'claude-code',
+    } as MonozukuriEvent);
+    state = reducer(state, {
+      type: 'feature.started',
+      ts: '2026-05-11T00:00:00Z',
+      run_id: 'run-1',
+      feature_id: FEAT_ID,
+      title: 'test',
+    } as MonozukuriEvent);
+    return state;
+  };
+
+  it('appends tool.invoked to recentEvents with tool + input_summary', () => {
+    let state = seedWithFeature();
+    state = reducer(state, {
+      type: 'tool.invoked',
+      ts: '2026-05-11T00:00:01Z',
+      run_id: 'run-1',
+      feature_id: FEAT_ID,
+      tool: 'Read',
+      input_summary: 'file_path=src/api.ts',
+    } as MonozukuriEvent);
+    const recent = state.features[FEAT_ID].recentEvents ?? [];
+    expect(recent.length).toBe(1);
+    expect(recent[0].tool).toBe('Read');
+    expect(recent[0].target).toBe('file_path=src/api.ts');
+  });
+
+  it('appends file.touched with op-derived tool label and path target', () => {
+    let state = seedWithFeature();
+    state = reducer(state, {
+      type: 'file.touched',
+      ts: '2026-05-11T00:00:01Z',
+      run_id: 'run-1',
+      feature_id: FEAT_ID,
+      path: 'src/index.ts',
+      op: 'edit',
+    } as MonozukuriEvent);
+    const recent = state.features[FEAT_ID].recentEvents ?? [];
+    expect(recent.length).toBe(1);
+    expect(recent[0].tool).toBe('Edit');
+    expect(recent[0].target).toBe('src/index.ts');
+  });
+
+  it('caps recentEvents at 8 entries (oldest dropped)', () => {
+    let state = seedWithFeature();
+    for (let i = 0; i < 12; i++) {
+      state = reducer(state, {
+        type: 'tool.invoked',
+        ts: '2026-05-11T00:00:00Z',
+        run_id: 'run-1',
+        feature_id: FEAT_ID,
+        tool: `T${i}`,
+      } as MonozukuriEvent);
+    }
+    const recent = state.features[FEAT_ID].recentEvents ?? [];
+    expect(recent.length).toBe(8);
+    expect(recent[0].tool).toBe('T4');   // first kept
+    expect(recent[recent.length - 1].tool).toBe('T11'); // last kept
+  });
+
+  it('does nothing when feature_id is unknown', () => {
+    let state = seedWithFeature();
+    const beforeRecent = state.features[FEAT_ID].recentEvents;
+    state = reducer(state, {
+      type: 'tool.invoked',
+      ts: '2026-05-11T00:00:01Z',
+      run_id: 'run-1',
+      feature_id: 'feat-unknown',
+      tool: 'Read',
+    } as MonozukuriEvent);
+    // beforeRecent is undefined for a freshly seeded feature — assert it stays
+    // that way and that the unknown feature wasn't created as a side effect.
+    expect(state.features[FEAT_ID].recentEvents).toBe(beforeRecent);
+    expect(state.features['feat-unknown']).toBeUndefined();
+  });
+
+  it('tool.completed is accepted but is a no-op (no state change)', () => {
+    let state = seedWithFeature();
+    const before = state;
+    state = reducer(state, {
+      type: 'tool.completed',
+      ts: '2026-05-11T00:00:01Z',
+      run_id: 'run-1',
+      feature_id: FEAT_ID,
+      tool: 'Read',
+    } as MonozukuriEvent);
+    expect(state).toBe(before);
+  });
+});

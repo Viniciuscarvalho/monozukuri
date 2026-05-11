@@ -1,5 +1,14 @@
 // Event types arriving as JSONL on stdin
 
+export interface RecentEvent {
+  /** Wall-clock timestamp in milliseconds (Date.now()) for cheap formatting. */
+  ts: number;
+  /** Tool name from the upstream event (Read / Edit / Bash / etc.). */
+  tool: string;
+  /** Optional file path or input summary — already truncated by the parser. */
+  target?: string;
+}
+
 export type Phase = 'prd' | 'techspec' | 'tasks' | 'code' | 'tests' | 'pr';
 export type PhaseStatus = 'pending' | 'in_progress' | 'done' | 'failed';
 export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped' | 'deferred';
@@ -26,6 +35,9 @@ export interface Feature {
   /** Anthropic prompt-cache accounting (last phase). */
   cacheCreationTokens?: number;
   cacheReadTokens?: number;
+  /** Last N tool/file events for this feature — drives the FeatureCard
+   *  "Recent activity" tree. Newest at the end; reducer caps the length. */
+  recentEvents?: ReadonlyArray<RecentEvent>;
   estimatedTokens?: number;
   costUsd?: number;
   prUrl?: string;
