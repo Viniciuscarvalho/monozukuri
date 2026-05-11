@@ -174,6 +174,35 @@ sub_doctor() {
       "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
   fi
 
+  # Known-incompatible skills — warn (non-blocking) when config routes a phase
+  # to a skill that violates the monozukuri autonomy contract.
+  local _ki_sh="${LIB_DIR}/agent/known-incompatible.sh"
+  local _cfg=".monozukuri/config.yaml"
+  if [ -f "$_ki_sh" ] && [ -f "$_cfg" ]; then
+    # shellcheck source=../lib/agent/known-incompatible.sh
+    source "$_ki_sh"
+    # Extract phase → skill pairs from agents.claude-code.skills block.
+    # grep targets lines of the form "  <phase>: <skill-name>" (2-space indent).
+    local _ki_phase _ki_skill _ki_warned=0
+    while IFS=': ' read -r _ki_phase _ki_skill; do
+      _ki_phase="${_ki_phase##*( )}"   # strip leading spaces (bash 4 extglob)
+      _ki_skill="${_ki_skill%%[[:space:]]*}" # strip trailing spaces / comments
+      [ -z "$_ki_skill" ] && continue
+      if is_skill_known_incompatible "$_ki_skill"; then
+        local _ki_reason
+        _ki_reason=$(known_incompatible_reason "$_ki_skill")
+        printf "  %s~%s skill '%s' (phase '%s') is known incompatible: %s\n" \
+          "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}" \
+          "$_ki_skill" "$_ki_phase" "$_ki_reason" >&2
+        printf "    See: docs/adapter-contract.md#known-incompatible-skills\n" >&2
+        _ki_warned=$((_ki_warned + 1))
+      fi
+    done < <(grep -E '^\s+(prd|techspec|tasks|code|tests|pr):\s+\S' "$_cfg" 2>/dev/null || true)
+    if [ "$_ki_warned" -eq 0 ] && [ -f "$_cfg" ]; then
+      _doctor_pass "skill compatibility: no known-incompatible skills configured"
+    fi
+  fi
+
   echo ""
   if [ "$failed" -eq 0 ]; then
     printf "%s✓ All checks passed — ready to run%s\n" "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}"

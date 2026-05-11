@@ -9,10 +9,10 @@ Worktree: `{{MONOZUKURI_WORKTREE}}`
 
 ## Inputs
 
-- PRD: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/prd.md`
-- TechSpec: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/techspec.md`
-- Code summary: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/code.md`
-- Test summary: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/tests.md`
+- PRD: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/prd.md`
+- TechSpec: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/techspec.md`
+- Code summary: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/code.md`
+- Test summary: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/tests.md`
 
 ## Instructions
 
@@ -25,13 +25,13 @@ PR body must include:
 - **Summary**: 2–4 bullet points from the PRD Goal
 - **Changes**: what was built (from code.md)
 - **Tests**: results summary (from tests.md)
-- **Artifacts**: links to prd.md, techspec.md in the run directory
+- **Artifacts**: links to prd.md, techspec.md in `tasks/prd-{{MONOZUKURI_FEATURE_ID}}/`
 
 Use `gh pr create` or the platform's native PR API.
 
 ## Output contract
 
-Write `pr.md` to `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/pr.md` with:
+Write `pr.md` to `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/pr.md` with:
 
 - PR URL
 - PR number

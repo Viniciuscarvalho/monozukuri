@@ -378,7 +378,35 @@ and run `make test`.
 
 ---
 
-## 8. Schema versioning
+## 8. Known incompatible skills
+
+Some skills are confirmed to violate the monozukuri autonomy contract and MUST NOT be
+used under `MONOZUKURI_AUTONOMY=full_auto`. They are tracked in
+`lib/agent/known-incompatible.sh` and reported by `monozukuri doctor`.
+
+### `feature-marker`
+
+**Status:** Incompatible  
+**Reason:** External skill (`~/.claude/skills/feature-marker/`). Does not read
+`MONOZUKURI_INTERACTIVE` and will issue interactive prompts ("Proceed? [yes / change
+path]") even when the orchestrator sets `MONOZUKURI_INTERACTIVE=0`. Exits 0 after
+blocking, causing Bug 3 (false `phase.completed`).  
+**History:** See `docs/planning/path-b-historical.md` lines 218-229 for full background.  
+**Replacement:** Use the bundled mz-\* skills (`mz-create-prd`, `mz-create-techspec`,
+`mz-create-tasks`) which honor the contract.
+
+### Adding entries
+
+To register a new known-incompatible skill:
+
+1. Add a `case` entry to `is_skill_known_incompatible` in `lib/agent/known-incompatible.sh`.
+2. Add the human-readable explanation to `known_incompatible_reason` in the same file.
+3. Add the skill name and reason to the table above.
+4. `monozukuri doctor` picks it up automatically via the config scan.
+
+---
+
+## 9. Schema versioning
 
 Schemas follow SemVer in `schemas/CHANGELOG.md`:
 

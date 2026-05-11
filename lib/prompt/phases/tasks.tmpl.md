@@ -8,8 +8,8 @@ Autonomy level: **{{MONOZUKURI_AUTONOMY}}**
 
 ## Inputs
 
-- PRD: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/prd.md`
-- TechSpec: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/techspec.md`
+- PRD: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/prd.md`
+- TechSpec: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/techspec.md`
 
 ## Project conventions (learned from prior runs)
 
@@ -17,7 +17,7 @@ Autonomy level: **{{MONOZUKURI_AUTONOMY}}**
 
 ## Output contract
 
-Write `tasks.json` to `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/tasks.json` matching this schema. Return ONLY the JSON, no commentary.
+Write `tasks.json` to `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/tasks.json` matching this schema. Return ONLY the JSON, no commentary.
 
 Each task must:
 

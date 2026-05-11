@@ -9,8 +9,8 @@ Worktree: `{{MONOZUKURI_WORKTREE}}`
 
 ## Inputs
 
-- TechSpec: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/techspec.md`
-- Tasks: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/tasks.json`
+- TechSpec: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/techspec.md`
+- Tasks: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/tasks.json`
 
 ## Project conventions (learned from prior runs)
 
@@ -28,4 +28,4 @@ Work in the worktree at `{{MONOZUKURI_WORKTREE}}`. Do not modify files outside t
 
 ## Output contract
 
-After all tasks are complete, write a summary to `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/code.md` listing which tasks passed and which (if any) were skipped with reasons.
+After all tasks are complete, write a summary to `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/code.md` listing which tasks passed and which (if any) were skipped with reasons.

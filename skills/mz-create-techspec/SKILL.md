@@ -9,14 +9,14 @@ You are executing the **techspec** phase of monozukuri's autonomous feature loop
 
 ## Inputs available
 
-- PRD at `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/prd.md` — every FR and NFR must be addressed
+- PRD at `$MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/prd.md` — every FR and NFR must be addressed
 - Project conventions — from `CLAUDE.md`, `AGENTS.md`, or the monozukuri learning store
 - The template at `references/techspec-template.md` — authoritative for section structure
 - The validation rules at `references/techspec-validation.md`
 
 ## Output contract
 
-Write the TechSpec to `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/techspec.md`.
+Write the TechSpec to `$MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/techspec.md`.
 
 The file MUST satisfy `references/techspec-validation.md`. The validator runs immediately after; failures trigger a reprompt.
 

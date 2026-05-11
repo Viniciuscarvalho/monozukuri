@@ -9,8 +9,8 @@ Worktree: `{{MONOZUKURI_WORKTREE}}`
 
 ## Inputs
 
-- TechSpec test plan: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/techspec.md` (§ Test Plan)
-- Code summary: `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/code.md`
+- TechSpec test plan: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/techspec.md` (§ Test Plan)
+- Code summary: `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/code.md`
 
 ## Project conventions (learned from prior runs)
 
@@ -27,7 +27,7 @@ Work in the worktree at `{{MONOZUKURI_WORKTREE}}`.
 
 ## Output contract
 
-Write `tests.md` to `{{MONOZUKURI_RUN_DIR}}/{{MONOZUKURI_FEATURE_ID}}/tests.md` with:
+Write `tests.md` to `{{MONOZUKURI_WORKTREE}}/tasks/prd-{{MONOZUKURI_FEATURE_ID}}/tests.md` with:
 
 - total tests run
 - tests added in this phase
