@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.46.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.2...v1.46.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* **run:** cycle-gate skips feature instead of aborting run + TUI unified grid ([#193](https://github.com/Viniciuscarvalho/monozukuri/issues/193)) ([a86dcc4](https://github.com/Viniciuscarvalho/monozukuri/commit/a86dcc449eab15d99176b78ac9b35e2c3775cfc2))
+
 ## [1.46.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.1...v1.46.2) (2026-05-11)
 
 
