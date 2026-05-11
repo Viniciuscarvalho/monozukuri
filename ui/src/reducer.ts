@@ -179,16 +179,67 @@ export function reducer(state: AppState, event: MonozukuriEvent): AppState {
     }
 
     case 'phase.completed': {
-      const { feature_id, phase, tokens_used, cost_usd } = event;
+      const {
+        feature_id,
+        phase,
+        tokens_used,
+        cost_usd,
+        tokens_in,
+        tokens_out,
+        tokens_total,
+        cache_creation_input_tokens,
+        cache_read_input_tokens,
+      } = event;
       const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
       const phases = { ...prev.phases, [phase]: 'done' as PhaseStatus };
+      // Prefer the new fine-grained counters from stream-parse; fall back to
+      // the legacy `tokens_used` aggregate when older producers emit only that.
+      const resolvedTokens = tokens_total ?? tokens_used ?? prev.tokens;
       const features = {
         ...state.features,
         [feature_id]: {
           ...prev,
           phases,
-          tokens: tokens_used,
+          tokens: resolvedTokens,
+          tokensIn: tokens_in ?? prev.tokensIn,
+          tokensOut: tokens_out ?? prev.tokensOut,
+          tokensTotal: tokens_total ?? prev.tokensTotal,
+          cacheCreationTokens: cache_creation_input_tokens ?? prev.cacheCreationTokens,
+          cacheReadTokens: cache_read_input_tokens ?? prev.cacheReadTokens,
           costUsd: (prev.costUsd ?? 0) + (cost_usd ?? 0),
+          // Phase ended — clear the live rate so the UI stops showing it.
+          tokenRate: undefined,
+          tokensSampledAt: undefined,
+        },
+      };
+      return { ...state, features };
+    }
+
+    case 'phase.token_update': {
+      const { feature_id, tokens_out, tokens_in } = event;
+      const prev = state.features[feature_id] ?? makeDefaultFeature(feature_id, feature_id);
+      const now = Date.now();
+      // Compute tokens-per-minute by diffing against the previous sample.
+      // Only meaningful when we have a prior sample within a 60s window.
+      let tokenRate = prev.tokenRate;
+      if (
+        typeof prev.tokensOut === 'number' &&
+        typeof prev.tokensSampledAt === 'number'
+      ) {
+        const dtMs = now - prev.tokensSampledAt;
+        const dTokens = tokens_out - prev.tokensOut;
+        if (dtMs > 0 && dtMs < 60_000 && dTokens > 0) {
+          tokenRate = (dTokens / dtMs) * 60_000;
+        }
+      }
+      const features = {
+        ...state.features,
+        [feature_id]: {
+          ...prev,
+          tokensOut: tokens_out,
+          tokensIn: tokens_in ?? prev.tokensIn,
+          tokensSampledAt: now,
+          tokenRate,
         },
       };
       return { ...state, features };
