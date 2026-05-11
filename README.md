@@ -698,6 +698,39 @@ npm test
 
 ---
 
+## Release channels
+
+Monozukuri ships two channels: **stable** (default) and **next** (RC). New features land in `@next` first, soak for 48 hours, then promote to stable.
+
+| Channel | npm tag   | Homebrew formula  | Who should use it           |
+| ------- | --------- | ----------------- | --------------------------- |
+| Stable  | `@latest` | `monozukuri`      | Everyone                    |
+| RC      | `@next`   | `monozukuri-next` | Early testers, contributors |
+
+### Install stable (recommended)
+
+```bash
+brew install viniciuscarvalho/tap/monozukuri
+# or
+npm install -g @viniciuscarvalho/monozukuri
+```
+
+### Install the RC channel
+
+```bash
+brew install viniciuscarvalho/tap/monozukuri-next
+# or
+npm install -g @viniciuscarvalho/monozukuri@next
+```
+
+> **Note:** `monozukuri` and `monozukuri-next` conflict — they share the same binary name. Run `brew uninstall monozukuri` before installing `monozukuri-next` (and vice versa).
+
+RC versions follow `X.Y.Z-rc.N` semver. They are pre-release GitHub releases and publish to `@next` on npm. `@latest` always points to the most recent stable.
+
+See [`docs/release-process.md`](docs/release-process.md) for the promotion and hotfix flows.
+
+---
+
 ## Contributing
 
 1. Fork and clone the repo
