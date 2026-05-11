@@ -237,6 +237,27 @@ _render_simple_vars() {
 #   - Otherwise → legacy sed substitution of MONOZUKURI_* env vars
 # ---------------------------------------------------------------------------
 
+# _render_enrich_from_env CTX_JSON — merge all MONOZUKURI_* env vars into a
+# context JSON string. Existing context keys take precedence (patch + ctx,
+# right-side wins in jq object addition). Emits the enriched JSON on stdout.
+_render_enrich_from_env() {
+  local ctx="$1"
+  local args=() jq_obj="{"  sep=""
+  local var
+  while IFS= read -r var; do
+    [[ -z "$var" ]] && continue
+    args+=(--arg "$var" "${!var:-}")
+    jq_obj+="${sep}\"${var}\":\$${var}"
+    sep=","
+  done < <(compgen -v | grep '^MONOZUKURI_')
+  jq_obj+="}"
+  if [[ "$jq_obj" == "{}" ]]; then
+    printf '%s' "$ctx"
+    return
+  fi
+  jq -n "${args[@]}" --argjson ctx "$ctx" "${jq_obj} + \$ctx"
+}
+
 # _render_sed_escape VAL — escapes a value for safe insertion into a sed s|...|RHS|
 _render_sed_escape() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/|/\\|/g'
@@ -267,7 +288,12 @@ render_phase_prompt() {
   local _rendered
   # Rich rendering path: jq-based when CONTEXT_JSON is set
   if [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
-    _rendered=$(monozukuri_render "$tmpl" "$CONTEXT_JSON") || return $?
+    # Pre-render: substitui MONOZUKURI_* vars do ambiente no contexto para que
+    # tokens como {{MONOZUKURI_WORKTREE}} resolvam mesmo que context_pack_build
+    # não os inclua. Chaves já presentes no contexto têm precedência.
+    local _ctx_enriched
+    _ctx_enriched=$(_render_enrich_from_env "$(cat "${CONTEXT_JSON}")")
+    _rendered=$(monozukuri_render "$tmpl" - <<<"$_ctx_enriched") || return $?
   else
     # Legacy sed rendering path (backward compat — no context pack)
     _rendered=$(sed \
