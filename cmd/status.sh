@@ -37,8 +37,20 @@ sub_status() {
     done
     local joined
     joined=$(printf '%s,' "${json_parts[@]}" | sed 's/,$//')
-    printf '{"features":[%s],"summary":{"total":%d,"done":%d,"pr":%d,"ready":%d,"failed":%d}}\n' \
-      "$joined" "$total" "$done_n" "$pr_n" "$ready_n" "$failed_n"
+
+    local skills_json='null'
+    if [ -f "$CONFIG_DIR/skills-manifest.json" ]; then
+      skills_json=$(node -e "
+        const m = JSON.parse(require('fs').readFileSync('$CONFIG_DIR/skills-manifest.json','utf-8'));
+        const skills = m.skills || [];
+        const proj = skills.filter(s => s.scope === 'project').length;
+        const glob = skills.filter(s => s.scope === 'global').length;
+        process.stdout.write(JSON.stringify({total: skills.length, project: proj, global: glob}));
+      " 2>/dev/null || echo 'null')
+    fi
+
+    printf '{"features":[%s],"summary":{"total":%d,"done":%d,"pr":%d,"ready":%d,"failed":%d},"skills":%s}\n' \
+      "$joined" "$total" "$done_n" "$pr_n" "$ready_n" "$failed_n" "$skills_json"
     exit 0
   fi
 
@@ -71,5 +83,13 @@ sub_status() {
     agent_count=$(node -p "JSON.parse(require('fs').readFileSync('$CONFIG_DIR/agents-manifest.json','utf-8')).agents.length" 2>/dev/null || echo "0")
     echo ""
     info "Discovered agents: $agent_count"
+  fi
+
+  if [ -f "$CONFIG_DIR/skills-manifest.json" ]; then
+    local skill_total skill_proj skill_glob
+    skill_total=$(node -p "JSON.parse(require('fs').readFileSync('$CONFIG_DIR/skills-manifest.json','utf-8')).skills.length" 2>/dev/null || echo "0")
+    skill_proj=$(node -p "JSON.parse(require('fs').readFileSync('$CONFIG_DIR/skills-manifest.json','utf-8')).skills.filter(s=>s.scope==='project').length" 2>/dev/null || echo "0")
+    skill_glob=$(node -p "JSON.parse(require('fs').readFileSync('$CONFIG_DIR/skills-manifest.json','utf-8')).skills.filter(s=>s.scope==='global').length" 2>/dev/null || echo "0")
+    info "Discovered skills: $skill_total ($skill_proj project, $skill_glob global)"
   fi
 }
