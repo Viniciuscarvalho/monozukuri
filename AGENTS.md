@@ -61,19 +61,19 @@ Layer 6 of the release gate (`.qa/layers/06-scale-soak.sh`) is the machine-reada
 
 ## Key env vars
 
-| Variable                          | Purpose                                                              |
-| --------------------------------- | -------------------------------------------------------------------- |
-| `MONOZUKURI_HOME`                 | Set by wrappers; points to install root (contains `lib/`, `cmd/`)    |
-| `MONOZUKURI_AUTONOMY`             | `supervised` \| `checkpoint` \| `full_auto` (default: `checkpoint`)  |
-| `ANTHROPIC_MODEL`                 | Override model (highest precedence over config)                      |
-| `LINEAR_API_KEY`                  | Required when `source.adapter: linear`                               |
-| `SKILL_TIMEOUT_SECONDS`           | Wall-clock cap per adapter call (default 1800; codex/gemini/kiro)    |
-| `MONOZUKURI_SCHEMA_MAX_REPROMPTS` | Schema fix reprompts before pausing (default 3)                      |
-| `MONOZUKURI_MAX_FEATURE_TOKENS`   | Token-spend ceiling per feature (default 80 000; claude-code only)   |
-| `MAX_RETRIES`                     | Feature-level retry attempts before marking failed (default 2)       |
-| `MONOZUKURI_SKIP_LIVE_CANARY`     | `1` in CI — skip Layer 5 (live `claude` call)                        |
-| `MONOZUKURI_SKIP_SCALE_SOAK_LIVE` | `1` in CI — skip live variant of Layer 6                             |
-| `MONOZUKURI_SKIP_CONFORMANCE`     | `1` in CI — skip Layer 7 (replay-vs-live drift check)                |
+| Variable                          | Purpose                                                             |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `MONOZUKURI_HOME`                 | Set by wrappers; points to install root (contains `lib/`, `cmd/`)   |
+| `MONOZUKURI_AUTONOMY`             | `supervised` \| `checkpoint` \| `full_auto` (default: `checkpoint`) |
+| `ANTHROPIC_MODEL`                 | Override model (highest precedence over config)                     |
+| `LINEAR_API_KEY`                  | Required when `source.adapter: linear`                              |
+| `SKILL_TIMEOUT_SECONDS`           | Wall-clock cap per adapter call (default 1800; codex/gemini/kiro)   |
+| `MONOZUKURI_SCHEMA_MAX_REPROMPTS` | Schema fix reprompts before pausing (default 3)                     |
+| `MONOZUKURI_MAX_FEATURE_TOKENS`   | Token-spend ceiling per feature (default 80 000; claude-code only)  |
+| `MAX_RETRIES`                     | Feature-level retry attempts before marking failed (default 2)      |
+| `MONOZUKURI_SKIP_LIVE_CANARY`     | `1` in CI — skip Layer 5 (live `claude` call)                       |
+| `MONOZUKURI_SKIP_SCALE_SOAK_LIVE` | `1` in CI — skip live variant of Layer 6                            |
+| `MONOZUKURI_SKIP_CONFORMANCE`     | `1` in CI — skip Layer 7 (replay-vs-live drift check)               |
 
 `SKILL_COMMAND` is deprecated and maps to `agents.claude-code.skills.<phase>` via the back-compat shim in `lib/config/load.sh`.
 
@@ -115,6 +115,8 @@ Accepted heading aliases:
 ### Full_auto contract is sacred
 
 When `MONOZUKURI_AUTONOMY=full_auto`, skills must NEVER ask for human input. Make a defensible default, document the assumption in `## Open Questions`, and proceed. If you find a code path that asks for input in full_auto, that's a bug — fix the path, don't soften the contract.
+
+For the current list of external skills confirmed to violate this contract, see [`docs/adapter-contract.md#known-incompatible-skills`](docs/adapter-contract.md#8-known-incompatible-skills). `monozukuri doctor` warns when any of these are active in `.monozukuri/config.yaml`.
 
 ### Reuse existing systems — don't reinvent
 
@@ -198,7 +200,7 @@ Common scopes from history: `cli`, `core`, `agent`, `prompt`, `run`, `memory`, `
 
 - **Run all tests:** `make test` (or `bats test/unit test/integration test/conformance test/properties`)
 - **Run only property tests:** `make test-properties` (free, fast — no API calls)
-- **Lint:** `make lint`  •  **Format:** `make fmt` (shfmt -w -i 2)
+- **Lint:** `make lint` • **Format:** `make fmt` (shfmt -w -i 2)
 - **Build TUI:** `npm run build --prefix ui`
 - **Release gate locally (CI-equivalent):** `MONOZUKURI_SKIP_LIVE_CANARY=1 MONOZUKURI_SKIP_SCALE_SOAK_LIVE=1 MONOZUKURI_SKIP_CONFORMANCE=1 .qa/release-gate.sh v1.0.0-rc.X`
 - **Re-record mock fixtures:** `make rerecord-fixtures` (LOCAL ONLY — ~$0.50/agent)
