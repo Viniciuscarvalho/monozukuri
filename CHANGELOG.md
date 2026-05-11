@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.45.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.45.0...v1.45.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* **agent:** align mz-* skills with ADR-008 artifact path ([47c2409](https://github.com/Viniciuscarvalho/monozukuri/commit/47c2409c7cfe679ecd9c0bdc4a4f5d593696462b))
+* **agent:** warn on known-incompatible skills in doctor ([33f5a04](https://github.com/Viniciuscarvalho/monozukuri/commit/33f5a049d46af07f9428ad07d336c75654dd9809))
+* **run:** add worktree-diff gate to code phase ([0a53dba](https://github.com/Viniciuscarvalho/monozukuri/commit/0a53dbaf6e1f5b35028218957fe7554daf9c3158))
+
 ## [1.45.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.44.0...v1.45.0) (2026-05-11)
 
 
