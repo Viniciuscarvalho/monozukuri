@@ -11,6 +11,21 @@ export interface Feature {
   phases: Record<Phase, PhaseStatus>;
   currentPhase?: Phase;
   tokens?: number;
+  /** Cumulative output tokens for the current/most-recent phase
+   *  (from phase.token_update / phase.completed). */
+  tokensOut?: number;
+  /** Input tokens (most recent observation). */
+  tokensIn?: number;
+  /** tokens_in + tokens_out — set on phase.completed. */
+  tokensTotal?: number;
+  /** Wall-clock timestamp (ms) of the most recent token_update; lets the UI
+   *  compute a rate by diffing against the prior sample. */
+  tokensSampledAt?: number;
+  /** Rate in tokens/minute, computed by the reducer on each token_update. */
+  tokenRate?: number;
+  /** Anthropic prompt-cache accounting (last phase). */
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
   estimatedTokens?: number;
   costUsd?: number;
   prUrl?: string;
@@ -115,9 +130,27 @@ export interface PhaseCompletedEvent extends BaseEvent {
   type: 'phase.completed';
   feature_id: string;
   phase: Phase;
-  duration_ms: number;
-  tokens_used: number;
-  cost_usd: number;
+  duration_ms?: number;
+  tokens_used?: number;
+  cost_usd?: number;
+  /** Extended fields emitted by lib/cli/stream-parse.sh (PR #176). All optional
+   *  for back-compat with older event producers. */
+  tokens_in?: number;
+  tokens_out?: number;
+  tokens_total?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+  had_token_telemetry?: boolean;
+}
+
+/** Incremental token-count update emitted by stream-parse during a phase.
+ *  Cumulative (monotonic) — `tokens_out` only increases. */
+export interface PhaseTokenUpdateEvent extends BaseEvent {
+  type: 'phase.token_update';
+  feature_id: string;
+  phase: Phase;
+  tokens_out: number;
+  tokens_in?: number;
 }
 
 export interface PhaseFailedEvent extends BaseEvent {
@@ -276,6 +309,7 @@ export type MonozukuriEvent =
   | PhaseStartedEvent
   | PhaseProgressEvent
   | PhaseCompletedEvent
+  | PhaseTokenUpdateEvent
   | PhaseFailedEvent
   | FeatureCompletedEvent
   | FeatureFailedEvent
