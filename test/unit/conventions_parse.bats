@@ -136,6 +136,26 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
+@test "GEMINI.md is in the scan order alongside CLAUDE.md and AGENTS.md" {
+  tmpdir=$(mktemp -d)
+  printf '## Build\nmake build\n' > "$tmpdir/GEMINI.md"
+
+  result=$(read_project_conventions "$tmpdir")
+  rm -rf "$tmpdir"
+
+  jq -e 'length == 1 and .[0].source.file == "GEMINI.md"' <<<"$result"
+}
+
+@test "detected_sources lists GEMINI.md when present" {
+  tmpdir=$(mktemp -d)
+  printf '## Build\nmake build\n' > "$tmpdir/GEMINI.md"
+
+  result=$(conventions_detected_sources "$tmpdir")
+  rm -rf "$tmpdir"
+
+  [[ "$result" == *"GEMINI.md"* ]]
+}
+
 # ── context_pack_build integration ───────────────────────────────────────────
 
 @test "conventions appear in project_learnings in rendered context pack" {
