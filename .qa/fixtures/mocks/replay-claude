@@ -10,6 +10,8 @@
 #   auth-expired  Emit auth-error and exit 1 → adapter classifies as transient.
 #   diverge       Emit recording with one structural drift (drops a heading).
 #   build-fail    Replay normally but write no artifacts (silent failure shape).
+#   no-op-success Exit 0 immediately without touching the worktree — exercises
+#                 _pipe_verify_code_diff (worktree-diff gate).
 #
 # Also handles --version and `auth status` so agent_doctor passes.
 
@@ -65,6 +67,11 @@ Authentication required: OAuth token has expired.
 Please run `claude auth login` and retry.
 EOF
     exit 1
+    ;;
+  no-op-success)
+    # Simulate a skill that exits 0 without touching the worktree.
+    # Used to exercise _pipe_verify_code_diff (the worktree-diff gate).
+    exit 0
     ;;
 esac
 

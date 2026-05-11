@@ -72,6 +72,32 @@ _orchestrator_watcher_stop() {
   [ -n "$pid" ] && { kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; }
 }
 
+# _pipe_verify_code_diff <feat_id> <wt_path>
+# Returns 0 if the worktree has code changes; returns 21 (EXIT_AGENT_BLOCKED) if
+# the agent exited 0 without writing anything — indicating it blocked on a prompt
+# or produced a no-op. Sets MONOZUKURI_BLOCKER_REASON=no-artifact-produced.
+_pipe_verify_code_diff() {
+  local feat_id="$1" wt_path="$2"
+  local base_sha changed untracked
+  base_sha=$(git -C "$wt_path" merge-base HEAD "${BASE_BRANCH:-main}" 2>/dev/null \
+    || git -C "$wt_path" rev-parse "${BASE_BRANCH:-main}" 2>/dev/null \
+    || echo "")
+  if [ -n "$base_sha" ]; then
+    changed=$(git -C "$wt_path" diff --name-only "$base_sha" HEAD 2>/dev/null || echo "")
+  else
+    changed=$(git -C "$wt_path" diff --name-only HEAD 2>/dev/null || echo "")
+  fi
+  # Exclude .monozukuri/ internal state from the "has the agent done anything?" check
+  untracked=$(git -C "$wt_path" ls-files --others --exclude-standard 2>/dev/null \
+    | grep -v '^\.monozukuri/' || echo "")
+  if [ -z "$changed" ] && [ -z "$untracked" ]; then
+    export MONOZUKURI_BLOCKER_REASON="no-artifact-produced"
+    warn "$feat_id: code phase exited 0 but worktree is unchanged — agent may have blocked on interactive input or performed no work"
+    return 21
+  fi
+  return 0
+}
+
 # ── run_backlog ───────────────────────────────────────────────────────────────
 
 run_backlog() {
@@ -678,6 +704,12 @@ EOPRD
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
 
+  # Defensive gate: Code phase must produce file changes in the worktree.
+  # Catches skills that exit 0 without writing code (e.g. blocked on interactive prompt).
+  if [ "$exit_code" -eq 0 ]; then
+    _pipe_verify_code_diff "$feat_id" "$wt_path" || exit_code=$?
+  fi
+
   if [ "$exit_code" -eq 0 ]; then
     monozukuri_emit phase.completed feature_id "$feat_id" phase "code" duration_ms 0 tokens_used 0 cost_usd 0
   elif [ "$exit_code" -ne 21 ] && [ "$exit_code" -ne 15 ]; then
@@ -691,12 +723,16 @@ EOPRD
     done
   fi
 
-  # EXIT_AGENT_BLOCKED (21): agent exited cleanly but embedded a human-input marker.
+  # EXIT_AGENT_BLOCKED (21): agent exited cleanly but embedded a human-input marker,
+  # OR the worktree-diff gate detected no file changes (MONOZUKURI_BLOCKER_REASON=no-artifact-produced).
   # Pause immediately — do not run validation gates or phase 3 on a blocked feature.
   if [ "$exit_code" -eq 21 ]; then
+    local _blocker_reason="${MONOZUKURI_BLOCKER_REASON:-blocker-marker-matched}"
+    unset MONOZUKURI_BLOCKER_REASON
     fstate_transition "$feat_id" "paused" "agent-blocker"
     fstate_record_pause "$feat_id" "human" "agent-blocker"
-    info "Paused: $feat_id — agent requested human input (see run log: $log_file)"
+    monozukuri_emit feature.paused feature_id "$feat_id" reason "$_blocker_reason" recoverable 1
+    info "Paused: $feat_id — $_blocker_reason (see run log: $log_file)"
     return 0
   fi
 
