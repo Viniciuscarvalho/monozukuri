@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { writeFileSync } from 'node:fs';
 import { Box, Text, useStdout } from 'ink';
 import { cleanup } from './runtime.js';
+import { tokens } from './tokens.js';
 import { Header } from './components/Header.js';
 import { FeatureCard } from './components/FeatureCard.js';
 import { FeatureList } from './components/FeatureList.js';
@@ -56,12 +57,12 @@ export default function App(): React.ReactElement {
   if (done) {
     return (
       <Box flexDirection="column" paddingY={1}>
-        <Text bold color="green">Run complete</Text>
+        <Text bold color={tokens.success}>Run complete</Text>
         <Text>
           {'  '}
-          <Text color="green">✓ {state.totals.succeeded} done</Text>
+          <Text color={tokens.success}>✓ {state.totals.succeeded} done</Text>
           {'  '}
-          <Text color="red">✗ {state.totals.failed} failed</Text>
+          <Text color={tokens.danger}>✗ {state.totals.failed} failed</Text>
           {'  '}
           <Text dimColor>~ {state.totals.skipped} skipped</Text>
         </Text>
