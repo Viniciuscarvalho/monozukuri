@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.46.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.1...v1.46.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* **prompt:** pre-render MONOZUKURI_* env vars into context before rich render ([#191](https://github.com/Viniciuscarvalho/monozukuri/issues/191)) ([a314a21](https://github.com/Viniciuscarvalho/monozukuri/commit/a314a213cefa30fbcff4891e9a3719c10a924b5b))
+
 ## [1.46.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.0...v1.46.1) (2026-05-11)
 
 
