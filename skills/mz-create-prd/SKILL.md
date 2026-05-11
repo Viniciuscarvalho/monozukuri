@@ -9,14 +9,14 @@ You are executing the **prd** phase of monozukuri's autonomous feature loop.
 
 ## Inputs available
 
-- Feature object (id, title, description, source ref) — provided via `MONOZUKURI_FEATURE_ID`, `MONOZUKURI_FEATURE_TITLE`, and `MONOZUKURI_RUN_DIR`
+- Feature object (id, title, description, source ref) — provided via `MONOZUKURI_FEATURE_ID`, `MONOZUKURI_FEATURE_TITLE`, and `MONOZUKURI_WORKTREE`
 - Project conventions — from `CLAUDE.md`, `AGENTS.md`, or the monozukuri learning store
 - The template at `references/prd-template.md` — this is authoritative for section structure
 - The validation rules at `references/prd-validation.md` — the validator checks against this
 
 ## Output contract
 
-Write the PRD to `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/prd.md`.
+Write the PRD to `$MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/prd.md`.
 
 The file MUST satisfy `references/prd-validation.md`. The validator (`lib/schema/validate.sh`) runs immediately after you finish; if it fails you will be reprompted with the specific error.
 
@@ -34,7 +34,7 @@ The file MUST satisfy `references/prd-validation.md`. The validator (`lib/schema
 3. Read `CLAUDE.md` and/or `AGENTS.md` if present in the repo root.
 4. If available, load project conventions from the monozukuri learning store.
 5. Render the template: fill each `{{PLACEHOLDER}}` from the feature inputs and project context.
-6. Write the rendered PRD to `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/prd.md`.
+6. Write the rendered PRD to `$MONOZUKURI_WORKTREE/tasks/prd-$MONOZUKURI_FEATURE_ID/prd.md`.
 7. Do not emit commentary before or after the PRD content.
 
 ## Workflow memory
