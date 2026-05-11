@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.41.0...v1.42.0) (2026-05-11)
+
+
+### Features
+
+* **run:** auto-invoke skill-discovery on session start ([#170](https://github.com/Viniciuscarvalho/monozukuri/issues/170)) ([0c57136](https://github.com/Viniciuscarvalho/monozukuri/commit/0c5713622106a9e23faac6023b836251f3c76857))
+
 ## [1.41.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.40.0...v1.41.0) (2026-05-11)
 
 
