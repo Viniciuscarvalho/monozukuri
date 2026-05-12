@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.47.1...v1.48.0) (2026-05-12)
+
+
+### Features
+
+* **tui:** visual polish pass — unified border, token enforcement, braille spinner ([#198](https://github.com/Viniciuscarvalho/monozukuri/issues/198)) ([5f43ae4](https://github.com/Viniciuscarvalho/monozukuri/commit/5f43ae45890966b19cce846285c182dba7675fac))
+
 ## [1.47.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.47.0...v1.47.1) (2026-05-12)
 
 
