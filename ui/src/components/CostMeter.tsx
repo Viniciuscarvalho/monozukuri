@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { tokens } from '../tokens.js';
 
 interface CostMeterProps {
   completed: number;
@@ -20,7 +21,7 @@ export function CostMeter({ completed, total, costUsd, budget, width }: CostMete
   const empty = barWidth - filled;
 
   const overBudget = budget > 0 && costUsd > budget;
-  const barColor = overBudget ? 'red' : 'green';
+  const barColor = overBudget ? tokens.danger : tokens.success;
 
   return (
     <Box>

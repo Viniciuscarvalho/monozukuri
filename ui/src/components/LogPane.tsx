@@ -1,21 +1,21 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { LogLine } from '../types.js';
+import { tokens } from '../tokens.js';
+import { LAYOUT } from '../lib/layout.js';
 
-type InkColor = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray';
-
-const PHASE_COLORS: Record<string, InkColor> = {
-  code: 'blue',
-  tests: 'yellow',
-  pr: 'cyan',
-  prd: 'magenta',
-  techspec: 'green',
-  tasks: 'white',
+const PHASE_LOG_COLOR: Record<string, string> = {
+  prd:      tokens.info,
+  techspec: tokens.warning,
+  tasks:    tokens.brand,
+  code:     tokens.success,
+  tests:    tokens.danger,
+  pr:       '#a78bfa',
 };
 
 interface LogPaneProps {
   log: LogLine[];
-  terminalWidth: number;
+  innerWidth: number;
 }
 
 function formatTime(ts: string): string {
@@ -36,36 +36,24 @@ function truncate(str: string, maxLen: number): string {
   return str.slice(0, maxLen - 1) + '…';
 }
 
-export function LogPane({ log, terminalWidth }: LogPaneProps): React.ReactElement {
+export function LogPane({ log, innerWidth }: LogPaneProps): React.ReactElement {
   const tail = log.slice(-12);
-  const maxTextLen = Math.max(20, terminalWidth - 42);
-
-  // Section header
-  const headerDashes = '─'.repeat(Math.max(0, terminalWidth - 16));
+  const maxTextLen = Math.max(20, innerWidth - LAYOUT.logChromeCols);
 
   return (
     <Box flexDirection="column">
-      {/* Section header */}
-      <Box>
-        <Text>├─ log (tail) </Text>
-        <Text dimColor>{headerDashes}</Text>
-        <Text>┤</Text>
-      </Box>
-
       {tail.length === 0 ? (
-        <Box>
-          <Text>│  </Text>
+        <Box paddingLeft={2}>
           <Text dimColor>(no log entries yet)</Text>
         </Box>
       ) : (
         tail.map((line, i) => {
           const time = formatTime(line.ts);
-          const phaseColor = PHASE_COLORS[line.phase] ?? 'white';
+          const phaseColor = PHASE_LOG_COLOR[line.phase] ?? tokens.muted;
           const text = truncate(line.text, maxTextLen);
 
           return (
-            <Box key={i}>
-              <Text>│  </Text>
+            <Box key={i} paddingLeft={2}>
               <Text dimColor>{time} </Text>
               <Text dimColor>{truncate(line.featureId, 10)}</Text>
               <Text>  </Text>

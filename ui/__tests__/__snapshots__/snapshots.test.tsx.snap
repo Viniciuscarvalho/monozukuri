@@ -1,18 +1,18 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`snapshots — FeatureCard renders active feature with tokensOut, rate, and activity tree 1`] = `
-" │ ▸ feat-005  Add greeting API endpoint  elapsed: 30s │
- │   ● PRD ● TechSpec ● Tasks ◐ Code ○ Tests ○ PR  │
- │   tokens: 2k / 5k est. · 4.2k/min │
- │   recent activity │
- │   ├─ 20s  Read src/index.ts │
- │   ├─ 10s  Edit src/api.ts │
- │   └─ 2s  Bash npm test │"
+"  ▸ feat-005  Add greeting API endpoint  elapsed: 30s
+  ● PRD ● TechSpec ● Tasks ◐ Code ○ Tests ○ PR
+  tokens: 2k / 5k est. · 4.2k/min   ⠋
+  recent activity
+  ├─ 20s  Read src/index.ts
+  ├─ 10s  Edit src/api.ts
+  └─ 2s  Bash npm test"
 `;
 
 exports[`snapshots — FeatureCard renders deferred feature without telemetry 1`] = `
-" │ ⏸  feat-009  Refactor auth module │
- │   deferred: size gate exceeded — 1200 LOC > 800 cap │"
+"  ⏸  feat-009  Refactor auth module
+  deferred: size gate exceeded — 1200 LOC > 800 cap"
 `;
 
 exports[`snapshots — FeatureCard renders waiting card when feature is null 1`] = `
@@ -22,29 +22,24 @@ exports[`snapshots — FeatureCard renders waiting card when feature is null 1`]
 `;
 
 exports[`snapshots — FeatureList renders a small backlog with mixed statuses 1`] = `
-"├─ features ────────────────────────────────────────────────────────────────┤
-│  ✓ feat-001            Add error logging                ○○○○○○  done │
-│  ✓ feat-002            Add input validation             ○○○○○○  done │
-│  ▶  feat-003            Add greeting custom              ○○○○○○  active │
-│  ○ feat-004            Add config loading               ○○○○○○  queued │"
-`;
-
-exports[`snapshots — Footer renders minimal 3-key footer at width=80 1`] = `
-"│ q quit · p pause · ? help                                                    │
-└──────────────────────────────────────────────────────────────────────────────┘"
+"  ✓ feat-001            Add error logging    ○○○○○○  done
+  ✓ feat-002            Add input validati…  ○○○○○○  done
+  ▶  feat-003            Add greeting custo…  ○○○○○○  active
+  ○ feat-004            Add config loading   ○○○○○○  queued"
 `;
 
 exports[`snapshots — Header renders default header at width=80 1`] = `
-"┌─ monozukuri ──────────────────────────────────────────────────── run abc123de ──┐
- │ autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown │
- │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 / 0  $0.00 / $40.00 budget │"
+"  monozukuri ──────────────────────────────────────────────────── run abc123de
+  autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 / 0  $0.00 / $40.00 budget"
 `;
 
 exports[`snapshots — Header renders header at width=120 (wide terminal) 1`] = `
-"┌ monozukur─────────────────────────────────────────────────────────────────────────── run       ──┐
-           ────────────────                                                           abc123de
-
- │ autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown │
- │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 / 0  $0.00 / $40.00     │
-    ░░░░░░░░                                                                  budget"
+"  monozukur───────────────────────────────────────────────────────────────────────────── run
+           ──────────────                                                               abc123de
+  autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 /   $0.00 / $40.00
+  ░░░░░░                                                                      budget"
 `;
+
+exports[`snapshots — footer sep renders minimal 3-key footer separator at width=78 1`] = `"── q quit · p pause · ? help ─────────────────────────────────────────────────"`;

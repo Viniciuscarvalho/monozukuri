@@ -1,17 +1,16 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`composite — full TUI render with all five PRs applied captures the full Header + FeatureCard + Footer stack with live telemetry 1`] = `
-"┌─ monozukuri ──────────────────────────────────────────────────────────── run run-abc1 ──┐
- │ autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown │
- │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 / 0  $0.00 / $40.00 budget │
- │ ▸ feat-005  Add greeting API endpoint  elapsed: 5m 53s │
- │   skill: mz-execute-task · tier project · mem: ok │
- │   ● PRD ● TechSpec ● Tasks ◐ Code ○ Tests ○ PR  │
- │   tokens: 2k / 5k est. · 4.2k/min   ⠋ Editing src/services/api.js │
- │   recent activity │
- │   ├─ 15s  Read src/services/api.js │
- │   ├─ 10s  Edit src/services/api.js │
- │   └─ 3s  Bash npm test │
-│ q quit · p pause · ? help                                                            │
-└──────────────────────────────────────────────────────────────────────────────────────┘"
+exports[`composite — full TUI render with all five PRs applied captures the full Header + FeatureCard + footer-sep stack with live telemetry 1`] = `
+"  monozukuri ──────────────────────────────────────────────────────────── run run-abc1
+  autonomy: checkpoint   model: claude-sonnet-4-6   agent: claude-code   source: markdown
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0 / 0  $0.00 / $40.00 budget
+  ▸ feat-005  Add greeting API endpoint  elapsed: 5m 53s
+  skill: mz-execute-task · tier project · mem: ok
+  ● PRD ● TechSpec ● Tasks ◐ Code ○ Tests ○ PR
+  tokens: 2k / 5k est. · 4.2k/min   ⠋
+  recent activity
+  ├─ 15s  Read src/services/api.js
+  ├─ 10s  Edit src/services/api.js
+  └─ 3s  Bash npm test
+── q quit · p pause · ? help ─────────────────────────────────────────────────────────"
 `;

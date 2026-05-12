@@ -6,21 +6,16 @@ import { tokens } from '../tokens.js';
 
 interface HeaderProps {
   state: AppState;
-  terminalWidth: number;
+  innerWidth: number;
 }
 
-export function Header({ state, terminalWidth }: HeaderProps): React.ReactElement {
+export function Header({ state, innerWidth }: HeaderProps): React.ReactElement {
   const { runId, autonomy, model, agent, source, featureCount, budget, features, totals } = state;
 
   const completed = totals.succeeded + totals.failed + totals.skipped;
   const totalCost = totals.costUsd;
 
-  // Build source label (e.g. "linear (team: FE)")
   const sourceLabel = source || 'unknown';
-
-  // Width of inner content area (terminal minus 2 for borders)
-  const innerWidth = Math.max(20, terminalWidth - 2);
-
   const runLabel = runId ? `run ${runId.slice(0, 8)}` : 'run —';
   const titleLeft = ' monozukuri ';
   const titleRight = ` ${runLabel} `;
@@ -28,32 +23,27 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
 
   return (
     <Box flexDirection="column">
-      {/* Top border with title */}
-      <Box>
-        <Text color={tokens.dim}>┌─</Text>
+      {/* Title row with run id */}
+      <Box paddingLeft={1}>
         <Text bold color={tokens.brand}>{titleLeft}</Text>
         <Text dimColor>{dashes}</Text>
-        <Text>{titleRight}</Text>
-        <Text>──┐</Text>
+        <Text color={tokens.dim}>{titleRight}</Text>
       </Box>
 
       {/* Metadata row */}
-      <Box paddingLeft={1} paddingRight={1}>
-        <Text>│</Text>
-        <Text> autonomy: </Text>
+      <Box paddingLeft={2}>
+        <Text color={tokens.dim}>autonomy: </Text>
         <Text color={tokens.brand}>{autonomy || '—'}</Text>
-        <Text>   model: </Text>
+        <Text color={tokens.dim}>   model: </Text>
         <Text color={tokens.warning}>{model || '—'}</Text>
-        <Text>   agent: </Text>
+        <Text color={tokens.dim}>   agent: </Text>
         <Text color={tokens.success}>{agent || '—'}</Text>
-        <Text>   source: </Text>
+        <Text color={tokens.dim}>   source: </Text>
         <Text color={tokens.info}>{sourceLabel}</Text>
-        <Text> │</Text>
       </Box>
 
       {/* Progress bar row */}
-      <Box paddingLeft={1}>
-        <Text>│  </Text>
+      <Box paddingLeft={2}>
         <CostMeter
           completed={completed}
           total={featureCount || Object.keys(features).length}
@@ -61,7 +51,6 @@ export function Header({ state, terminalWidth }: HeaderProps): React.ReactElemen
           budget={budget}
           width={innerWidth}
         />
-        <Text> │</Text>
       </Box>
     </Box>
   );

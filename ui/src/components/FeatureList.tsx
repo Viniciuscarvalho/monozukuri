@@ -1,12 +1,13 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { Feature, Phase, PhaseStatus } from '../types.js';
-import { statusColor, statusSymbol } from '../tokens.js';
+import { tokens, statusColor, statusSymbol } from '../tokens.js';
+import { LAYOUT } from '../lib/layout.js';
 
 interface FeatureListProps {
   features: Record<string, Feature>;
   order: string[];
-  terminalWidth?: number;
+  innerWidth?: number;
 }
 
 const PHASES: Phase[] = ['prd', 'techspec', 'tasks', 'code', 'tests', 'pr'];
@@ -19,10 +20,10 @@ function phaseChar(ps: PhaseStatus): string {
 }
 
 function phaseCharColor(ps: PhaseStatus): string {
-  if (ps === 'done') return '#31d58b';
-  if (ps === 'in_progress') return '#d6f24a';
-  if (ps === 'failed') return '#ff6b63';
-  return '#57534e';
+  if (ps === 'done') return tokens.success;
+  if (ps === 'in_progress') return tokens.brand;
+  if (ps === 'failed') return tokens.danger;
+  return tokens.dim;
 }
 
 function truncate(str: string, maxLen: number): string {
@@ -45,36 +46,32 @@ function FeatureRow({ feature, titleLen }: FeatureRowProps): React.ReactElement 
   const icon = statusSymbol(status);
   const color = statusColor(status);
   const isActive = status === 'active';
-  const idLabel = pad(id, 18);
+  const idLabel = pad(id, LAYOUT.featureIdWidth);
   const titleLabel = pad(title || id, titleLen);
 
   return (
     <Box flexDirection="column">
-      <Box>
-        <Text>│  </Text>
+      <Box paddingLeft={2}>
         <Text color={color} bold={isActive}>{icon}{' '}</Text>
-        <Text color={isActive ? '#fafaf9' : '#a8a29e'}>{idLabel}</Text>
-        <Text color="#57534e">{'  '}</Text>
-        <Text color={isActive ? '#fafaf9' : '#a8a29e'}>{titleLabel}</Text>
-        <Text color="#57534e">{'  '}</Text>
+        <Text color={isActive ? tokens.textPrimary : tokens.textSecondary}>{idLabel}</Text>
+        <Text color={tokens.dim}>{'  '}</Text>
+        <Text color={isActive ? tokens.textPrimary : tokens.textSecondary}>{titleLabel}</Text>
+        <Text color={tokens.dim}>{'  '}</Text>
         {PHASES.map((ph) => {
           const ps: PhaseStatus = phases?.[ph] ?? 'pending';
           return (
             <Text key={ph} color={phaseCharColor(ps)}>{phaseChar(ps)}</Text>
           );
         })}
-        <Text color="#57534e">{'  '}</Text>
+        <Text color={tokens.dim}>{'  '}</Text>
         <Text color={color} bold={isActive}>{status}</Text>
         {isActive && currentPhase ? (
-          <Text color="#57534e"> [{currentPhase}]</Text>
+          <Text color={tokens.dim}> [{currentPhase}]</Text>
         ) : null}
-        <Text> │</Text>
       </Box>
       {(status === 'failed' || status === 'skipped' || status === 'pr_failed' || status === 'deferred') && error ? (
-        <Box>
-          <Text>│     </Text>
+        <Box paddingLeft={4}>
           <Text color={color} dimColor>{truncate(error, Math.max(10, titleLen + 20))}</Text>
-          <Text> │</Text>
         </Box>
       ) : null}
     </Box>
@@ -84,30 +81,19 @@ function FeatureRow({ feature, titleLen }: FeatureRowProps): React.ReactElement 
 export function FeatureList({
   features,
   order,
-  terminalWidth = 80,
+  innerWidth = 80,
 }: FeatureListProps): React.ReactElement {
   const all: Feature[] = order.map((id) => features[id]).filter(Boolean) as Feature[];
 
-  // Fixed columns: │  [icon] [id:18] [2sp] [title] [2sp] [dots:6] [2sp] [status] │
-  // Fixed cost: 3 + 2 + 18 + 2 + 2 + 6 + 2 + 12 + 2 = 49
-  const FIXED_COLS = 49;
-  const titleLen = Math.max(10, terminalWidth - FIXED_COLS);
-
-  const headerDashes = '─'.repeat(Math.max(0, terminalWidth - 16));
+  // Fixed columns: [icon+space:2] [id:18] [2sp] [title] [2sp] [dots:6] [2sp] [status:~12] = 44
+  const fixedCols = LAYOUT.featureIdWidth + LAYOUT.featureTitleWidth + 13;
+  const titleLen = Math.max(10, innerWidth - fixedCols);
 
   return (
     <Box flexDirection="column">
-      <Box>
-        <Text>├─ features </Text>
-        <Text dimColor>{headerDashes}</Text>
-        <Text>┤</Text>
-      </Box>
-
       {all.length === 0 ? (
-        <Box>
-          <Text>│  </Text>
+        <Box paddingLeft={2}>
           <Text dimColor>(no features loaded)</Text>
-          <Text> │</Text>
         </Box>
       ) : (
         all.map((f) => (

@@ -1,9 +1,11 @@
 import React from 'react';
+import { Text } from 'ink';
 import { render } from 'ink-testing-library';
 import { Header } from '../src/components/Header.js';
-import { Footer } from '../src/components/Footer.js';
 import { FeatureCard } from '../src/components/FeatureCard.js';
 import { FeatureList } from '../src/components/FeatureList.js';
+import { tokens } from '../src/tokens.js';
+import { sep } from '../src/lib/layout.js';
 import { initialState } from '../src/reducer.js';
 import type { Feature, Phase, PhaseStatus } from '../src/types.js';
 
@@ -30,29 +32,24 @@ describe('snapshots — Header', () => {
   };
 
   it('renders default header at width=80', () => {
-    const { lastFrame } = render(<Header state={baseState} terminalWidth={80} />);
+    const { lastFrame } = render(<Header state={baseState} innerWidth={78} />);
     expect(lastFrame()).toMatchSnapshot();
   });
 
   it('renders header at width=120 (wide terminal)', () => {
-    const { lastFrame } = render(<Header state={baseState} terminalWidth={120} />);
+    const { lastFrame } = render(<Header state={baseState} innerWidth={118} />);
     expect(lastFrame()).toMatchSnapshot();
   });
 });
 
-describe('snapshots — Footer', () => {
-  it('renders minimal 3-key footer at width=80', () => {
-    const { lastFrame } = render(<Footer terminalWidth={80} />);
-    expect(lastFrame()).toMatchSnapshot();
-  });
-
-  it('does not include verbose keybindings (l/f/search) after Day 5 trim', () => {
-    const { lastFrame } = render(<Footer terminalWidth={80} />);
+describe('snapshots — footer sep', () => {
+  it('renders minimal 3-key footer separator at width=78', () => {
+    const { lastFrame } = render(<Text color={tokens.dim}>{sep('q quit · p pause · ? help', 78)}</Text>);
     const frame = lastFrame() ?? '';
+    expect(frame).toMatchSnapshot();
     expect(frame).toContain('q quit');
     expect(frame).toContain('p pause');
     expect(frame).toContain('? help');
-    // Verbose keys deferred to a future help-overlay PR
     expect(frame).not.toContain('learnings');
     expect(frame).not.toContain('filter');
     expect(frame).not.toContain('search');
@@ -61,7 +58,7 @@ describe('snapshots — Footer', () => {
 
 describe('snapshots — FeatureCard', () => {
   it('renders waiting card when feature is null', () => {
-    const { lastFrame } = render(<FeatureCard feature={null} spinner="" now={NOW} />);
+    const { lastFrame } = render(<FeatureCard feature={null} now={NOW} />);
     expect(lastFrame()).toMatchSnapshot();
   });
 
@@ -85,7 +82,7 @@ describe('snapshots — FeatureCard', () => {
         { ts: new Date('2026-05-11T10:00:28Z').getTime(), tool: 'Bash', target: 'npm test' },
       ],
     };
-    const { lastFrame } = render(<FeatureCard feature={f} spinner="" now={NOW} />);
+    const { lastFrame } = render(<FeatureCard feature={f} now={NOW} />);
     expect(lastFrame()).toMatchSnapshot();
   });
 
@@ -97,7 +94,7 @@ describe('snapshots — FeatureCard', () => {
       phases: pendingPhases,
       error: 'size gate exceeded — 1200 LOC > 800 cap',
     };
-    const { lastFrame } = render(<FeatureCard feature={f} spinner="" now={NOW} />);
+    const { lastFrame } = render(<FeatureCard feature={f} now={NOW} />);
     expect(lastFrame()).toMatchSnapshot();
   });
 });

@@ -1,35 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { writeFileSync } from 'node:fs';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Text } from 'ink';
 import { cleanup } from './runtime.js';
 import { tokens } from './tokens.js';
+import { useTerminalWidth, sep } from './lib/layout.js';
 import { Header } from './components/Header.js';
 import { FeatureCard } from './components/FeatureCard.js';
 import { FeatureList } from './components/FeatureList.js';
 import { LogPane } from './components/LogPane.js';
-import { Footer } from './components/Footer.js';
 import { SetupPanel } from './components/SetupPanel.js';
 import { useEventStream } from './hooks/useEventStream.js';
 import { useKeybindings } from './hooks/useKeybindings.js';
 import { useTicker } from './hooks/useTicker.js';
 import type { ViewMode } from './types.js';
 
-function Separator({ width }: { width: number }): React.ReactElement {
-  const dashes = '─'.repeat(Math.max(0, width - 2));
-  return (
-    <Box>
-      <Text>{'├' + dashes + '┤'}</Text>
-    </Box>
-  );
-}
-
 export default function App(): React.ReactElement {
   const [view, setView] = useState<ViewMode>('main');
   const [done, setDone] = useState(false);
   const state = useEventStream();
   const now = useTicker();
-  const { stdout } = useStdout();
-  const terminalWidth = stdout?.columns ?? 80;
+  const terminalWidth = useTerminalWidth();
+  const innerWidth = terminalWidth - 2;
 
   useKeybindings({ setView });
 
@@ -124,28 +115,15 @@ export default function App(): React.ReactElement {
   }
 
   return (
-    <Box flexDirection="column">
-      {/* Header: title bar + metadata + progress */}
-      <Header state={state} terminalWidth={terminalWidth} />
-
-      {/* Separator */}
-      <Separator width={terminalWidth} />
-
-      {/* Active feature card */}
-      <FeatureCard feature={currentFeature} spinner={state.spinner} now={now} />
-
-      {/* Queue + Done split pane */}
-      <FeatureList
-        features={state.features}
-        order={state.order}
-        terminalWidth={terminalWidth}
-      />
-
-      {/* Log tail */}
-      <LogPane log={state.log} terminalWidth={terminalWidth} />
-
-      {/* Footer */}
-      <Footer terminalWidth={terminalWidth} />
+    <Box borderStyle="round" borderColor={tokens.dim} width={terminalWidth} flexDirection="column">
+      <Header state={state} innerWidth={innerWidth} />
+      <Text color={tokens.dim}>{sep('active ▶', innerWidth)}</Text>
+      <FeatureCard feature={currentFeature} now={now} innerWidth={innerWidth} />
+      <Text color={tokens.dim}>{sep('queue', innerWidth)}</Text>
+      <FeatureList features={state.features} order={state.order} innerWidth={innerWidth} />
+      <Text color={tokens.dim}>{sep('log', innerWidth)}</Text>
+      <LogPane log={state.log} innerWidth={innerWidth} />
+      <Text color={tokens.dim}>{sep('q quit · p pause · ? help', innerWidth)}</Text>
     </Box>
   );
 }

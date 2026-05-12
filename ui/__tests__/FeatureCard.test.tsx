@@ -31,47 +31,51 @@ describe('FeatureCard', () => {
   const now = new Date('2026-04-27T10:01:30Z');
 
   it('renders waiting state for null feature', () => {
-    const { lastFrame } = render(<FeatureCard feature={null} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={null}  now={now} />);
     expect(lastFrame() ?? '').toContain('waiting');
   });
 
   it('renders active feature title and id', () => {
-    const { lastFrame } = render(<FeatureCard feature={activeFeature} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={activeFeature}  now={now} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('feat-001');
     expect(frame).toContain('Add login page');
   });
 
   it('renders elapsed time for active feature', () => {
-    const { lastFrame } = render(<FeatureCard feature={activeFeature} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={activeFeature}  now={now} />);
     expect(lastFrame() ?? '').toContain('elapsed:');
   });
 
   it('renders token count', () => {
-    const { lastFrame } = render(<FeatureCard feature={activeFeature} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={activeFeature}  now={now} />);
     expect(lastFrame() ?? '').toContain('tokens:');
     // formatTokens rounds 1500 → 2k
     expect(lastFrame() ?? '').toContain('2k');
   });
 
   it('renders phase timeline', () => {
-    const { lastFrame } = render(<FeatureCard feature={activeFeature} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={activeFeature}  now={now} />);
     expect(lastFrame() ?? '').toContain('◐');
   });
 
   it('renders deferred feature with reason', () => {
-    const { lastFrame } = render(<FeatureCard feature={deferredFeature} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={deferredFeature}  now={now} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('feat-002');
     expect(frame).toContain('deferred');
     expect(frame).toContain('size gate exceeded');
   });
 
-  it('renders spinner text when provided', () => {
+  it('renders braille spinner for active feature', () => {
     const { lastFrame } = render(
-      <FeatureCard feature={activeFeature} spinner="Implementing src/auth.ts" now={now} />
+      <FeatureCard feature={activeFeature} now={now} />
     );
-    expect(lastFrame() ?? '').toContain('Implementing');
+    // Active features show a braille spinner frame; status='active' qualifies
+    const frame = lastFrame() ?? '';
+    // At least one of the braille chars should appear
+    const brailleChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    expect(brailleChars.some(ch => frame.includes(ch))).toBe(true);
   });
 });
 
@@ -96,26 +100,26 @@ describe('FeatureCard — Day 4 telemetry', () => {
   };
 
   it('renders live tokensOut from phase.token_update', () => {
-    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry}  now={now} />);
     const frame = lastFrame() ?? '';
     // formatTokens(1840) → "2k"
     expect(frame).toContain('2k');
   });
 
   it('renders tokens/min rate when tokenRate is set', () => {
-    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry}  now={now} />);
     // formatRate(4200) → "4.2k/min"
     expect(lastFrame() ?? '').toContain('4.2k/min');
   });
 
   it('omits rate when tokenRate is undefined', () => {
     const f = { ...featureWithTelemetry, tokenRate: undefined };
-    const { lastFrame } = render(<FeatureCard feature={f} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={f}  now={now} />);
     expect(lastFrame() ?? '').not.toContain('/min');
   });
 
   it('renders recent activity tree with last 3 events', () => {
-    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={featureWithTelemetry}  now={now} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('recent activity');
     expect(frame).toContain('Read');
@@ -127,7 +131,7 @@ describe('FeatureCard — Day 4 telemetry', () => {
 
   it('omits recent activity section when no events present', () => {
     const f = { ...featureWithTelemetry, recentEvents: [] };
-    const { lastFrame } = render(<FeatureCard feature={f} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={f}  now={now} />);
     expect(lastFrame() ?? '').not.toContain('recent activity');
   });
 
@@ -137,7 +141,7 @@ describe('FeatureCard — Day 4 telemetry', () => {
       tokensOut: undefined,
       tokens: 1500, // legacy field
     };
-    const { lastFrame } = render(<FeatureCard feature={f} spinner="" now={now} />);
+    const { lastFrame } = render(<FeatureCard feature={f}  now={now} />);
     expect(lastFrame() ?? '').toContain('2k'); // formatTokens(1500) → 2k
   });
 });
