@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`composite — full TUI render with all five PRs applied captures the full Header + FeatureCard + footer-sep stack with live telemetry 1`] = `
 "  monozukuri ──────────────────────────────────────────────────────────── run run-abc1
