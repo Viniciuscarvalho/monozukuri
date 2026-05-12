@@ -96,9 +96,9 @@ Recover in this order. Escalate only when the previous step does not resolve the
 
 **What you see.** A feature fails immediately with `skill: command not found`. No PRD is produced.
 
-**What it means.** The skill referenced in `config.yaml` under `skill.command` does not resolve as a Claude Code slash-command. Either the skill is not installed, or the name is misspelled.
+**What it means.** The skill referenced in `config.yaml` under `skill.command` cannot be resolved by the configured agent. Either the skill is not installed, or the name is misspelled.
 
-**What to do.** Confirm the skill is installed (`claude /list-commands` or equivalent for your Claude Code version). For Feature-marker specifically: `brew install feature-marker`. Update `skill.command` in `config.yaml` to the exact slash-command name without the leading slash.
+**What to do.** Confirm the skill or command is available for your configured agent — for Claude Code, run `claude /list-commands`; for Codex, Gemini, or Kiro, verify the rendered prompt is accessible. For Feature-marker specifically: `brew install feature-marker`. Update `skill.command` in `config.yaml` to the correct name.
 
 ### `gh` not authenticated
 
