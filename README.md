@@ -9,11 +9,9 @@
 
 ---
 
-<!-- CAPTURE: replace this line with the hero GIF.
-     Path: docs/assets/hero.gif
-     Recipe: docs/execution.md#recording-the-hero-asset -->
-
 ![Monozukuri in action](docs/assets/hero.gif)
+
+![Web dashboard — both features complete](docs/assets/dashboard.png)
 
 ## Quick start
 
