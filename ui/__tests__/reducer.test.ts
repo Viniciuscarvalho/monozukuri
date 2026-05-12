@@ -63,6 +63,8 @@ describe('reducer phase.token_update (PR #176 events)', () => {
       run_id: 'run-1',
       feature_id: FEAT_ID,
       title: 'test',
+      worktree_path: '.worktrees/feat-001',
+      branch: 'feat/feat-001',
     } as MonozukuriEvent);
     return state;
   };
@@ -161,6 +163,8 @@ describe('reducer phase.completed (PR #176 extended fields)', () => {
       run_id: 'run-1',
       feature_id: FEAT_ID,
       title: 'test',
+      worktree_path: '.worktrees/feat-001',
+      branch: 'feat/feat-001',
     } as MonozukuriEvent);
     return state;
   };
@@ -244,6 +248,8 @@ describe('reducer tool.invoked / file.touched (Day 4 activity tree)', () => {
       run_id: 'run-1',
       feature_id: FEAT_ID,
       title: 'test',
+      worktree_path: '.worktrees/feat-001',
+      branch: 'feat/feat-001',
     } as MonozukuriEvent);
     return state;
   };
