@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.1...v1.48.2) (2026-05-12)
+
+
+### Documentation
+
+* **assets:** add hero GIF and dashboard screenshot to README ([#203](https://github.com/Viniciuscarvalho/monozukuri/issues/203)) ([776ba4b](https://github.com/Viniciuscarvalho/monozukuri/commit/776ba4b1a4254d9e2d8ff8d2592248d86e6f3b51))
+
 ## [1.48.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.0...v1.48.1) (2026-05-12)
 
 
