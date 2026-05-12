@@ -58,11 +58,16 @@ jobs:
       - name: Run release gate
         if: steps.check.outputs.is_release == 'true'
         env:
-          MONOZUKURI_SKIP_LIVE_CANARY: "1"
+          # Layer 5 (live-canary) is enabled — runs one minimal claude --print
+          # call to verify API availability. Cost: ~$0.01 per release PR.
+          # Budget: secret MONOZUKURI_CI ($5 prepay).
+          ANTHROPIC_API_KEY: ${{ secrets.MONOZUKURI_CI }}
+
+          # Layer 6 live mode stays off — requires larger budget (~$5-15/run).
           MONOZUKURI_SKIP_SCALE_SOAK_LIVE: "1"
-          # Layer 7 makes live `claude --print` calls. Keep it off in CI to
-          # honour the zero-CI-cost discipline; maintainers run it locally
-          # pre-release via `make conformance` or an unset env var.
+
+          # Layer 7 (conformance) stays off — maintainers run locally
+          # via `make conformance` pre-release.
           MONOZUKURI_SKIP_CONFORMANCE: "1"
         run: .qa/release-gate.sh "${{ steps.version.outputs.version }}"
 
