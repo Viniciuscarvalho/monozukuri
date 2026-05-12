@@ -16,15 +16,15 @@ You can switch between levels by passing `--autonomy <level>` on the CLI or by s
 
 ## At a glance
 
-| Dimension                   | `supervised`                 | `checkpoint`                     | `full_auto`                     |
-| --------------------------- | ---------------------------- | -------------------------------- | ------------------------------- |
-| **Approval gates**          | After every phase            | After every PR (waits for merge) | None                            |
-| **Output channel**          | Ink TUI (interactive)        | Structured logs                  | Structured logs + web dashboard |
-| **Claude Code permissions** | Default (prompted)           | Default (prompted)               | `bypassPermissions`             |
-| **Default model**           | `opusplan`                   | `opusplan`                       | `opusplan`                      |
-| **Resumable**               | Yes                          | Yes                              | Yes                             |
-| **Unattended-safe**         | No                           | Partial — pauses on merge        | Yes                             |
-| **Typical use**             | Skill evaluation, first runs | Day-to-day delivery              | Overnight / large backlogs      |
+| Dimension             | `supervised`                 | `checkpoint`                     | `full_auto`                     |
+| --------------------- | ---------------------------- | -------------------------------- | ------------------------------- |
+| **Approval gates**    | After every phase            | After every PR (waits for merge) | None                            |
+| **Output channel**    | Ink TUI (interactive)        | Structured logs                  | Structured logs + web dashboard |
+| **Agent permissions** | Default (prompted)           | Default (prompted)               | Bypassed                        |
+| **Default model**     | `opusplan`                   | `opusplan`                       | `opusplan`                      |
+| **Resumable**         | Yes                          | Yes                              | Yes                             |
+| **Unattended-safe**   | No                           | Partial — pauses on merge        | Yes                             |
+| **Typical use**       | Skill evaluation, first runs | Day-to-day delivery              | Overnight / large backlogs      |
 
 ---
 
@@ -54,7 +54,7 @@ This is the default level. It assumes you want the agent to make progress while 
 
 ## Full auto
 
-`monozukuri run --autonomy full_auto` runs without any approval gates. It bypasses Claude Code permissions, opens the PR, and immediately starts the next feature without waiting for merge. A local web dashboard launches on `http://localhost:7878`<!-- CONFIRM: dashboard port --> for live progress.
+`monozukuri run --autonomy full_auto` runs without any approval gates. It bypasses the agent's permission gates, opens the PR, and immediately starts the next feature without waiting for merge. A local web dashboard launches on `http://localhost:7878`<!-- CONFIRM: dashboard port --> for live progress.
 
 This mode is the reason Monozukuri exists. It is also the mode with the highest blast radius — a misconfigured skill in `full_auto` can burn through the entire backlog before anyone notices. Treat the safeguards below as non-optional.
 

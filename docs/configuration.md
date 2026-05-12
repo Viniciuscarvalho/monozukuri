@@ -10,7 +10,7 @@ For the semantics of `autonomy:` see [autonomy.md](autonomy.md). For the recover
 
 ```yaml
 # .monozukuri/config.yaml
-skill: # which Claude Code skill executes each feature
+skill: # which skill or rendered prompt executes each feature
 source: # where the backlog comes from
 autonomy: # supervised | checkpoint | full_auto
 model: # which Claude model and routing policy
@@ -27,14 +27,14 @@ Every block has defaults. A minimal valid config only needs `skill`, `source`, a
 
 ```yaml
 skill:
-  command: feature-marker # any Claude Code slash-command, without the leading slash
+  command: feature-marker # slash-command (Claude Code) or rendered prompt name for other agents
   timeout_seconds: 1800 # max time a single skill invocation may run
   retry_on_timeout: false # whether to retry once if the skill hangs
 ```
 
-The `command` field is the slash-command Monozukuri invokes for each feature. The default is [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker), which runs the full PRD → TechSpec → Tasks → Code → Tests → PR pipeline inside Claude Code. Any custom skill that accepts a feature description and produces the same six artifacts will work — Monozukuri does not parse the skill's internal output beyond verifying the artifacts exist.
+The `command` field is the skill or prompt name Monozukuri invokes for each feature. The default is [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker), which runs the full PRD → TechSpec → Tasks → Code → Tests → PR pipeline. On Claude Code it runs as a native `mz-*` skill; on Codex, Gemini, and Kiro it runs as a rendered prompt injected by the orchestrator. Any skill that accepts a feature description and produces the same six artifacts will work — Monozukuri does not parse the skill's internal output beyond verifying the artifacts exist.
 
-You can also point this at a skill you wrote yourself, or even leave a well-tuned `CLAUDE.md` in your project and use a generic skill that follows it. The interface contract is documented under [adr/008-orchestrator-economy.md](adr/008-orchestrator-economy.md#skill-interface).
+You can also point this at a skill you wrote yourself, or even leave a well-tuned `AGENTS.md` in your project and use a generic skill that follows it. The interface contract is documented under [adr/008-orchestrator-economy.md](adr/008-orchestrator-economy.md#skill-interface).
 
 ---
 
@@ -162,13 +162,13 @@ See [ADR-008](adr/008-orchestrator-economy.md#three-tier-learning-store) for the
 
 A small number of settings live in the environment rather than in `config.yaml`, either because they are secrets or because they affect process behavior before the config is read.
 
-| Variable                | Purpose                                               | Required by                        |
-| ----------------------- | ----------------------------------------------------- | ---------------------------------- |
-| `LINEAR_API_KEY`        | Authenticates the Linear adapter                      | `source.adapter: linear`           |
-| `MONOZUKURI_MEMORY_DIR` | Overrides the location of the global learning store   | Optional                           |
-| `MONOZUKURI_LOG_LEVEL`  | `debug` / `info` / `warn` / `error` (default: `info`) | Optional                           |
-| `GH_TOKEN`              | GitHub auth, if `gh auth login` is not used           | `source.adapter: github`, PR phase |
-| `ANTHROPIC_API_KEY`     | Claude Code authentication                            | Always (via `claude` CLI)          |
+| Variable                | Purpose                                               | Required by                             |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------- |
+| `LINEAR_API_KEY`        | Authenticates the Linear adapter                      | `source.adapter: linear`                |
+| `MONOZUKURI_MEMORY_DIR` | Overrides the location of the global learning store   | Optional                                |
+| `MONOZUKURI_LOG_LEVEL`  | `debug` / `info` / `warn` / `error` (default: `info`) | Optional                                |
+| `GH_TOKEN`              | GitHub auth, if `gh auth login` is not used           | `source.adapter: github`, PR phase      |
+| `ANTHROPIC_API_KEY`     | Authentication for Claude Code agent                  | `agent: claude-code` (via `claude` CLI) |
 
 Keep secrets in `.env` (gitignored). The `.env` file is loaded by the orchestrator at startup; it does not need to be exported manually.
 

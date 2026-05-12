@@ -65,7 +65,7 @@ The dry run is the answer to "what is this thing about to do to my repo?" Use it
 
 ## Full auto mode (structured logs + web dashboard)
 
-`monozukuri run --autonomy full_auto` runs without any approval gates. It bypasses Claude Code permissions, opens the PR, and immediately starts the next feature. A local web dashboard launches on `http://localhost:7878` for live progress.
+`monozukuri run --autonomy full_auto` runs without any approval gates. It bypasses the agent's permission gates, opens the PR, and immediately starts the next feature. A local web dashboard launches on `http://localhost:7878` for live progress.
 
 ```
 <!-- CAPTURE: same structured-log shape as checkpoint, but showing the transition from

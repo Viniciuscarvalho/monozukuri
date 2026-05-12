@@ -1,11 +1,11 @@
 ![Monozukuri — autonomous feature delivery](assets/banner.svg)
 
-**ものづくり — reads your backlog, creates worktrees, invokes a Claude Code skill for each feature, and opens PRs. While you're away.**
+**ものづくり — reads your backlog, creates worktrees, runs a coding agent for each feature, and opens PRs. While you're away.**
 
 [![npm version](https://img.shields.io/npm/v/@viniciuscarvalho/monozukuri.svg)](https://www.npmjs.com/package/@viniciuscarvalho/monozukuri)
 [![Homebrew Tap](https://img.shields.io/badge/homebrew-tap-orange.svg)](https://github.com/Viniciuscarvalho/homebrew-tap)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform: Claude Code](https://img.shields.io/badge/platform-Claude%20Code-purple.svg)](https://github.com/Viniciuscarvalho/monozukuri)
+[![Agents: Claude Code · Codex · Gemini · Kiro](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20Kiro-purple.svg)](https://github.com/Viniciuscarvalho/monozukuri)
 
 ---
 
@@ -27,11 +27,11 @@ monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 ```
 
-> Requires `node >=18`, `jq`, `gh`, and the Claude Code CLI (`claude`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.
+> Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, `gemini`, or `kiro`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.
 
 ## What Monozukuri does
 
-For each feature in your backlog, Monozukuri creates an isolated git worktree, invokes a Claude Code skill to take the feature from PRD through tests, opens a pull request, and moves on. It is **skill-agnostic** — it defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) but works with any Claude Code slash-command you configure.
+For each feature in your backlog, Monozukuri creates an isolated git worktree, runs a coding agent to take the feature from PRD through tests, opens a pull request, and moves on. It supports **Claude Code, Codex, Gemini, and Kiro** — it defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) on Claude Code but works with any agent you configure in `config.yaml`.
 
 It runs in three autonomy levels — from `supervised` (Ink TUI, you approve each phase) to `full_auto` (structured logs, runs the whole backlog unattended). It persists state under `.monozukuri/` so you can `--resume` after any interruption, and it writes learnings to a three-tier store (feature / project / global) that primes future runs.
 
