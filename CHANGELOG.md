@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.0...v1.48.1) (2026-05-12)
+
+
+### Documentation
+
+* use agent-agnostic language across README and docs ([#201](https://github.com/Viniciuscarvalho/monozukuri/issues/201)) ([03e3f98](https://github.com/Viniciuscarvalho/monozukuri/commit/03e3f98c6a35eaca01347baf592648e271599798))
+
 ## [1.48.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.47.1...v1.48.0) (2026-05-12)
 
 
