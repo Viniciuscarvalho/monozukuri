@@ -65,6 +65,8 @@ export function FeatureCard({ feature, now, innerWidth = 80 }: FeatureCardProps)
       () => setSpinnerFrame(f => (f + 1) % tokens.spinner.frames.length),
       tokens.spinner.intervalMs,
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (id as any).unref?.();
     return () => clearInterval(id);
   }, [feature?.status]);
 
