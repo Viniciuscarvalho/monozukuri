@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.47.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.3...v1.47.0) (2026-05-12)
+
+
+### Features
+
+* **ci:** RC release channel — [@next](https://github.com/next) npm + monozukuri-next brew + promotion scripts ([#195](https://github.com/Viniciuscarvalho/monozukuri/issues/195)) ([b361919](https://github.com/Viniciuscarvalho/monozukuri/commit/b36191972bf6f25ee936628f91e3bc5956701395))
+
 ## [1.46.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.2...v1.46.3) (2026-05-11)
 
 
