@@ -13,7 +13,7 @@ const baseState = {
 
 describe('Header', () => {
   it('renders agent and model together', () => {
-    const { lastFrame } = render(<Header state={baseState} terminalWidth={160} />);
+    const { lastFrame } = render(<Header state={baseState} innerWidth={158} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('agent: claude-code');
     expect(frame).toContain('model: claude-sonnet-4-6');
@@ -23,19 +23,19 @@ describe('Header', () => {
     'renders %s as agent name',
     (agentName) => {
       const state = { ...baseState, agent: agentName };
-      const { lastFrame } = render(<Header state={state} terminalWidth={160} />);
+      const { lastFrame } = render(<Header state={state} innerWidth={158} />);
       expect(lastFrame() ?? '').toContain(`agent: ${agentName}`);
     }
   );
 
   it('renders — when agent is empty', () => {
     const state = { ...baseState, agent: '' };
-    const { lastFrame } = render(<Header state={state} terminalWidth={160} />);
+    const { lastFrame } = render(<Header state={state} innerWidth={158} />);
     expect(lastFrame() ?? '').toContain('agent: —');
   });
 
   it('renders autonomy', () => {
-    const { lastFrame } = render(<Header state={baseState} terminalWidth={160} />);
+    const { lastFrame } = render(<Header state={baseState} innerWidth={158} />);
     expect(lastFrame() ?? '').toContain('autonomy: checkpoint');
   });
 });

@@ -25,7 +25,7 @@ export function SetupPanel({ state }: SetupPanelProps): React.ReactElement {
               <Text bold dimColor>Agents</Text>
               {agentEntries.map(([agent, status]) => (
                 <Box key={agent}>
-                  <Text color={status === 'ok' ? 'green' : 'yellow'}>
+                  <Text color={status === 'ok' ? tokens.success : tokens.warning}>
                     {status === 'ok' ? '✓' : '→'}
                   </Text>
                   <Text>  {agent}</Text>
