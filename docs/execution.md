@@ -112,31 +112,21 @@ The README hero GIF is regenerated from a [VHS](https://github.com/charmbracelet
 
 Keep typing slow enough to read but skip the agent's thinking time with VHS `Hide`/`Show` blocks around long waits.
 
-**Tape skeleton** (save as `docs/assets/hero.tape`):
+**Tape and wrapper:** `docs/assets/hero.tape` contains the VHS script.
+`docs/assets/record-hero.sh` is the wrapper that sets up a clean demo repo,
+injects the mock agent (no API calls, free to re-run), and invokes VHS.
 
-```tape
-Output docs/assets/hero.gif
-Set Theme "Catppuccin Mocha"
-Set FontSize 14
-Set Width 1200
-Set Height 700
-Set PlaybackSpeed 1.0
+To regenerate:
 
-Type "monozukuri init" Sleep 500ms Enter
-Sleep 2s
-Type "monozukuri run --dry-run" Sleep 500ms Enter
-Sleep 4s
-Type "monozukuri run --autonomy checkpoint" Sleep 500ms Enter
+```bash
+# Install VHS if needed
+brew install vhs
 
-Hide
-Sleep 30s    # let PRD + TechSpec complete off-camera
-Show
-
-Sleep 8s     # show the rest of the pipeline streaming
-Type "gh pr list" Sleep 500ms Enter
-Sleep 3s
+# Record
+docs/assets/record-hero.sh
 ```
 
-Run `vhs docs/assets/hero.tape` to regenerate. Commit the GIF alongside the tape; reviewers can re-run the tape locally to verify the asset matches the CLI.
+Commit the resulting `docs/assets/hero.gif` alongside any tape changes;
+reviewers can re-run the wrapper locally to verify the asset matches the CLI.
 
 **Capturing the failure clip.** The README does not embed the failure clip — it lives in [troubleshooting.md](troubleshooting.md). Use the same VHS approach with a tape that triggers a known failure (e.g. a feature with a `size_gate: skip` annotation, or a deliberately malformed PRD template) and shows the user recovering via `monozukuri status` followed by `monozukuri run --resume`. Target length: 10–15 seconds.
