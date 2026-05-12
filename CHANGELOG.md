@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.47.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.47.0...v1.47.1) (2026-05-12)
+
+
+### Documentation
+
+* add user-facing reference docs and simplify README ([#197](https://github.com/Viniciuscarvalho/monozukuri/issues/197)) ([435c231](https://github.com/Viniciuscarvalho/monozukuri/commit/435c2314893369f2407ccd0c8d6b906819000229))
+
 ## [1.47.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.46.3...v1.47.0) (2026-05-12)
 
 
