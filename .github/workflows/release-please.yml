@@ -2,7 +2,7 @@ name: Release Please
 
 on:
   push:
-    branches: [main]
+    branches: [main, "hotfix/v*"]
 
 permissions:
   contents: write
@@ -21,6 +21,7 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
       - name: Enable auto-merge on release PR
         if: ${{ steps.release.outputs.pr }}
         run: gh pr merge --auto --squash --repo "${{ github.repository }}" "${{ fromJSON(steps.release.outputs.pr).number }}"
@@ -41,8 +42,17 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Install and build UI
         run: npm install --prefix ui && npm run build --prefix ui
+      - name: Determine npm dist-tag
+        id: dist_tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *"-rc."* ]]; then
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --tag ${{ steps.dist_tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -52,6 +62,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Determine target formula
+        id: target
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          if [[ "$TAG" == *"-rc."* ]]; then
+            echo "formula=Formula/monozukuri-next.rb" >> "$GITHUB_OUTPUT"
+            echo "name=monozukuri-next" >> "$GITHUB_OUTPUT"
+          else
+            echo "formula=Formula/monozukuri.rb" >> "$GITHUB_OUTPUT"
+            echo "name=monozukuri" >> "$GITHUB_OUTPUT"
+          fi
       - name: Compute tarball SHA256
         id: sha
         run: |
@@ -67,12 +88,14 @@ jobs:
           github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           script: |
             const { sha256, url, version } = ${{ toJSON(steps.sha.outputs) }};
+            const formula = '${{ steps.target.outputs.formula }}';
+            const name = '${{ steps.target.outputs.name }}';
             const owner = 'Viniciuscarvalho';
             const repo = 'homebrew-tap';
 
             // Read current formula from main
             const { data: file } = await github.rest.repos.getContent({
-              owner, repo, path: 'Formula/monozukuri.rb'
+              owner, repo, path: formula
             });
             const content = Buffer.from(file.content, 'base64').toString();
             const updated = content
@@ -83,8 +106,8 @@ jobs:
             // Commit directly to main — no branch, no PR
             await github.rest.repos.createOrUpdateFileContents({
               owner, repo,
-              path: 'Formula/monozukuri.rb',
-              message: `chore: bump monozukuri to ${version}`,
+              path: formula,
+              message: `chore: bump ${name} to ${version}`,
               content: Buffer.from(updated).toString('base64'),
               sha: file.sha,
               branch: 'main'

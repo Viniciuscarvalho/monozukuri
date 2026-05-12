@@ -37,12 +37,14 @@ jobs:
         id: version
         run: |
           title="${{ github.event.pull_request.title }}"
-          version=$(echo "$title" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          version=$(echo "$title" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?' | head -1)
           if [ -z "$version" ]; then
             echo "Could not extract version from PR title: $title" >&2
             exit 1
           fi
+          is_prerelease=$([[ "$version" == *-rc.* ]] && echo true || echo false)
           echo "version=v$version" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$is_prerelease" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         if: steps.check.outputs.is_release == 'true'
@@ -53,14 +55,40 @@ jobs:
         if: steps.check.outputs.is_release == 'true'
         run: npm install -g bats
 
+      - name: Install Claude Code CLI
+        if: steps.check.outputs.is_release == 'true'
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude --version
+
+      - name: Verify Claude authentication
+        if: steps.check.outputs.is_release == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.MONOZUKURI_CI }}
+        run: |
+          # Validates that API key works before running the gate
+          # If this fails, the gate would fail anyway — fail fast and clearly
+          echo "Testing Claude API connectivity..."
+          if claude --print "respond with: ok" 2>&1 | grep -qi "ok"; then
+            echo "✓ Claude CLI authenticated successfully"
+          else
+            echo "::error::Claude authentication failed. Check MONOZUKURI_CI secret has valid Anthropic API key."
+            exit 1
+          fi
+
       - name: Run release gate
         if: steps.check.outputs.is_release == 'true'
         env:
-          MONOZUKURI_SKIP_LIVE_CANARY: "1"
+          # Layer 5 (live-canary) is enabled — runs one minimal claude --print
+          # call to verify API availability. Cost: ~$0.01 per release PR.
+          # Budget: secret MONOZUKURI_CI ($5 prepay).
+          ANTHROPIC_API_KEY: ${{ secrets.MONOZUKURI_CI }}
+
+          # Layer 6 live mode stays off — requires larger budget (~$5-15/run).
           MONOZUKURI_SKIP_SCALE_SOAK_LIVE: "1"
-          # Layer 7 makes live `claude --print` calls. Keep it off in CI to
-          # honour the zero-CI-cost discipline; maintainers run it locally
-          # pre-release via `make conformance` or an unset env var.
+
+          # Layer 7 (conformance) stays off — maintainers run locally
+          # via `make conformance` pre-release.
           MONOZUKURI_SKIP_CONFORMANCE: "1"
         run: .qa/release-gate.sh "${{ steps.version.outputs.version }}"
 

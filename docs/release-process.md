@@ -29,42 +29,110 @@ The `.github/workflows/release-gate.yml` workflow runs on every PR targeting `ma
 
 Once set, the release-please auto-merge cannot fire until the gate passes.
 
-## Normal release flow
+## Release channels
+
+Two channels are active at all times:
+
+| Channel | Semver suffix | npm dist-tag | Homebrew formula  |
+| ------- | ------------- | ------------ | ----------------- |
+| RC      | `-rc.N`       | `@next`      | `monozukuri-next` |
+| Stable  | _(none)_      | `@latest`    | `monozukuri`      |
+
+`main` is always in RC mode (`prerelease: true` in `release-please-config.json`). Stable releases are created explicitly via promotion (see below).
+
+## Normal release flow (RC)
 
 ```
-1. Land commits to main → release-please opens a release PR
-2. Release gate runs on the PR (CI)
-3. If gate PASS: auto-merge fires → release tag created → npm publish + homebrew update
-4. If gate FAIL: fix the regression, push to the release branch, gate re-runs
+1. Land feat:/fix: commits to main
+2. release-please opens a PR titled "chore: release X.Y.Z-rc.N"
+3. Release gate runs on the PR (CI) with is_prerelease=true
+4. If gate PASS: auto-merge fires → GitHub pre-release created →
+     npm publish @next + Formula/monozukuri-next.rb updated
+5. If gate FAIL: fix the regression, push to the release branch, gate re-runs
 ```
 
-## Hotfix flow (< 30 min target)
+## Promotion: RC → Stable
 
-Use when a critical bug needs production within 30 minutes of decision.
+Use after 48h soak with no regressions on `@next`.
 
 ```bash
-# 1. Branch from the current release tag
-git checkout v1.0.0
-git checkout -b hotfix/v1.0.1
+# 1. Create and merge the promotion chore PR
+./scripts/promote-rc-to-stable.sh 1.47.0
+# → opens PR setting release-as: 1.47.0 and prerelease: false
+# merge it manually (auto-merge does NOT fire on chore PRs — intentional)
 
-# 2. Apply the fix
-# ... edit files ...
+# 2. release-please opens "chore: release 1.47.0" — auto-merge fires:
+#    → npm publish @latest + Formula/monozukuri.rb updated
 
-# 3. Run only Layers 1 + 3 (build + schema) — skip the slow layers
-.qa/release-gate.sh --hotfix v1.0.1
-
-# 4. Tag and push
-git add -A
-git commit -m "fix: <description>"
-git tag v1.0.1
-git push origin hotfix/v1.0.1 --tags
-
-# 5. Publish
-npm publish --access public
-# Open a PR to tap: brew bump-formula-pr monozukuri --tag v1.0.1
+# 3. Restore RC mode for the next cycle
+./scripts/finalize-rc-promotion.sh
+# → opens PR removing release-as and re-enabling prerelease: true
+# merge it to resume RC mode
 ```
 
-`--hotfix` runs only Layers 1 and 3. It skips the loop (Layer 2), backwards-compat (Layer 4), live-canary (Layer 5), and scale-soak (Layer 6). Use it only for critical patches where the fix is isolated and tested manually.
+**Critical:** step 3 is not optional. Without it, the next `feat:` on `main` opens another stable PR instead of `rc.1`.
+
+## Hotfix flow — current stable
+
+Use when a critical bug needs to go to `@latest` without waiting for the RC soak.
+
+The release gate's `--hotfix` mode runs only Layers 1 + 3 (build + schema, target < 3 min). It is auto-selected when the release PR has `release-as` set and `prerelease: false`.
+
+```bash
+# 1. Branch from main (RC is in flight — that's fine)
+git checkout main && git checkout -b hotfix/v1.47.1
+
+# 2. Apply the fix
+git commit -m "fix(scope): description"
+
+# 3. Create and merge the release-please chore PR
+./scripts/promote-rc-to-stable.sh 1.47.1
+# merge the chore PR, release-please opens the release PR, auto-merge publishes
+
+# 4. Restore RC mode
+./scripts/finalize-rc-promotion.sh
+# merge to resume RC cycle (next feat: opens 1.48.0-rc.1)
+```
+
+## Hotfix flow — older stable (RC in flight on main)
+
+Use when `main` is at `1.48.0-rc.2` but a critical bug exists in the still-current `1.47.x` stable.
+
+**One-time setup** (do this when the first case appears, not before):
+
+```bash
+# Create a maintenance branch from the last stable tag
+git checkout -b hotfix/v1.47.x v1.47.0
+git push -u origin hotfix/v1.47.x
+
+# Set the manifest on this branch to match the last stable
+# (edit .release-please-manifest.json to {"." : "1.47.0"})
+```
+
+Branch protection: add the same required checks (`CI`, `Commitlint`, `Release Gate`) to `hotfix/v*` as on `main`.
+
+**Hotfix flow:**
+
+```bash
+# 1. Branch from the maintenance branch
+git checkout hotfix/v1.47.x && git checkout -b fix/critical-bug-1.47.x
+
+# 2. Apply and commit the fix
+git commit -m "fix(scope): description"
+
+# 3. PR → hotfix/v1.47.x → release-please opens release PR for 1.47.1
+# → auto-merge publishes 1.47.1 to @latest + Formula/monozukuri.rb
+
+# 4. CRITICAL: cherry-pick the fix back to main
+git checkout main
+git cherry-pick <fix-commit-sha>
+# Open a PR for this cherry-pick — do not skip it.
+# Without it, the next RC on main will regress the bug.
+```
+
+The `target-branch: ${{ github.ref_name }}` parameter in `release-please.yml` ensures release-please reads the maintenance branch's own manifest, keeping its version sequence independent of `main`'s RC cycle.
+
+Semver convivência during the gap is clean: `@latest` = `1.47.1`, `@next` = `1.48.0-rc.2`. Both channels resolve correctly.
 
 ## Scale soak (Layer 6)
 
