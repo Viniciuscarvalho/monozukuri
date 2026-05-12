@@ -8,6 +8,10 @@ setup() {
   MOCK_CLAUDE_DIR="$REPO_ROOT/test/fixtures/agents/mock-claude-code"
   export LIB_DIR FIXTURE_CTX MOCK_CLAUDE_DIR REPO_ROOT
 
+  # Per-test scoped temp dir — safe under parallel bats --jobs execution
+  _CC_TEST_DIR=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  export _CC_TEST_DIR
+
   source "$LIB_DIR/agent/contract.sh"
   source "$LIB_DIR/prompt/render.sh"
   source "$LIB_DIR/agent/adapter-claude-code.sh"
@@ -23,13 +27,13 @@ setup() {
 teardown() {
   unset MONOZUKURI_PHASE CONTEXT_JSON MONOZUKURI_FEATURE_ID \
         MONOZUKURI_WORKTREE MONOZUKURI_LOG_FILE MONOZUKURI_ERROR_FILE 2>/dev/null || true
-  rm -rf /tmp/cc-adapter-test-* 2>/dev/null || true
+  rm -rf "${_CC_TEST_DIR:-}" 2>/dev/null || true
 }
 
 # ── phase-aware routing ───────────────────────────────────────────────────────
 
 @test "agent_run_phase: with MONOZUKURI_PHASE=prd and CONTEXT_JSON, uses render path" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
   local log_file="$wt/run.log"
 
   MONOZUKURI_FEATURE_ID="feat-001" \
@@ -44,7 +48,7 @@ teardown() {
 }
 
 @test "agent_run_phase: with MONOZUKURI_PHASE=techspec and CONTEXT_JSON, creates artifact" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
 
   MONOZUKURI_FEATURE_ID="feat-001" \
   MONOZUKURI_WORKTREE="$wt" \
@@ -57,7 +61,7 @@ teardown() {
 }
 
 @test "agent_run_phase: without MONOZUKURI_PHASE, exits non-zero with no-skill-or-template error" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
   local log_file="$wt/run.log"
 
   local rc=0
@@ -70,7 +74,7 @@ teardown() {
 }
 
 @test "agent_run_phase: CONTEXT_JSON missing file exits non-zero" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
 
   local rc=0
   MONOZUKURI_FEATURE_ID="feat-001" \
@@ -86,7 +90,7 @@ teardown() {
 # ── _cc_run_phase_render internals ───────────────────────────────────────────
 
 @test "_cc_run_phase_render: renders context tokens into the call" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
   local log_file="$wt/run.log"
 
   # Stub to capture the rendered prompt
@@ -105,7 +109,7 @@ teardown() {
 }
 
 @test "_cc_run_phase_render: artifact created on success" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
   local log_file="$wt/run.log"
 
   CONTEXT_JSON="$FIXTURE_CTX" \
@@ -115,7 +119,7 @@ teardown() {
 }
 
 @test "_cc_run_phase_render: returns non-zero when platform_claude fails" {
-  local wt; wt=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
+  local wt; wt=$(mktemp -d "$_CC_TEST_DIR/XXXXX")
 
   platform_claude() { return 1; }
   export -f platform_claude
