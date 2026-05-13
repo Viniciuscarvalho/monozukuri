@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.49.0...v1.49.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* v1.0 pre-launch — canary jq fix, draft PR UX, docs ([#210](https://github.com/Viniciuscarvalho/monozukuri/issues/210)) ([5983e33](https://github.com/Viniciuscarvalho/monozukuri/commit/5983e337c824c3f18034305d2f3d4f952546acb6))
+
 ## [1.49.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.3...v1.49.0) (2026-05-13)
 
 
