@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.2...v1.48.3) (2026-05-13)
+
+
+### Bug Fixes
+
+* **agent:** close mz-open-pr full_auto hang and expose hidden CLI commands ([#205](https://github.com/Viniciuscarvalho/monozukuri/issues/205)) ([6857eed](https://github.com/Viniciuscarvalho/monozukuri/commit/6857eed27e1fb50d6977cbd077d630076cf5eee7))
+
 ## [1.48.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.1...v1.48.2) (2026-05-12)
 
 
