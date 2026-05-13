@@ -1,0 +1,41 @@
+<svg width="100%" viewBox="0 0 680 360" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Sequential chat vs parallel PRs</title>
+<desc>On the left, one chat session per feature, you-as-bottleneck switching between them. On the right, parallel worktrees producing PRs while you sleep.</desc>
+<style>
+.ts { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; fill: #6b6b6b; font-weight: 400; }
+.th { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; }
+@media (prefers-color-scheme: dark) { .ts { fill: #a5a5a0; } }
+</style>
+
+<text x="40" y="30" class="th" fill="#1f1f1f">Sequential chat</text>
+<text x="40" y="48" class="ts">One conversation. One feature at a time. You are the loop.</text>
+
+<text x="370" y="30" class="th" fill="#1f1f1f">Parallel pipelines</text>
+<text x="370" y="48" class="ts">N worktrees. N PRs. You review when you're back.</text>
+
+<rect x="40" y="80" width="280" height="40" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="56" y="105" class="ts">› Chat: feat-001 — Add OAuth</text>
+<rect x="40" y="130" width="280" height="40" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="56" y="155" class="ts">› Chat: feat-002 — Migrate logs</text>
+<rect x="40" y="180" width="280" height="40" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="56" y="205" class="ts">› Chat: feat-003 — Redis cache</text>
+
+<text x="40" y="252" class="ts">↻ you switch context · 3 times · 4 hours</text>
+<text x="40" y="272" class="ts">↻ you wait for the agent · 3 times · 90 min</text>
+<text x="40" y="292" class="ts">↻ you open PRs by hand · 3 times</text>
+
+<line x1="345" y1="80" x2="345" y2="320" stroke="#d0d0c8" stroke-width="0.5"/>
+
+<rect x="370" y="80" width="270" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="386" y="105" class="ts" fill="#3C3489">⚙ worktree-a → PR #42</text>
+<rect x="370" y="130" width="270" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="386" y="155" class="ts" fill="#3C3489">⚙ worktree-b → PR #43</text>
+<rect x="370" y="180" width="270" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="386" y="205" class="ts" fill="#3C3489">⚙ worktree-c → PR #44</text>
+
+<text x="370" y="252" class="ts">↻ you write the backlog · once</text>
+<text x="370" y="272" class="ts">↻ you wake up · once</text>
+<text x="370" y="292" class="ts">↻ you review in batch · once</text>
+
+<text x="40" y="340" class="ts">The agent isn't the bottleneck. The pattern is.</text>
+</svg>

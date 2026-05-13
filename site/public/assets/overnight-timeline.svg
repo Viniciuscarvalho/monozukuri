@@ -1,0 +1,50 @@
+<svg width="100%" viewBox="0 0 680 280" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>An overnight run, on a single timeline</title>
+<desc>Three features running in parallel from 11 PM to 5 AM. Each colored band is one feature's phase progression. Pull request markers show when each opened.</desc>
+<style>
+.ts { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; fill: #6b6b6b; font-weight: 400; }
+.th { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; }
+@media (prefers-color-scheme: dark) { .ts { fill: #a5a5a0; } }
+</style>
+
+<text x="40" y="30" class="th" fill="#1f1f1f">An overnight run, on a single timeline</text>
+<text x="40" y="50" class="ts">11 PM – 5 AM · 3 features in parallel · 3 PRs opened while asleep</text>
+
+<line x1="40" y1="220" x2="640" y2="220" stroke="#d0d0c8" stroke-width="0.5"/>
+
+<line x1="40" y1="215" x2="40" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="40" y="245" class="ts" text-anchor="middle">11 PM</text>
+<line x1="140" y1="215" x2="140" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="140" y="245" class="ts" text-anchor="middle">12 AM</text>
+<line x1="240" y1="215" x2="240" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="240" y="245" class="ts" text-anchor="middle">1 AM</text>
+<line x1="340" y1="215" x2="340" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="340" y="245" class="ts" text-anchor="middle">2 AM</text>
+<line x1="440" y1="215" x2="440" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="440" y="245" class="ts" text-anchor="middle">3 AM</text>
+<line x1="540" y1="215" x2="540" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="540" y="245" class="ts" text-anchor="middle">4 AM</text>
+<line x1="640" y1="215" x2="640" y2="225" stroke="#999" stroke-width="0.5"/>
+<text x="640" y="245" class="ts" text-anchor="middle">5 AM</text>
+
+<rect x="40" y="90" width="180" height="22" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="40" y="83" class="ts">feat-001 · OAuth</text>
+<circle cx="220" cy="101" r="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="232" y="105" class="ts">PR #42</text>
+
+<rect x="60" y="130" width="240" height="22" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="60" y="123" class="ts">feat-002 · structured logs</text>
+<circle cx="300" cy="141" r="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="312" y="145" class="ts">PR #43</text>
+
+<rect x="80" y="170" width="380" height="22" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="80" y="163" class="ts">feat-003 · Redis cache</text>
+<circle cx="460" cy="181" r="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="472" y="185" class="ts">PR #44</text>
+
+<line x1="55" y1="265" x2="75" y2="265" stroke="#7F77DD" stroke-width="3"/>
+<text x="82" y="269" class="ts">pipeline running</text>
+<circle cx="200" cy="265" r="5" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="212" y="269" class="ts">PR opened</text>
+<text x="340" y="269" class="ts">→ at 5 AM, three PRs waiting in batch review</text>
+</svg>
