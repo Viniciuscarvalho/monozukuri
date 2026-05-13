@@ -27,7 +27,15 @@ PR body must include:
 - **Tests**: results summary (from tests.md)
 - **Artifacts**: links to prd.md, techspec.md in `tasks/prd-{{MONOZUKURI_FEATURE_ID}}/`
 
-Use `gh pr create` or the platform's native PR API.
+Use `gh pr create` — no other method.
+
+**Non-interactive contract** (`MONOZUKURI_INTERACTIVE=0`): never leave `gh` waiting on `$EDITOR` or stdin. Write the PR body to `pr-body.md` first, then run:
+
+```
+gh pr create --title "<title>" --body-file pr-body.md
+```
+
+Never pass `--body` with a long inline string — shell-escape failures silently open `$EDITOR` and hang the run. If the base branch is ambiguous, query it with `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` and proceed without prompting.
 
 ## Output contract
 

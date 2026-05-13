@@ -38,7 +38,9 @@ Write `$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/pr.md` with:
 1. Read `references/pr-body-template.md`.
 2. Populate each section from the PRD, code summary, and test summary.
 3. Push the worktree branch: `git push -u origin HEAD`
-4. Run `gh pr create --title "$MONOZUKURI_FEATURE_TITLE" --body "<rendered body>"`
+4. Write the rendered body to `pr-body.md` in the worktree, then run:
+   `gh pr create --title "$MONOZUKURI_FEATURE_TITLE" --body-file pr-body.md`
+   Never use `--body` with an inline string — shell-escape failures resolve to `$EDITOR` and hang the run.
 5. Write `pr.md` with the PR URL, number, and branches.
 
 ## Workflow memory

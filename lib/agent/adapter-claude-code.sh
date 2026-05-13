@@ -155,6 +155,14 @@ _cc_run_phase_skill() {
   [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && perm_flag="--dangerously-skip-permissions"
 
   local phase="${MONOZUKURI_PHASE:-}"
+
+  # Prevent `gh pr create` from opening $EDITOR in full_auto.
+  # 180s cap: a real hang wastes 3 min, not 30.
+  if [[ "${phase}" = "pr" ]] && [[ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ]]; then
+    SKILL_TIMEOUT_SECONDS=180
+    export GH_PROMPT_DISABLED=1
+  fi
+
   local artifact_dir="$wt_path/tasks/prd-$feat_id"
   mkdir -p "$artifact_dir"
   local artifact_file="$artifact_dir/${phase}.md"
