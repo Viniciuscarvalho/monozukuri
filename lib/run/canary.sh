@@ -89,7 +89,7 @@ _canary_aggregate_by_stack() {
     group_by(.stack) |
     map({
       stack: .[0].stack,
-      pass_rate: (map(select(.ci_pass == 1)) | length) * 100 / length
+      pass_rate: ((map(select(.ci_pass == 1)) | length) * 100 / length)
     }) |
     map({key: .stack, value: (.pass_rate | floor)}) |
     from_entries
