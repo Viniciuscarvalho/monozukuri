@@ -141,7 +141,12 @@ run_pr_creation() {
     fstate_transition "$feat_id" "pr-created" "complete"
     monozukuri_emit feature.completed feature_id "$feat_id" pr_url "$pr_url" 2>/dev/null || true
     fstate_set_pr_url "$feat_id" "$pr_url"
-    info "PR: $pr_url"
+    if [ "$PR_STRATEGY" = "draft" ]; then
+      info "PR opened as draft: $pr_url"
+      info "  → run 'gh pr ready <number>' when ready for review"
+    else
+      info "PR: $pr_url"
+    fi
     if declare -f ingest_trigger_if_merged &>/dev/null; then
       ingest_trigger_if_merged "$feat_id"
     fi
