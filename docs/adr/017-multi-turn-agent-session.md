@@ -1,6 +1,6 @@
 # ADR-017: Multi-Turn Agent Session
 
-- **Status**: Draft
+- **Status**: Accepted
 - **Date**: 2026-05-13
 - **Deciders**: Vinicius Carvalho
 - **Supersedes**: —

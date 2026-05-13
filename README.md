@@ -7,6 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agents: Claude Code · Codex · Gemini · Kiro](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20Kiro-purple.svg)](https://github.com/Viniciuscarvalho/monozukuri)
 
+> **Agent support:** Claude Code is the reference adapter — fully validated end-to-end. Codex, Gemini, and Kiro are experimental (rendered-prompt mode, no conformance recordings yet).
+
 ---
 
 ![Monozukuri in action](docs/assets/hero.gif)
