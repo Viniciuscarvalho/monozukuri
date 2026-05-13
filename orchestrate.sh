@@ -139,7 +139,7 @@ OPT_NO_UI=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|stop|summary|retry)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -328,6 +328,10 @@ while [ $# -gt 0 ]; do
       echo "  retry --all                  Retry all recoverable schema failures"
       echo "  retry --feat <id>            Retry specific feature(s); repeatable"
       echo "  retry --reason <substring>   Filter by pause/error reason (default: schema)"
+      echo "  stop --all|--clear|--status         Kill switch for active pipelines"
+      echo "  summary [--all]                     Cross-project status + cost dashboard"
+      echo "  ui [<run-id>]                       Open web dashboard for a run"
+      echo "  telemetry --status|--opt-in|--opt-out  Anonymous usage data consent"
       echo ""
       echo "Flags:"
       echo "  --autonomy <level>           supervised | checkpoint | full_auto"
