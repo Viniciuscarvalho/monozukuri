@@ -45,13 +45,14 @@ agent_capabilities() {
   "agent": "claude-code",
   "supports": {
     "phases":         ["prd","techspec","tasks","code","tests","pr"],
-    "skills":         true,
-    "native_edit":    true,
-    "shell_access":   true,
-    "mcp":            true,
-    "streaming":      true,
-    "token_counting": "exact",
-    "approval_modes": ["read-only","auto-edit","full-access"]
+    "skills":              true,
+    "native_edit":         true,
+    "shell_access":        true,
+    "mcp":                 true,
+    "streaming":           true,
+    "token_counting":      "exact",
+    "approval_modes":      ["read-only","auto-edit","full-access"],
+    "session_continuity":  true
   },
   "models": {
     "aliases": {
@@ -105,6 +106,40 @@ _cc_inject_schemas() {
     local src="$schemas_dir/$artifact.schema.json"
     [ -f "$src" ] && cp "$src" "$dest/" 2>/dev/null || true
   done
+}
+
+# _cc_session_id_for_feature FEAT_ID
+# Returns the Claude session UUID for FEAT_ID, creating session.json on first call.
+# session.json lives at $STATE_DIR/$feat_id/session.json (same dir as cost.json).
+_cc_session_id_for_feature() {
+  local feat_id="$1"
+  local state_base="${STATE_DIR:-${MONOZUKURI_RUN_DIR:-/tmp}}"
+  local session_file="${state_base}/${feat_id}/session.json"
+
+  if [[ -f "$session_file" ]]; then
+    jq -r '.session_id // empty' "$session_file" 2>/dev/null
+    return
+  fi
+
+  local uuid
+  uuid=$(uuidgen 2>/dev/null || python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || \
+    printf '%04x%04x-%04x-%04x-%04x-%04x%04x%04x' \
+      $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM)
+
+  mkdir -p "${state_base}/${feat_id}"
+  printf '{"session_id":"%s","cwd":"%s","created_at":"%s","last_completed_turn":"","agent":"claude-code"}\n' \
+    "$uuid" "${MONOZUKURI_WORKTREE:-}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$session_file"
+  printf '%s\n' "$uuid"
+}
+
+# _cc_session_jsonl_exists SESSION_ID WT_PATH
+# Returns 0 if Claude's session transcript exists for the given UUID and worktree cwd.
+_cc_session_jsonl_exists() {
+  local session_id="$1"
+  local wt_path="$2"
+  local cwd_slug
+  cwd_slug=$(printf '%s' "$wt_path" | tr '/' '-')
+  [[ -f "${HOME}/.claude/projects/${cwd_slug}/${session_id}.jsonl" ]]
 }
 
 # _cc_invoke_claude FEAT_ID PHASE WT_PATH LOG_FILE [flags...]
@@ -190,12 +225,14 @@ _cc_run_phase_skill() {
   return "$exit_code"
 }
 
-# _cc_run_phase_render PHASE FEAT_ID WT_PATH LOG_FILE
+# _cc_run_phase_render PHASE FEAT_ID WT_PATH LOG_FILE [SESSION_FLAGS]
 # Template-render path: renders template → pipes to claude --print.
 # Used when no native skill is installed but CONTEXT_JSON is set.
 # Covers all six phases (prd, techspec, tasks, code, tests, pr).
+# SESSION_FLAGS: optional "--session-id <uuid>" or "--resume <uuid>" for multi-turn mode.
 _cc_run_phase_render() {
   local phase="$1" feat_id="$2" wt_path="$3" log_file="$4"
+  local session_flags="${5:-}"
   local effective_model="${MONOZUKURI_MODEL:-}"
   [ "$effective_model" = "opusplan" ] && effective_model="sonnet"
 
@@ -217,9 +254,11 @@ _cc_run_phase_render() {
   local artifact_file="$artifact_dir/${phase}.md"
 
   local exit_code=0
+  # shellcheck disable=SC2086
   _cc_invoke_claude "$feat_id" "$phase" "$wt_path" "$log_file" \
     ${effective_model:+--model "$effective_model"} \
     $perm_flag \
+    $session_flags \
     -p "$rendered_prompt" || exit_code=$?
 
   [ "$exit_code" -eq 0 ] && [ -s "$log_file" ] && cp "$log_file" "$artifact_file" || true
@@ -240,6 +279,7 @@ agent_run_phase() {
   # fix-schema: schema-reprompt dispatched here instead of calling platform_claude
   # directly. MONOZUKURI_FIX_CONTEXT carries the humanized AJV diagnostic from
   # schema_humanize_error. Symmetric with fix-retry (ADR-012).
+  # ADR-017: when multi-turn is active, send fix as a continuation on the existing session.
   if [[ "$phase" == "fix-schema" ]]; then
     local fix_context="${MONOZUKURI_FIX_CONTEXT:-Rewrite the artifact with all required sections.}"
     local fix_model="${MONOZUKURI_MODEL:-}"
@@ -247,7 +287,16 @@ agent_run_phase() {
     local fix_perm_flag=""
     [ "${MONOZUKURI_AUTONOMY:-}" = "full_auto" ] && fix_perm_flag="--permission-mode bypassPermissions"
     local exit_code=0
-    if [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
+
+    if [[ "${MONOZUKURI_MULTI_TURN_ACTIVE:-0}" == "1" ]] && [[ -n "${MONOZUKURI_SESSION_ID:-}" ]]; then
+      # Multi-turn: resume the session and send the fix as a new turn.
+      # shellcheck disable=SC2086
+      _cc_invoke_claude "$feat_id" "fix-schema" "$wt_path" "$log_file" \
+        ${fix_model:+--model "$fix_model"} \
+        $fix_perm_flag \
+        --resume "${MONOZUKURI_SESSION_ID}" \
+        -p "$fix_context" || exit_code=$?
+    elif [ -n "${MONOZUKURI_RUN_ID:-}" ]; then
       local _fs_sj_log="${log_file%.log}.stream.jsonl"
       local _extract_text
       _extract_text='const rl=require("readline").createInterface({input:process.stdin,terminal:false});rl.on("line",l=>{try{const e=JSON.parse(l);if(e.type==="assistant"&&e.message&&Array.isArray(e.message.content)){for(const c of e.message.content)if(c.type==="text")process.stdout.write(c.text||"")}else if(e.type==="result")process.stdout.write(e.result||"")}catch(_){process.stdout.write(l+"\n")}});'
@@ -318,75 +367,111 @@ agent_run_phase() {
     return "$exit_code"
   fi
 
-  # Lazy-load skill detection helpers
-  if ! declare -f phase_to_skill &>/dev/null; then
-    local _detect_sh
-    _detect_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/skill-detect.sh"
-    [[ -f "$_detect_sh" ]] && source "$_detect_sh"
-  fi
+  # ADR-017: multi-turn fast path — bypass skill detection, force rendered template + session flags
+  if [[ "${MONOZUKURI_MULTI_TURN_ACTIVE:-0}" == "1" ]]; then
+    local _mt_session_id
+    _mt_session_id=$(_cc_session_id_for_feature "$feat_id")
 
-  # Tier 1: native skill invocation (skill installed in worktree or globally)
-  # If route-tasks.sh resolved a specialist for this phase, it wins over the
-  # generic phase-mapped skill. On specialist failure, fall back to the
-  # phase-mapped skill and emit skill.fallback.
-  #
-  # Skill resolution order (implemented in lib/agent/skill-detect.sh:skill_installed):
-  #   1. <worktree>/.claude/skills/<skill>/SKILL.md   — project-local install
-  #   2. ~/.claude/skills/<skill>/SKILL.md             — global install (monozukuri setup --global)
-  #   3. Tier 2: template-render path (CONTEXT_JSON present, no installed skill)
-  #   4. Tier 3: legacy feature-marker (no phase mapping, no context)
-  # Bundled mz-* skills in the monozukuri source tree are NOT used directly here;
-  # they must first be installed via `monozukuri setup` to appear at one of the paths above.
-  local skill=""
-  [[ -n "$phase" ]] && declare -f phase_to_skill &>/dev/null && \
-    skill="$(phase_to_skill "$phase")"
+    local _mt_state_base="${STATE_DIR:-${MONOZUKURI_RUN_DIR:-/tmp}}"
+    local _mt_session_file="${_mt_state_base}/${feat_id}/session.json"
+    local _mt_last_turn=""
+    [[ -f "$_mt_session_file" ]] && \
+      _mt_last_turn=$(jq -r '.last_completed_turn // empty' "$_mt_session_file" 2>/dev/null || true)
 
-  local specialist="${ROUTED_AGENT:-}"
-  local default_agent="${MONOZUKURI_AGENT:-claude-code}"
-  [[ "$specialist" == "$default_agent" ]] && specialist=""
+    local _mt_session_flags=""
+    if [[ -z "$_mt_last_turn" ]]; then
+      _mt_session_flags="--session-id ${_mt_session_id}"
+    elif _cc_session_jsonl_exists "$_mt_session_id" "$wt_path"; then
+      _mt_session_flags="--resume ${_mt_session_id}"
+    else
+      monozukuri_emit session.resume_missed feature_id "$feat_id" phase "$phase" \
+        session_id "$_mt_session_id"
+      _mt_session_id=$(_cc_session_id_for_feature "${feat_id}-fb-$(date +%s)")
+      _mt_session_flags="--session-id ${_mt_session_id}"
+    fi
+    export MONOZUKURI_SESSION_ID="$_mt_session_id"
 
-  # Prefer installed specialist; fall back to phase-mapped skill if it fails
-  local tier1_skill=""
-  if [[ -n "$specialist" ]] && declare -f skill_installed &>/dev/null && \
-     skill_installed "claude-code" "$specialist" "$wt_path"; then
-    tier1_skill="$specialist"
-  elif [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
-     skill_installed "claude-code" "$skill" "$wt_path"; then
-    tier1_skill="$skill"
-  fi
+    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "mt" skill "rendered:$phase"
+    _cc_run_phase_render "$phase" "$feat_id" "$wt_path" "$log_file" "$_mt_session_flags" || exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "mt"
+    else
+      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "mt" exit_code "$exit_code"
+    fi
 
-  if [[ -n "$tier1_skill" ]]; then
-    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "1" skill "$tier1_skill"
-    _cc_run_phase_skill "$tier1_skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
-    # If specialist failed, retry with the generic phase-mapped skill
-    if [[ "$exit_code" -ne 0 ]] && [[ "$tier1_skill" == "$specialist" ]] && [[ -n "$skill" ]] && \
-       declare -f skill_installed &>/dev/null && skill_installed "claude-code" "$skill" "$wt_path"; then
-      monozukuri_emit skill.fallback feature_id "$feat_id" phase "$phase" from_skill "$tier1_skill" to_skill "$skill" exit_code "$exit_code"
-      exit_code=0
-      _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+  else
+    # Cold-process path: Tier 1 (native skill) → Tier 2 (rendered template) → error
+
+    # Lazy-load skill detection helpers
+    if ! declare -f phase_to_skill &>/dev/null; then
+      local _detect_sh
+      _detect_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/skill-detect.sh"
+      [[ -f "$_detect_sh" ]] && source "$_detect_sh"
+    fi
+
+    # Tier 1: native skill invocation (skill installed in worktree or globally)
+    # If route-tasks.sh resolved a specialist for this phase, it wins over the
+    # generic phase-mapped skill. On specialist failure, fall back to the
+    # phase-mapped skill and emit skill.fallback.
+    #
+    # Skill resolution order (implemented in lib/agent/skill-detect.sh:skill_installed):
+    #   1. <worktree>/.claude/skills/<skill>/SKILL.md   — project-local install
+    #   2. ~/.claude/skills/<skill>/SKILL.md             — global install (monozukuri setup --global)
+    #   3. Tier 2: template-render path (CONTEXT_JSON present, no installed skill)
+    #   4. Tier 3: legacy feature-marker (no phase mapping, no context)
+    # Bundled mz-* skills in the monozukuri source tree are NOT used directly here;
+    # they must first be installed via `monozukuri setup` to appear at one of the paths above.
+    local skill=""
+    [[ -n "$phase" ]] && declare -f phase_to_skill &>/dev/null && \
+      skill="$(phase_to_skill "$phase")"
+
+    local specialist="${ROUTED_AGENT:-}"
+    local default_agent="${MONOZUKURI_AGENT:-claude-code}"
+    [[ "$specialist" == "$default_agent" ]] && specialist=""
+
+    # Prefer installed specialist; fall back to phase-mapped skill if it fails
+    local tier1_skill=""
+    if [[ -n "$specialist" ]] && declare -f skill_installed &>/dev/null && \
+       skill_installed "claude-code" "$specialist" "$wt_path"; then
+      tier1_skill="$specialist"
+    elif [[ -n "$skill" ]] && declare -f skill_installed &>/dev/null && \
+       skill_installed "claude-code" "$skill" "$wt_path"; then
       tier1_skill="$skill"
     fi
-    if [ "$exit_code" -eq 0 ]; then
-      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "1"
-    else
-      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "1" exit_code "$exit_code"
-    fi
 
-  # Tier 2: template-render path (any phase, when CONTEXT_JSON is available)
-  elif [[ -n "$phase" ]] && [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
-    monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "2" skill "rendered:$phase"
-    _cc_run_phase_render "$phase" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
-    if [ "$exit_code" -eq 0 ]; then
-      monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "2"
-    else
-      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "2" exit_code "$exit_code"
-    fi
+    if [[ -n "$tier1_skill" ]]; then
+      monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "1" skill "$tier1_skill"
+      _cc_run_phase_skill "$tier1_skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+      # If specialist failed, retry with the generic phase-mapped skill
+      if [[ "$exit_code" -ne 0 ]] && [[ "$tier1_skill" == "$specialist" ]] && [[ -n "$skill" ]] && \
+         declare -f skill_installed &>/dev/null && skill_installed "claude-code" "$skill" "$wt_path"; then
+        monozukuri_emit skill.fallback feature_id "$feat_id" phase "$phase" from_skill "$tier1_skill" to_skill "$skill" exit_code "$exit_code"
+        exit_code=0
+        _cc_run_phase_skill "$skill" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+        tier1_skill="$skill"
+      fi
+      if [ "$exit_code" -eq 0 ]; then
+        monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "1"
+      else
+        monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "1" exit_code "$exit_code"
+      fi
 
-  # No skill or render template available — hard error
-  else
-    error "No mz-* skill or render template available for phase '${phase:-<none>}'. Install skills via 'monozukuri setup' or ensure CONTEXT_JSON points to a valid context file."
-    monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "0" exit_code "1" reason "no-skill-or-template"
-    exit_code=1
+    # Tier 2: template-render path (any phase, when CONTEXT_JSON is available)
+    elif [[ -n "$phase" ]] && [[ -n "${CONTEXT_JSON:-}" ]] && [[ -f "${CONTEXT_JSON}" ]]; then
+      monozukuri_emit skill.invoked feature_id "$feat_id" phase "$phase" tier "2" skill "rendered:$phase"
+      _cc_run_phase_render "$phase" "$feat_id" "$wt_path" "$log_file" || exit_code=$?
+      if [ "$exit_code" -eq 0 ]; then
+        monozukuri_emit skill.completed feature_id "$feat_id" phase "$phase" tier "2"
+      else
+        monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "2" exit_code "$exit_code"
+      fi
+
+    # No skill or render template available — hard error
+    else
+      error "No mz-* skill or render template available for phase '${phase:-<none>}'. Install skills via 'monozukuri setup' or ensure CONTEXT_JSON points to a valid context file."
+      monozukuri_emit skill.failed feature_id "$feat_id" phase "$phase" tier "0" exit_code "1" reason "no-skill-or-template"
+      exit_code=1
+    fi
   fi
 
   # ADR-013: write error envelope so policy engine can classify without log scraping

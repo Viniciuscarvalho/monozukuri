@@ -26,7 +26,8 @@ agent_capabilities() {
     "mcp":            false,
     "streaming":      true,
     "token_counting": "approximate",
-    "approval_modes": ["interactive","yolo"]
+    "approval_modes":        ["interactive","yolo"],
+    "session_continuity":    false
   },
   "models": {
     "aliases": {
