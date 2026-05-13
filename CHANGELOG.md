@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.3...v1.49.0) (2026-05-13)
+
+
+### Features
+
+* **agent:** ADR-017 multi-turn session for claude-code adapter ([#208](https://github.com/Viniciuscarvalho/monozukuri/issues/208)) ([7d6f981](https://github.com/Viniciuscarvalho/monozukuri/commit/7d6f9818965d651405278dd80e11982fc75929ed))
+
 ## [1.48.3](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.48.2...v1.48.3) (2026-05-13)
 
 
