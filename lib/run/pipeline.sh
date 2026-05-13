@@ -356,6 +356,18 @@ process_item() {
   run_feature "$feat_id" "$title" "$body" "$priority" "$labels" "$deps" "$index" "$total" "$next_feat_id"
 }
 
+# ── ADR-017: session turn tracker ─────────────────────────────────────────────
+
+_pipeline_update_session_turn() {
+  [[ "${MONOZUKURI_MULTI_TURN_ACTIVE:-0}" != "1" ]] && return 0
+  local _feat_id="$1" _phase="$2"
+  local _sf="${STATE_DIR}/${_feat_id}/session.json"
+  [[ -f "$_sf" ]] || return 0
+  local _tmp
+  _tmp=$(jq --arg p "$_phase" '.last_completed_turn = $p' "$_sf" 2>/dev/null) || return 0
+  printf '%s\n' "$_tmp" > "$_sf"
+}
+
 # ── run_feature ───────────────────────────────────────────────────────────────
 
 run_feature() {
@@ -595,6 +607,17 @@ EOPRD
   # Load the adapter and dispatch
   agent_load "${MONOZUKURI_AGENT:-claude-code}"
 
+  # ADR-017: activate multi-turn only when user opted in AND the loaded adapter supports it
+  export MONOZUKURI_MULTI_TURN_ACTIVE=0
+  if [[ "${MONOZUKURI_MULTI_TURN:-0}" == "1" ]]; then
+    if agent_capabilities 2>/dev/null | jq -e '.supports.session_continuity == true' >/dev/null 2>&1; then
+      export MONOZUKURI_MULTI_TURN_ACTIVE=1
+      info "Multi-turn mode active (session_continuity supported)"
+    else
+      warn "MONOZUKURI_MULTI_TURN=1 but agent '${MONOZUKURI_AGENT:-claude-code}' lacks session_continuity — cold-process fallback"
+    fi
+  fi
+
   # Build context JSON for the template-render path (Tier 2 in adapter).
   # Required when mz-* skills are not installed in the worktree.
   if declare -f context_pack_build &>/dev/null; then
@@ -678,6 +701,7 @@ EOPRD
       return 1
     fi
     monozukuri_emit phase.completed feature_id "$feat_id" phase "$_ph" duration_ms 0 tokens_used 0 cost_usd 0
+    _pipeline_update_session_turn "$feat_id" "$_ph"
   done
   [ "$_planning_ran" = "true" ] && cost_record "$feat_id" "phase1" "$COST_PHASE_1_PLANNING"
 
@@ -708,6 +732,7 @@ EOPRD
 
   if [ "$exit_code" -eq 0 ]; then
     monozukuri_emit phase.completed feature_id "$feat_id" phase "code" duration_ms 0 tokens_used 0 cost_usd 0
+    _pipeline_update_session_turn "$feat_id" "code"
   elif [ "$exit_code" -ne 21 ] && [ "$exit_code" -ne 15 ]; then
     monozukuri_emit phase.failed feature_id "$feat_id" phase "code" error "exit-$exit_code" retryable 1
   fi

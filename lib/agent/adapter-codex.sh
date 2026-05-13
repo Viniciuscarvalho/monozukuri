@@ -26,7 +26,8 @@ agent_capabilities() {
     "mcp":            false,
     "streaming":      true,
     "token_counting": "approximate",
-    "approval_modes": ["suggest","auto-edit"]
+    "approval_modes":        ["suggest","auto-edit"],
+    "session_continuity":    false
   },
   "models": {
     "aliases": {

@@ -269,6 +269,12 @@ render_phase_prompt() {
   local prompt_dir="${PROMPT_PHASES_DIR:-${_RENDER_SH_DIR}/phases}"
   local tmpl="${prompt_dir}/${phase}.tmpl.md"
 
+  # ADR-017: prefer compact continuation template when multi-turn is active
+  if [[ "${MONOZUKURI_MULTI_TURN_ACTIVE:-0}" == "1" ]]; then
+    local _ct="${prompt_dir}/${phase}.continue.tmpl.md"
+    [[ -f "$_ct" ]] && tmpl="$_ct"
+  fi
+
   if [[ -n "$override" ]]; then
     local _override_tmpl="${prompt_dir}/${override}.tmpl.md"
     if [[ -f "$_override_tmpl" ]]; then

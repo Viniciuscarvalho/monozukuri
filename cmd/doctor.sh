@@ -203,6 +203,20 @@ sub_doctor() {
     fi
   fi
 
+  # ADR-017: multi-turn visibility (only printed when opted in)
+  if [[ "${MONOZUKURI_MULTI_TURN:-0}" == "1" ]]; then
+    local _mt_agent
+    _mt_agent=$(grep -E '^\s*agent\s*:' ".monozukuri/config.yaml" 2>/dev/null | head -1 \
+      | sed 's/.*:\s*//' | tr -d '"' | xargs 2>/dev/null || echo "claude-code")
+    local _mt_adapter="${LIB_DIR}/agent/adapter-${_mt_agent}.sh"
+    if [[ -f "$_mt_adapter" ]] && grep -q '"session_continuity":[[:space:]]*true' "$_mt_adapter" 2>/dev/null; then
+      _doctor_pass "MONOZUKURI_MULTI_TURN=1 (${_mt_agent}: session_continuity active, mz-* skills bypassed)"
+    else
+      printf "  %s~%s MONOZUKURI_MULTI_TURN=1 but '%s' lacks session_continuity — cold-process fallback\n" \
+        "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}" "$_mt_agent"
+    fi
+  fi
+
   echo ""
   if [ "$failed" -eq 0 ]; then
     printf "%s✓ All checks passed — ready to run%s\n" "${T_SUCCESS:-\033[0;32m}" "${T_RESET:-\033[0m}"
