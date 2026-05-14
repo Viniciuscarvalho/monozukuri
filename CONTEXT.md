@@ -25,9 +25,21 @@ The fraction of features that enter a paused state at Phase 3 (code execution) a
 
 The 7-layer QA script at `.qa/release-gate.sh`. Layer 6 (scale soak) is the machine-readable v1.0 SLO enforcement. Layers 5, 6-live, and 7 are skipped in CI; they are manual pre-release checks.
 
+### Conflict Predictor
+
+The pre-pipeline static gate (`dep_predict_conflicts` in `lib/run/implicit-dep.sh`) that parses `## File Layout` / `## Files Touched` sections from all queued TechSpecs before Phase A runs. When the file graph is a DAG, it reorders the feature queue automatically. When two features claim the same file with no resolvable ordering, it emits `dep.conflict` and exits `EXIT_CYCLE_GATE`. Extends the runtime `overlap_check` (which fires at Phase C and reads `state.json`); the two checks are complementary, not redundant.
+
+### Fixture Provenance
+
+The `captured_with` field in `.qa/fixtures/recordings/metadata.json`. Value is `"seed"` when the recording was copied from a claude-code run (not real tier-2 output) or `"real"` when captured from the actual CLI via `make rerecord-fixtures`. Layer 7 (`07-conformance.sh`) only runs its live-vs-replay drift check for recordings with `captured_with: "real"` — seeded recordings are structurally plausible but do not constitute a real conformance baseline.
+
 ### Recording
 
 A captured real agent response under `.qa/fixtures/recordings/<agent>/`. Used by `replay-claude` for deterministic CI replay. Codex and Gemini recordings are currently seeded from claude-code recordings — not real agent output. Re-recording requires the respective CLI and `make rerecord-fixtures`.
+
+### Skill Injection
+
+The mechanism by which tier-2 adapters (Codex, Gemini) receive SKILL.md content that Claude Code gets natively via `--agent`. Implemented in `lib/agent/skill-inject.sh` as a turn-1 prompt prefix: the SKILL.md for the current phase is prepended to the phase prompt before the CLI is invoked. Adapters declare `skill_injection: true` in `agent_capabilities` to opt in. Under multi-turn mode, the prefix is sent on turn 1 only; subsequent continuation turns rely on session context carrying the instructions forward. If a specific adapter's session does not reliably carry turn-1 context, it can declare `skill_injection_every_turn: true` to re-prefix every turn.
 
 ### Skill (mz-\*)
 
