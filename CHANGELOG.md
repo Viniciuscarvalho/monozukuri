@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.1...v1.50.2) (2026-05-14)
+
+
+### Documentation
+
+* **planning:** v2.0 gap-closure PRD + ADRs 018-023 ([#216](https://github.com/Viniciuscarvalho/monozukuri/issues/216)) ([d839452](https://github.com/Viniciuscarvalho/monozukuri/commit/d839452e99f7159ae0956aaa817296f2c2f8e34a))
+
 ## [1.50.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.0...v1.50.1) (2026-05-14)
 
 
