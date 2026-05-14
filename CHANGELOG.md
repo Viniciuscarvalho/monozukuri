@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.49.1...v1.50.0) (2026-05-14)
+
+
+### Features
+
+* add promotional site + GitHub Pages deployment ([#207](https://github.com/Viniciuscarvalho/monozukuri/issues/207)) ([a5cf1dd](https://github.com/Viniciuscarvalho/monozukuri/commit/a5cf1ddb151c6311814499aace67cb17f3276d71))
+
 ## [1.49.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.49.0...v1.49.1) (2026-05-13)
 
 
