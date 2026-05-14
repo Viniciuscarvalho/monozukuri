@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { Terminal, GitPullRequest, GitMerge, FileText, CheckCircle2, ShieldAlert, Cpu } from "lucide-react";
+import { Terminal, FileText, ShieldAlert, Cpu } from "lucide-react";
+
+const base = import.meta.env.BASE_URL;
 
 export default function Landing() {
   const fadeUp = {
@@ -78,7 +80,7 @@ export default function Landing() {
             </motion.div>
             
             <motion.div variants={fadeUp} className="bg-black/50 border border-white/5 rounded-lg p-2 md:p-8">
-              <img src="/assets/before-after.svg" alt="Sequential vs Parallel" className="w-full h-auto opacity-90" />
+              <img src={`${base}assets/before-after.svg`} alt="Sequential vs Parallel" className="w-full h-auto opacity-90" />
             </motion.div>
           </motion.div>
         </section>
@@ -94,7 +96,7 @@ export default function Landing() {
             </motion.div>
             
             <motion.div variants={fadeUp} className="bg-black/50 border border-white/5 rounded-lg p-2 md:p-8">
-              <img src="/assets/six-phase-pipeline.svg" alt="Six-phase pipeline" className="w-full h-auto opacity-90" />
+              <img src={`${base}assets/six-phase-pipeline.svg`} alt="Six-phase pipeline" className="w-full h-auto opacity-90" />
             </motion.div>
           </motion.div>
         </section>
@@ -110,7 +112,7 @@ export default function Landing() {
             </motion.div>
             
             <motion.div variants={fadeUp} className="bg-black/50 border border-white/5 rounded-lg p-2 md:p-8">
-              <img src="/assets/overnight-timeline.svg" alt="Overnight timeline" className="w-full h-auto opacity-90" />
+              <img src={`${base}assets/overnight-timeline.svg`} alt="Overnight timeline" className="w-full h-auto opacity-90" />
             </motion.div>
           </motion.div>
         </section>
@@ -126,7 +128,7 @@ export default function Landing() {
             </motion.div>
             
             <motion.div variants={fadeUp} className="bg-black/50 border border-white/5 rounded-lg p-2 md:p-8">
-              <img src="/assets/three-tier-learning.svg" alt="Three-tier learning store" className="w-full h-auto opacity-90" />
+              <img src={`${base}assets/three-tier-learning.svg`} alt="Three-tier learning store" className="w-full h-auto opacity-90" />
             </motion.div>
           </motion.div>
         </section>
