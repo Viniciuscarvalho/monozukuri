@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.0...v1.50.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* **site:** set GitHub Pages base path and fix asset URLs ([#213](https://github.com/Viniciuscarvalho/monozukuri/issues/213)) ([2368810](https://github.com/Viniciuscarvalho/monozukuri/commit/23688106b8edb919dae434420f6b64c711f25101))
+
 ## [1.50.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.49.1...v1.50.0) (2026-05-14)
 
 
