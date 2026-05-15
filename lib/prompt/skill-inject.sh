@@ -39,21 +39,47 @@ monozukuri_skill_prefix_for_phase() {
   printf -- '\n--- END %s SKILL.md ---\n\n' "$skill_name"
 }
 
+_monozukuri_skill_capability() {
+  local key="$1" fallback="$2" caps
+  if declare -f agent_capabilities >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    caps=$(agent_capabilities 2>/dev/null || true)
+    if [[ -n "$caps" ]]; then
+      printf '%s\n' "$caps" | jq -r --arg key "$key" --arg fallback "$fallback" \
+        '.supports as $supports | if ($supports | has($key)) then $supports[$key] else ($fallback == "true") end' 2>/dev/null && return 0
+    fi
+  fi
+  printf '%s\n' "$fallback"
+}
+
+_monozukuri_skill_fallback_supported() {
+  case "${ADAPTER:-${MONOZUKURI_AGENT:-}}" in
+    codex|gemini) printf '%s\n' "true" ;;
+    *)            printf '%s\n' "false" ;;
+  esac
+}
+
 monozukuri_should_inject_skill() {
+  local phase="${1:-}"
   case "${MONOZUKURI_SKILL_INJECTION:-auto}" in
     1|true|yes|on) return 0 ;;
     0|false|no|off) return 1 ;;
   esac
 
-  case "${ADAPTER:-${MONOZUKURI_AGENT:-}}" in
-    codex|gemini) return 0 ;;
-    *) return 1 ;;
-  esac
+  local supported every_turn
+  supported=$(_monozukuri_skill_capability "skill_injection" "$(_monozukuri_skill_fallback_supported)")
+  [[ "$supported" == "true" ]] || return 1
+
+  if [[ "${MONOZUKURI_MULTI_TURN_ACTIVE:-0}" == "1" && "$phase" != "prd" ]]; then
+    every_turn=$(_monozukuri_skill_capability "skill_injection_every_turn" "false")
+    [[ "$every_turn" == "true" ]] || return 1
+  fi
+
+  return 0
 }
 
 monozukuri_inject_skill_prompt() {
   local phase="${1:-}" prompt="${2:-}"
-  if ! monozukuri_should_inject_skill; then
+  if ! monozukuri_should_inject_skill "$phase"; then
     printf '%s' "$prompt"
     return 0
   fi
@@ -64,5 +90,5 @@ monozukuri_inject_skill_prompt() {
     printf '%s' "$prompt"
     return 0
   fi
-  printf '%s%s' "$prefix" "$prompt"
+  printf '%s\n\n%s' "$prefix" "$prompt"
 }

@@ -207,11 +207,66 @@ setup() {
   [[ "$output" == *"## Problem"* ]]
 }
 
+@test "render_phase_prompt separates injected SKILL.md from phase prompt" {
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="1"
+  run render_phase_prompt prd
+  unset ADAPTER MONOZUKURI_SKILL_INJECTION
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'--- END mz-create-prd SKILL.md ---\n\n# PRD'* ]]
+}
+
 @test "render_phase_prompt does not prefix SKILL.md when injection is disabled" {
   export ADAPTER="codex"
   export MONOZUKURI_SKILL_INJECTION="0"
   run render_phase_prompt prd
   unset ADAPTER MONOZUKURI_SKILL_INJECTION
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"## Monozukuri portable skill instructions"* ]]
+}
+
+@test "render_phase_prompt auto mode reads agent_capabilities skill_injection flag" {
+  agent_capabilities() {
+    printf '%s\n' '{"supports":{"skill_injection":true,"skill_injection_every_turn":true}}'
+  }
+
+  export ADAPTER="kiro"
+  unset MONOZUKURI_SKILL_INJECTION
+  run render_phase_prompt prd
+  unset ADAPTER
+  unset -f agent_capabilities
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Monozukuri portable skill instructions"* ]]
+}
+
+@test "render_phase_prompt auto mode skips injection when capability is false" {
+  agent_capabilities() {
+    printf '%s\n' '{"supports":{"skill_injection":false,"skill_injection_every_turn":false}}'
+  }
+
+  export ADAPTER="codex"
+  unset MONOZUKURI_SKILL_INJECTION
+  run render_phase_prompt prd
+  unset ADAPTER
+  unset -f agent_capabilities
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"## Monozukuri portable skill instructions"* ]]
+}
+
+@test "render_phase_prompt skips continuation skill injection unless every_turn is enabled" {
+  agent_capabilities() {
+    printf '%s\n' '{"supports":{"skill_injection":true,"skill_injection_every_turn":false}}'
+  }
+
+  export ADAPTER="codex"
+  export MONOZUKURI_MULTI_TURN_ACTIVE="1"
+  unset MONOZUKURI_SKILL_INJECTION
+  run render_phase_prompt techspec
+  unset ADAPTER MONOZUKURI_MULTI_TURN_ACTIVE
+  unset -f agent_capabilities
+
   [ "$status" -eq 0 ]
   [[ "$output" != *"## Monozukuri portable skill instructions"* ]]
 }
