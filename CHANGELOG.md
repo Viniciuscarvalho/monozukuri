@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.2...v1.51.0) (2026-05-15)
+
+
+### Features
+
+* **agent:** add portable skill injection ([#218](https://github.com/Viniciuscarvalho/monozukuri/issues/218)) ([a1f4a77](https://github.com/Viniciuscarvalho/monozukuri/commit/a1f4a77032f747e7e356548f137540660db9f289))
+
 ## [1.50.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.1...v1.50.2) (2026-05-14)
 
 
