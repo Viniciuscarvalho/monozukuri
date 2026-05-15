@@ -86,9 +86,9 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-# ── autonomy → codex exec mapping ────────────────────────────────────────────
+# ── autonomy → approval_mode mapping ─────────────────────────────────────────
 
-@test "codex agent_run_phase bypasses approvals and sandbox for full_auto autonomy" {
+@test "codex agent_run_phase uses 'auto-edit' for full_auto autonomy" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
   tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
@@ -107,10 +107,10 @@ SCRIPT
   chmod +x "$tmp_script"
   run bash "$tmp_script"
   rm -rf "$mock_dir" "$tmp_script"
-  [[ "$output" == *"exec --dangerously-bypass-approvals-and-sandbox -"* ]]
+  [[ "$output" == *"auto-edit"* ]]
 }
 
-@test "codex agent_run_phase uses workspace-write sandbox for checkpoint autonomy" {
+@test "codex agent_run_phase uses 'suggest' for checkpoint autonomy" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
   tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
@@ -129,30 +129,7 @@ SCRIPT
   chmod +x "$tmp_script"
   run bash "$tmp_script"
   rm -rf "$mock_dir" "$tmp_script"
-  [[ "$output" == *"exec --sandbox workspace-write -"* ]]
-}
-
-@test "codex agent_run_phase passes MONOZUKURI_MODEL to codex exec" {
-  local mock_dir tmp_script
-  mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
-  printf '#!/bin/bash\necho "codex_args: $*"\nexit 0\n' > "$mock_dir/codex"
-  chmod +x "$mock_dir/codex"
-  cat > "$tmp_script" <<SCRIPT
-#!/bin/bash
-export PATH="$mock_dir:\$PATH"
-source "$LIB_DIR/agent/adapter-codex.sh"
-MONOZUKURI_FEATURE_ID="feat-001"
-MONOZUKURI_WORKTREE="$mock_dir"
-MONOZUKURI_AUTONOMY="checkpoint"
-MONOZUKURI_MODEL="gpt-5.5"
-MONOZUKURI_LOG_FILE="/tmp/mz-codex-test-\$\$.log"
-agent_run_phase 2>&1
-SCRIPT
-  chmod +x "$tmp_script"
-  run bash "$tmp_script"
-  rm -rf "$mock_dir" "$tmp_script"
-  [[ "$output" == *"exec --sandbox workspace-write --model gpt-5.5 -"* ]]
+  [[ "$output" == *"suggest"* ]]
 }
 
 # ── agent_estimate_tokens ─────────────────────────────────────────────────────

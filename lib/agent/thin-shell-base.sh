@@ -85,11 +85,9 @@ agent_run_phase() {
   local rendered_prompt
   if declare -f render_phase_prompt &>/dev/null; then
     local _agent_raw="${MONOZUKURI_AGENT:-}"
-    local _agent_norm
-    _agent_norm=$(printf '%s' "$_agent_raw" | tr '[:lower:]-' '[:upper:]_')
-    local _phase_norm
-    _phase_norm=$(printf '%s' "$phase" | tr '[:lower:]' '[:upper:]')
-    local _override_var="CFG_AGENTS_${_agent_norm}_SKILLS_${_phase_norm}"
+    local _agent_norm="${_agent_raw//-/_}"
+    _agent_norm="${_agent_norm^^}"
+    local _override_var="CFG_AGENTS_${_agent_norm}_SKILLS_${phase^^}"
     local _override="${!_override_var:-}"
     rendered_prompt=$(render_phase_prompt "$phase" "${_override}")
   else
