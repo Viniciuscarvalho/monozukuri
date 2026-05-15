@@ -35,6 +35,12 @@ _assert_capabilities_valid() {
         throw new Error('phase entry must be a non-empty string, got: ' + JSON.stringify(p));
     });
 
+    // Portable skill injection flags are required by ADR-020.
+    if (typeof c.supports.skill_injection !== 'boolean')
+      throw new Error('supports.skill_injection must be boolean');
+    if ('skill_injection_every_turn' in c.supports && typeof c.supports.skill_injection_every_turn !== 'boolean')
+      throw new Error('supports.skill_injection_every_turn must be boolean when present');
+
     // models.default must be a non-empty string
     if (typeof c.models.default !== 'string' || c.models.default.length === 0)
       throw new Error('models.default must be a non-empty string');

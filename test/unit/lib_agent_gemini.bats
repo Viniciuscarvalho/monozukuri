@@ -37,6 +37,12 @@ setup() {
   echo "$cap" | jq -e '.supports.approval_modes | index("yolo")' >/dev/null
 }
 
+@test "gemini agent_capabilities declares portable skill injection support" {
+  local cap
+  cap=$(agent_capabilities)
+  echo "$cap" | jq -e '.supports.skill_injection == true' >/dev/null
+}
+
 # ── agent_doctor ─────────────────────────────────────────────────────────────
 
 @test "gemini agent_doctor: fails when gemini binary not in PATH" {

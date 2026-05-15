@@ -30,6 +30,8 @@
 # Dependencies: bash 4+, jq
 
 _RENDER_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=skill-inject.sh
+source "${_RENDER_SH_DIR}/skill-inject.sh"
 
 monozukuri_render() {
   local template_path="${1:-}"
@@ -325,6 +327,10 @@ render_phase_prompt() {
     _schema_block=$(_render_schema_block "$phase")
     [[ -n "$_schema_block" ]] && _rendered+=$'\n\n'"$_schema_block"
   fi
+
+  # Portable skill injection for non-Claude adapters. Keep this after schema
+  # appending so the original rendered prompt remains intact below the prefix.
+  _rendered=$(monozukuri_inject_skill_prompt "$phase" "$_rendered")
 
   printf '%s\n' "$_rendered"
 }

@@ -33,6 +33,8 @@ agent_capabilities() {
     "streaming":      true,
     "token_counting": "approximate",
     "approval_modes":        ["interactive","autonomous"],
+    "skill_injection":       false,
+    "skill_injection_every_turn": false,
     "session_continuity":    false
   },
   "models": {

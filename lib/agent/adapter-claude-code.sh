@@ -52,6 +52,8 @@ agent_capabilities() {
     "streaming":           true,
     "token_counting":      "exact",
     "approval_modes":      ["read-only","auto-edit","full-access"],
+    "skill_injection":     false,
+    "skill_injection_every_turn": false,
     "session_continuity":  true
   },
   "models": {
