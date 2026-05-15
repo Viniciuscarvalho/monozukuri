@@ -139,7 +139,7 @@ function slugify(s) {
 
 // Parse AGENTS.md: strip generated block, split on ## headings,
 // extract optional YAML frontmatter from each section body.
-// relPath is the path recorded in each agent's path field — defaults
+// relPath is the path recorded in each agent's `path` field — defaults
 // to 'AGENTS.md' for backward compatibility.
 function parseAgentsMd(mdPath, relPath) {
   if (!relPath) relPath = 'AGENTS.md';
