@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "assets/**"
+      - ".github/ISSUE_TEMPLATE/**"
 
 concurrency:
   group: ci-${{ github.event.pull_request.number }}
@@ -81,8 +86,19 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Cache bats
+        id: bats-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/bats-global
+          key: bats-${{ runner.os }}-v1
+
       - name: Install bats
-        run: npm install -g bats
+        if: steps.bats-cache.outputs.cache-hit != 'true'
+        run: npm install -g --prefix ~/bats-global bats
+
+      - name: Add bats to PATH
+        run: echo "$HOME/bats-global/bin" >> $GITHUB_PATH
 
       - name: Run unit tests (selected)
         if: needs.select-tests.outputs.run_all == 'true' || needs.select-tests.outputs.unit_tests != ''
@@ -130,8 +146,19 @@ jobs:
           git config --global user.email "ci@monozukuri.local"
           git config --global user.name "CI"
 
+      - name: Cache bats
+        id: bats-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/bats-global
+          key: bats-${{ runner.os }}-v1
+
       - name: Install bats
-        run: npm install -g bats
+        if: steps.bats-cache.outputs.cache-hit != 'true'
+        run: npm install -g --prefix ~/bats-global bats
+
+      - name: Add bats to PATH
+        run: echo "$HOME/bats-global/bin" >> $GITHUB_PATH
 
       - name: Run integration tests (selected)
         if: needs.select-tests.outputs.run_all == 'true' || needs.select-tests.outputs.integration_tests != ''
@@ -162,10 +189,12 @@ jobs:
               --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
           fi
 
-  # ── Conformance tests (always run — structural, fast, no source dependency) ──
+  # ── Conformance tests (skipped on docs/asset-only changes) ──────────────────
   conformance:
     name: Conformance tests
     runs-on: ubuntu-latest
+    needs: select-tests
+    if: needs.select-tests.outputs.run_all == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -173,8 +202,19 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Cache bats
+        id: bats-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/bats-global
+          key: bats-${{ runner.os }}-v1
+
       - name: Install bats
-        run: npm install -g bats
+        if: steps.bats-cache.outputs.cache-hit != 'true'
+        run: npm install -g --prefix ~/bats-global bats
+
+      - name: Add bats to PATH
+        run: echo "$HOME/bats-global/bin" >> $GITHUB_PATH
 
       - name: Run conformance tests
         run: bats test/conformance/
