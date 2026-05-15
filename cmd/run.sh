@@ -97,6 +97,7 @@ sub_run() {
   module_require run/implicit-dep
   # ADR-012 (Gap 3): phase template rendering + adapter routing
   module_require prompt/context-pack
+  module_require prompt/render
   module_require agent/registry
   # Phase modules (extracted from pipeline.sh)
   module_require run/pause
