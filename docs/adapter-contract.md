@@ -95,7 +95,9 @@ agent_login_hint()
     "mcp": false,
     "streaming": true,
     "token_counting": "estimate",
-    "approval_modes": ["auto"]
+    "approval_modes": ["auto"],
+    "skill_injection": false,
+    "skill_injection_every_turn": false
   },
   "models": {
     "aliases": { "default": "<model-id>" },
@@ -115,6 +117,15 @@ agent_login_hint()
 - `"aws:credentials"` — AWS SDK credential chain (kiro)
 
 `additionalProperties` is allowed; Monozukuri reads only the fields above.
+
+Capability fields added for portable skill injection (ADR-020):
+
+| Field | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `supports.skill_injection` | boolean | ✅ | Adapter receives phase `SKILL.md` content through the rendered prompt rather than through a native skill mechanism. `true` means `render_phase_prompt` may prefix the phase prompt with the matching `skills/mz-*/SKILL.md`; `false` means no prompt prefix is applied. |
+| `supports.skill_injection_every_turn` | boolean | — | When `true`, inject the phase skill on every phase prompt. When absent or `false`, inject only according to the adapter's native/session strategy. |
+
+Claude Code reports `skills: true` and `skill_injection: false` because it invokes `mz-*` skills natively. Codex and Gemini report `skill_injection: true` so they receive the same canonical phase instructions through prompt text.
 
 ---
 

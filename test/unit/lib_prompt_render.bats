@@ -195,3 +195,23 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == "feat-pack" ]]
 }
+
+@test "render_phase_prompt prefixes SKILL.md for adapters with skill injection" {
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="1"
+  run render_phase_prompt prd
+  unset ADAPTER MONOZUKURI_SKILL_INJECTION
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Monozukuri portable skill instructions"* ]]
+  [[ "$output" == *"mz-create-prd"* ]]
+  [[ "$output" == *"## Problem"* ]]
+}
+
+@test "render_phase_prompt does not prefix SKILL.md when injection is disabled" {
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="0"
+  run render_phase_prompt prd
+  unset ADAPTER MONOZUKURI_SKILL_INJECTION
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"## Monozukuri portable skill instructions"* ]]
+}
