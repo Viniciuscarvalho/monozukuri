@@ -33,10 +33,10 @@ agent_capabilities() {
   },
   "models": {
     "aliases": {
-      "default": "gpt-5",
-      "mini":    "gpt-5-mini"
+      "default": "gpt-5.5",
+      "mini":    "gpt-5.4-mini"
     },
-    "default": "gpt-5"
+    "default": "gpt-5.5"
   },
   "auth": {
     "methods": ["oauth:openai-account"],
@@ -61,18 +61,19 @@ agent_login_hint() { printf 'codex login\n'; }
 
 _thin_shell_invoke() {
   local prompt="$1" log_file="$2" _feat_id="$3" wt_path="$4"
-  local approval_mode
+  local cmd=(codex exec)
   case "${MONOZUKURI_AUTONOMY:-checkpoint}" in
-    full_auto)  approval_mode="auto-edit" ;;
-    *)          approval_mode="suggest" ;;
+    full_auto)  cmd+=(--dangerously-bypass-approvals-and-sandbox) ;;
+    *)          cmd+=(--sandbox workspace-write) ;;
   esac
+  if [ -n "${MONOZUKURI_MODEL:-}" ]; then
+    cmd+=(--model "$MONOZUKURI_MODEL")
+  fi
+  cmd+=(-)
+
   (cd "$wt_path" && printf '%s\n' "$prompt" | \
     adapter_tee "$log_file" -- \
-      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" \
-        codex \
-          --approval-mode "$approval_mode" \
-          ${MONOZUKURI_MODEL:+--model "$MONOZUKURI_MODEL"} \
-          -)
+      op_timeout "${SKILL_TIMEOUT_SECONDS:-1800}" "${cmd[@]}")
 }
 
 _thin_shell_auth_check() {

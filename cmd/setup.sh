@@ -55,7 +55,11 @@ sub_setup() {
     echo ""
     local flags=()
     [ "${OPT_SETUP_GLOBAL:-false}" = "true" ] && flags+=(--global)
-    setup_status "$agents" "all" "${flags[@]}"
+    if ((${#flags[@]})); then
+      setup_status "$agents" "all" "${flags[@]}"
+    else
+      setup_status "$agents" "all"
+    fi
     echo ""
     monozukuri_emit setup.completed action "${OPT_SETUP_ACTION:-install}"
     return 0
@@ -77,7 +81,11 @@ sub_setup() {
     }
     flags=()
     [ "${OPT_SETUP_GLOBAL:-false}" = "true" ] && flags+=(--global)
-    setup_uninstall "$agents" "all" "${flags[@]}"
+    if ((${#flags[@]})); then
+      setup_uninstall "$agents" "all" "${flags[@]}"
+    else
+      setup_uninstall "$agents" "all"
+    fi
     echo ""
     _setup_pass "Uninstall complete."
     return 0
@@ -109,7 +117,11 @@ sub_setup() {
   fi
 
   echo ""
-  setup_install "$agents" "all" "${flags[@]}"
+  if ((${#flags[@]})); then
+    setup_install "$agents" "all" "${flags[@]}"
+  else
+    setup_install "$agents" "all"
+  fi
 
   echo ""
   if [ "${OPT_DRY_RUN:-false}" = "true" ]; then
