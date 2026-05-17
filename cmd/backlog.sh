@@ -3,13 +3,19 @@
 
 _backlog_help() {
   cat <<'EOF'
-Usage: monozukuri backlog list [--format table|json|csv] [--limit N]
+Usage: monozukuri backlog list [--format table|json|csv] [--limit N] [filters]
 
 List backlog items ranked by priority, then age.
 
 Flags:
   --format table|json|csv   Output format (default: table)
   --limit N                 Maximum items to print (default: 50, max: 500)
+  --label foo,bar           Include items with any listed label
+  --status ready|blocked|in-progress|done
+                            Include items by status (default: ready)
+  --exclude-blocked         Shortcut for --status ready
+  --agent claude-code|codex|gemini
+                            Include items explicitly compatible with an agent
   --help                    Show this help
 EOF
 }
@@ -30,6 +36,9 @@ sub_backlog() {
 sub_backlog_list() {
   local format="${OPT_BACKLOG_FORMAT:-table}"
   local limit="${OPT_BACKLOG_LIMIT:-50}"
+  local label="${OPT_BACKLOG_LABEL:-}"
+  local status="${OPT_BACKLOG_STATUS:-ready}"
+  local agent="${OPT_BACKLOG_AGENT:-}"
 
   case "$format" in
     table|json|csv) ;;
@@ -42,6 +51,20 @@ sub_backlog_list() {
     err "Invalid --limit: expected integer from 1 to 500"
     return 2
   fi
+  case "$status" in
+    ready|blocked|in-progress|done) ;;
+    *)
+      err "Invalid --status: $status (expected: ready, blocked, in-progress, done)"
+      return 2
+      ;;
+  esac
+  case "$agent" in
+    ""|claude-code|codex|gemini) ;;
+    *)
+      err "Invalid --agent: $agent (expected: claude-code, codex, gemini)"
+      return 2
+      ;;
+  esac
 
   source "$LIB_DIR/core/modules.sh"
   modules_init "$LIB_DIR"
@@ -66,15 +89,13 @@ sub_backlog_list() {
 
   load_config "$config_file"
 
-  local adapter_out count backlog_file
-  adapter_out=$(run_adapter)
-  count=$(echo "$adapter_out" | grep -Eo '^[0-9]+$' | tail -1 || true)
+  local backlog_file
+  run_adapter >/dev/null
   backlog_file="$ROOT_DIR/$BACKLOG_OUTPUT"
 
-  if [ "${count:-0}" -eq 0 ] && [ "$format" = "table" ]; then
-    node "$LIB_DIR/backlog/list.js" --file "$backlog_file" --format "$format" --limit "$limit"
-    return 0
-  fi
+  local args=(--file "$backlog_file" --format "$format" --limit "$limit" --status "$status")
+  [ -n "$label" ] && args+=(--label "$label")
+  [ -n "$agent" ] && args+=(--agent "$agent")
 
-  node "$LIB_DIR/backlog/list.js" --file "$backlog_file" --format "$format" --limit "$limit"
+  node "$LIB_DIR/backlog/list.js" "${args[@]}"
 }

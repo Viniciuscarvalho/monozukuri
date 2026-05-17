@@ -35,24 +35,58 @@ _write_features() {
 ## [FEAT] feat-low: Low priority feature
 - priority: low
 - effort: S
+- labels: docs
+- agents: gemini
 
 Body.
 
 ## [FEAT] feat-high-old: High priority older feature with a very long title that should be truncated by the list command
 - priority: high
 - effort: M
+- labels: cli, ux
+- agents: codex, claude-code
 
 Body.
 
 ## [FEAT] feat-high-new: High priority newer feature
 - priority: high
 - effort: L
+- labels: cli
+- agents: claude-code
+
+Body.
+
+## [BLOCKED] feat-blocked: Blocked feature
+- priority: high
+- effort: L
+- labels: ops
+- agents: codex
+
+Body.
+
+## [WIP] feat-wip: In progress feature
+- priority: medium
+- effort: M
+- labels: ops
+- agents: gemini
+
+Body.
+
+## [DONE] feat-done: Done feature
+- priority: medium
+- effort: S
+- labels: docs
+- agents: claude-code
 
 Body.
 EOF
 }
 
-@test "monozukuri backlog list prints ranked table by default" {
+_ids_from_json() {
+  node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.map(i=>i.id).join(','));"
+}
+
+@test "monozukuri backlog list prints ranked ready table by default" {
   _write_features
   run bash "$ORCHESTRATE" backlog list
   [ "$status" -eq 0 ]
@@ -61,6 +95,7 @@ EOF
   [ "$first_id" = "feat-high-old" ]
   [[ "$output" == *"feat-high-new"* ]]
   [[ "$output" == *"feat-low"* ]]
+  [[ "$output" != *"feat-blocked"* ]]
 }
 
 @test "monozukuri backlog list supports json and limit" {
@@ -77,6 +112,61 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == id,priority,effort,status,title* ]]
   [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 2 ]
+}
+
+@test "monozukuri backlog list filters by label with OR semantics" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --label docs,ux
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old,feat-low" ]
+}
+
+@test "monozukuri backlog list filters by status" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --status blocked
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-blocked" ]
+}
+
+@test "monozukuri backlog list excludes blocked through ready shortcut" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --exclude-blocked
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old,feat-high-new,feat-low" ]
+}
+
+@test "monozukuri backlog list filters by compatible agent" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --agent codex
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old" ]
+}
+
+@test "monozukuri backlog list combines label and agent filters with AND" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --label cli --agent codex
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old" ]
+}
+
+@test "monozukuri backlog list combines status and label filters with AND" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --format json --status done --label docs
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-done" ]
+}
+
+@test "monozukuri backlog list returns success and friendly message for no matches" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --label missing
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No backlog items match the selected filters"* ]]
 }
 
 @test "monozukuri backlog list rejects invalid limit" {
