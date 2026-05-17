@@ -35,6 +35,8 @@ const query = JSON.stringify({
         title
         description
         url
+        createdAt
+        estimate
         priority
         state { name type }
         labels { nodes { name } }
@@ -76,7 +78,9 @@ const req = https.request(options, (res) => {
         body: issue.description || '',
         labels: issue.labels.nodes.map(l => l.name),
         priority: PRIO_MAP[issue.priority] || 'none',
+        effort: issue.estimate ? String(issue.estimate) : '-',
         status: STATE_MAP[issue.state.type] || 'backlog',
+        created_at: issue.createdAt || null,
         dependencies: [],
         metadata: { url: issue.url }
       }));
