@@ -88,7 +88,7 @@ jobs:
 
       - name: Cache bats
         id: bats-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/bats-global
           key: bats-${{ runner.os }}-v1
@@ -148,7 +148,7 @@ jobs:
 
       - name: Cache bats
         id: bats-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/bats-global
           key: bats-${{ runner.os }}-v1
@@ -204,7 +204,7 @@ jobs:
 
       - name: Cache bats
         id: bats-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/bats-global
           key: bats-${{ runner.os }}-v1
