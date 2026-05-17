@@ -140,6 +140,9 @@ OPT_NO_UI=false
 OPT_BACKLOG_ACTION=""
 OPT_BACKLOG_FORMAT="table"
 OPT_BACKLOG_LIMIT="50"
+OPT_BACKLOG_LABEL=""
+OPT_BACKLOG_STATUS="ready"
+OPT_BACKLOG_AGENT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -224,6 +227,48 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --label)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_LABEL="$1"
+      else
+        err "Unknown argument: --label"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --status)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_STATUS="$1"
+      elif [ "$SUBCOMMAND" = "setup" ]; then
+        OPT_SETUP_ACTION=status
+      elif [ "$SUBCOMMAND" = "telemetry" ]; then
+        OPT_TELEMETRY_ACTION=--status
+      else
+        err "Unknown argument: --status"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --exclude-blocked)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        OPT_BACKLOG_STATUS="ready"
+      else
+        err "Unknown argument: --exclude-blocked"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --agent)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_AGENT="$1"
+      elif [ "$SUBCOMMAND" = "setup" ]; then
+        shift; OPT_SETUP_AGENT="$1"
+      else
+        err "Unknown argument: --agent"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --resume)
       OPT_RESUME=true
       ;;
@@ -269,10 +314,6 @@ while [ $# -gt 0 ]; do
     --uninstall)
       [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=uninstall
       ;;
-    --status)
-      [ "$SUBCOMMAND" = "setup" ]      && OPT_SETUP_ACTION=status
-      [ "$SUBCOMMAND" = "telemetry" ]  && OPT_TELEMETRY_ACTION=--status
-      ;;
     --opt-in)
       [ "$SUBCOMMAND" = "telemetry" ]  && OPT_TELEMETRY_ACTION=--opt-in
       ;;
@@ -281,11 +322,6 @@ while [ $# -gt 0 ]; do
       ;;
     --list)
       [ "$SUBCOMMAND" = "setup" ] && OPT_SETUP_ACTION=list
-      ;;
-    --agent)
-      if [ "$SUBCOMMAND" = "setup" ]; then
-        shift; OPT_SETUP_AGENT="$1"
-      fi
       ;;
     validate)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
@@ -302,13 +338,19 @@ while [ $# -gt 0 ]; do
       ;;
     --help|-h)
       if [ "$SUBCOMMAND" = "backlog" ]; then
-        echo "Usage: monozukuri backlog list [--format table|json|csv] [--limit N]"
+        echo "Usage: monozukuri backlog list [--format table|json|csv] [--limit N] [filters]"
         echo ""
         echo "List backlog items ranked by priority, then age."
         echo ""
         echo "Flags:"
         echo "  --format table|json|csv   Output format (default: table)"
         echo "  --limit N                 Maximum items to print (default: 50, max: 500)"
+        echo "  --label foo,bar           Include items with any listed label"
+        echo "  --status ready|blocked|in-progress|done"
+        echo "                            Include items by status (default: ready)"
+        echo "  --exclude-blocked         Shortcut for --status ready"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Include items explicitly compatible with an agent"
         echo "  --help                    Show this help"
         exit 0
       fi
@@ -387,6 +429,10 @@ while [ $# -gt 0 ]; do
       echo "  --no-ui                      Skip the Ink TUI; emit plain-text output"
       echo "  --format <table|json|csv>    Output format for backlog list"
       echo "  --limit <n>                  Max items for backlog list (default: 50, max: 500)"
+      echo "  --label <a,b>                Filter backlog list by label"
+      echo "  --status <status>            Filter backlog list by status"
+      echo "  --exclude-blocked            Shortcut for backlog list --status ready"
+      echo "  --agent <agent>              Filter backlog list or target setup by agent"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -438,7 +484,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_SETUP_AGENT OPT_SETUP_ACTION OPT_SETUP_ALL OPT_SETUP_GLOBAL \
        OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES \
        OPT_TELEMETRY_ACTION \
-       OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT
+       OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
+       OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
