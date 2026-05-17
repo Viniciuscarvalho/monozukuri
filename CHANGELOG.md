@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.51.0...v1.51.1) (2026-05-17)
+
+
+### Bug Fixes
+
+* **agent:** run Codex through rendered phase prompts ([#221](https://github.com/Viniciuscarvalho/monozukuri/issues/221)) ([49f264d](https://github.com/Viniciuscarvalho/monozukuri/commit/49f264d6f6d2e0d6aa44a3b7df7b7583e426b176))
+
 ## [1.51.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.50.2...v1.51.0) (2026-05-15)
 
 
