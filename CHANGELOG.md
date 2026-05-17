@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.54.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.53.0...v1.54.0) (2026-05-17)
+
+
+### Features
+
+* **cli:** filter backlog list output ([#229](https://github.com/Viniciuscarvalho/monozukuri/issues/229)) ([02a4f8b](https://github.com/Viniciuscarvalho/monozukuri/commit/02a4f8b8779113878807cff447c74f5c98637d0b))
+
 ## [1.53.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.52.0...v1.53.0) (2026-05-17)
 
 
