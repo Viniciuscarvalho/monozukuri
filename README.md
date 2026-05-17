@@ -23,6 +23,7 @@ brew install monozukuri
 
 cd your-project
 monozukuri init
+monozukuri backlog list  # inspect ranked features
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 ```

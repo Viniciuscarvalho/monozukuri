@@ -41,6 +41,7 @@ for (const line of lines) {
       body: '',
       labels: [],
       priority: 'none',
+      effort: '-',
       status: STATUS_MAP[rawStatus] || 'backlog',
       dependencies: [],
       metadata: {}
@@ -60,6 +61,12 @@ for (const line of lines) {
   const prioMatch = line.match(/^-\s*priority:\s*(.+)/i);
   if (prioMatch) {
     current.priority = prioMatch[1].trim().toLowerCase();
+    continue;
+  }
+
+  const effortMatch = line.match(/^-\s*effort:\s*(.+)/i);
+  if (effortMatch) {
+    current.effort = effortMatch[1].trim();
     continue;
   }
 

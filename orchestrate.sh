@@ -9,6 +9,7 @@
 #   ./orchestrate.sh run                       # Execute orchestration
 #   ./orchestrate.sh run --autonomy full_auto  # Override autonomy
 #   ./orchestrate.sh run --dry-run             # Show plan, don't execute
+#   ./orchestrate.sh backlog list              # List ranked backlog items
 #   ./orchestrate.sh status                    # Show current state
 #   ./orchestrate.sh clean                     # Remove all worktrees
 #
@@ -136,10 +137,13 @@ OPT_RETRY_ALL=false
 OPT_RETRY_FEATS=""
 OPT_RETRY_REASON=""
 OPT_NO_UI=false
+OPT_BACKLOG_ACTION=""
+OPT_BACKLOG_FORMAT="table"
+OPT_BACKLOG_LIMIT="50"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -150,6 +154,8 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_ACTION="$1"
       elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
         OPT_ROUTING_PHASE="$1"
+      elif [ "$SUBCOMMAND" = "backlog" ] && [ -z "$OPT_BACKLOG_ACTION" ]; then
+        OPT_BACKLOG_ACTION="$1"
       fi
       ;;
     --resume-paused)
@@ -200,6 +206,24 @@ while [ $# -gt 0 ]; do
     --no-ui)
       OPT_NO_UI=true
       ;;
+    --format)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_FORMAT="$1"
+      else
+        err "Unknown argument: --format"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --limit)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_LIMIT="$1"
+      else
+        err "Unknown argument: --limit"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --resume)
       OPT_RESUME=true
       ;;
@@ -207,6 +231,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
+      [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
     install|status|uninstall)
       if [ "$SUBCOMMAND" = "setup" ]; then
@@ -276,6 +301,17 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_ACTION" ] && OPT_ROUTING_ACTION="$1"
       ;;
     --help|-h)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        echo "Usage: monozukuri backlog list [--format table|json|csv] [--limit N]"
+        echo ""
+        echo "List backlog items ranked by priority, then age."
+        echo ""
+        echo "Flags:"
+        echo "  --format table|json|csv   Output format (default: table)"
+        echo "  --limit N                 Maximum items to print (default: 50, max: 500)"
+        echo "  --help                    Show this help"
+        exit 0
+      fi
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
       echo "Commands:"
@@ -284,6 +320,7 @@ while [ $# -gt 0 ]; do
       echo "  config validate              Validate .monozukuri/config.yaml against schema"
       echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
+      echo "  backlog list                 List ranked backlog items"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -348,6 +385,8 @@ while [ $# -gt 0 ]; do
       echo "  --non-interactive            Skip all prompts; use defaults"
       echo "  --resume                     Resume the most recent run (idempotent)"
       echo "  --no-ui                      Skip the Ink TUI; emit plain-text output"
+      echo "  --format <table|json|csv>    Output format for backlog list"
+      echo "  --limit <n>                  Max items for backlog list (default: 50, max: 500)"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -368,6 +407,8 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_ACTION="$1"
       elif [ "$SUBCOMMAND" = "routing" ] && [ -z "$OPT_ROUTING_PHASE" ]; then
         OPT_ROUTING_PHASE="$1"
+      elif [ "$SUBCOMMAND" = "backlog" ] && [ -z "$OPT_BACKLOG_ACTION" ]; then
+        OPT_BACKLOG_ACTION="$1"
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
         if [ -n "${OPT_RETRY_FEATS:-}" ]; then
@@ -396,7 +437,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_CONVENTIONS_WRITE OPT_CONVENTIONS_YES \
        OPT_SETUP_AGENT OPT_SETUP_ACTION OPT_SETUP_ALL OPT_SETUP_GLOBAL \
        OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES \
-       OPT_TELEMETRY_ACTION
+       OPT_TELEMETRY_ACTION \
+       OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -446,6 +488,7 @@ esac
 case "$SUBCOMMAND" in
   doctor)          source "$CMD_DIR/doctor.sh"; sub_doctor ;;
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
+  backlog)         source "$CMD_DIR/backlog.sh"; sub_backlog ;;
   run)
     source "$CMD_DIR/run.sh"
     if [ "$_use_tui" = "true" ]; then sub_run | node "$_TUI_SCRIPT"; else sub_run; fi
