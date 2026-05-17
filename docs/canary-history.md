@@ -18,3 +18,8 @@ This file records the results of weekly canary benchmark runs. Each row represen
 | date       | run_id              | headline\_% | tokens_avg | completion\_% | stack_breakdown_json                      |
 | ---------- | ------------------- | ----------- | ---------- | ------------- | ----------------------------------------- |
 | 2026-04-26 | run-20260426-183854 | 100         | 42516      | 100           | {"backend":100,"data":100,"frontend":100} |
+2026-05-17 | run-20260517-040021 | 100 | 44648 | 100 | {
+  "backend": 100,
+  "data": 100,
+  "frontend": 100
+}
