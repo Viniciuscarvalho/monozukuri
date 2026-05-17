@@ -1,6 +1,11 @@
 # Changelog
 
-## [1.51.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.51.0...v1.51.1) (2026-05-17)
+## [1.52.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.51.0...v1.52.0) (2026-05-17)
+
+
+### Features
+
+* **cli:** add ranked backlog list command ([#227](https://github.com/Viniciuscarvalho/monozukuri/issues/227)) ([d57ef92](https://github.com/Viniciuscarvalho/monozukuri/commit/d57ef921f34c8aaf0dbe4895fbcd569a3fccc299))
 
 
 ### Bug Fixes
