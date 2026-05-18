@@ -145,6 +145,7 @@ OPT_BACKLOG_STATUS="ready"
 OPT_BACKLOG_AGENT=""
 OPT_BACKLOG_IDS=""
 OPT_BACKLOG_STRICT=false
+OPT_BACKLOG_SCORE_EXPLAIN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -280,6 +281,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --score-explain)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        shift; OPT_BACKLOG_SCORE_EXPLAIN="$1"
+      else
+        err "Unknown argument: --score-explain"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --resume)
       OPT_RESUME=true
       ;;
@@ -365,6 +375,7 @@ while [ $# -gt 0 ]; do
         echo "  --exclude-blocked         Shortcut for --status ready"
         echo "  --agent claude-code|codex|gemini"
         echo "                            Include items explicitly compatible with an agent"
+        echo "  --score-explain id        Show the ranking score breakdown for one item"
         echo ""
         echo "Validate flags:"
         echo "  --strict                  Report dependency warnings as errors"
@@ -451,6 +462,7 @@ while [ $# -gt 0 ]; do
       echo "  --status <status>            Filter backlog list by status"
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
       echo "  --agent <agent>              Filter backlog list or target setup by agent"
+      echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -511,7 +523,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_TELEMETRY_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
-       OPT_BACKLOG_IDS OPT_BACKLOG_STRICT
+       OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

@@ -72,12 +72,125 @@ _ids_from_json() {
   node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.map(i=>i.id).join(','));"
 }
 
+_write_scoring_backlog() {
+  cat > "$BACKLOG" <<'JSON'
+[
+  {
+    "id": "dep-done",
+    "priority": "low",
+    "effort": "S",
+    "status": "done",
+    "title": "Completed dependency",
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "medium-old-small",
+    "priority": "medium",
+    "effort": "S",
+    "status": "ready",
+    "title": "Medium old small",
+    "created_at": "2026-03-01T00:00:00Z"
+  },
+  {
+    "id": "high-new-xxl",
+    "priority": "high",
+    "effort": "XXL",
+    "status": "ready",
+    "title": "High new huge",
+    "created_at": "2026-05-01T00:00:00Z"
+  },
+  {
+    "id": "high-blocked",
+    "priority": "high",
+    "effort": "S",
+    "status": "ready",
+    "title": "High blocked",
+    "dependencies": ["dep-open"],
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "dep-open",
+    "priority": "low",
+    "effort": "S",
+    "status": "ready",
+    "title": "Open dependency",
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "high-ready",
+    "priority": "high",
+    "effort": "S",
+    "status": "ready",
+    "title": "High ready",
+    "dependencies": ["dep-done"],
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "numeric-effort",
+    "priority": "medium",
+    "effort": "8",
+    "status": "ready",
+    "title": "Numeric effort",
+    "created_at": "2026-05-01T00:00:00Z"
+  }
+]
+JSON
+}
+
 @test "backlog list ranks default ready items by priority desc then age asc" {
   _write_backlog
   run node "$LIST_JS" --file "$BACKLOG" --format json
   [ "$status" -eq 0 ]
   ids=$(printf '%s' "$output" | _ids_from_json)
   [ "$ids" = "high-new,low-old" ]
+}
+
+@test "backlog list scores priority age and effort with default weights" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --format json
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [[ "$ids" == high-ready,medium-old-small,* ]]
+  [[ "$ids" == *",high-new-xxl,"* ]]
+}
+
+@test "backlog list sends unsatisfied dependencies to the end" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --format json --limit 20
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "${ids##*,}" = "high-blocked" ]
+}
+
+@test "backlog list supports numeric effort story points" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --score-explain numeric-effort
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Effort: 8 => E=8"* ]]
+  [[ "$output" == *"contribution=-16"* ]]
+}
+
+@test "backlog list score-explain shows dependency penalty breakdown" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --score-explain high-blocked
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Score:"* ]]
+  [[ "$output" == *"Formula:"* ]]
+  [[ "$output" == *"unsatisfied=dep-open"* ]]
+  [[ "$output" == *"penalty=-100"* ]]
+}
+
+@test "backlog list accepts custom scoring weights" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z \
+    MONOZUKURI_SCORING_PRIORITY_WEIGHT=1 \
+    MONOZUKURI_SCORING_AGE_WEIGHT=10 \
+    MONOZUKURI_SCORING_EFFORT_WEIGHT=1 \
+    node "$LIST_JS" --file "$BACKLOG" --format json
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  first=${ids%%,*}
+  [ "$first" = "high-ready" ]
 }
 
 @test "backlog list table prints required columns and truncates title to 60 chars" {

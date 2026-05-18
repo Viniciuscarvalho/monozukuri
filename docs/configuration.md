@@ -13,6 +13,7 @@ For the semantics of `autonomy:` see [autonomy.md](autonomy.md). For the recover
 skill: # which skill or rendered prompt executes each feature
 source: # where the backlog comes from
 autonomy: # supervised | checkpoint | full_auto
+scoring: # backlog ranking weights
 model: # which Claude model and routing policy
 gates: # size, cycle, and budget ceilings
 phase: # per-phase circuit breaker
@@ -70,6 +71,31 @@ autonomy: checkpoint # supervised | checkpoint | full_auto
 ```
 
 A single string. The CLI flag `--autonomy <level>` overrides this value for the duration of the run. See [autonomy.md](autonomy.md) for the semantic differences.
+
+---
+
+## `scoring`
+
+```yaml
+scoring:
+  priority_weight: 10
+  age_weight: 1
+  effort_weight: 2
+```
+
+Controls how `monozukuri backlog list` ranks ready work. The default formula is
+documented in [ADR-024](adr/024-backlog-priority-scoring.md):
+
+```text
+score = (priority_weight * P) + (age_weight * A) - (effort_weight * E)
+```
+
+`P` is the declared priority value, `A` is complete weeks since creation, and `E`
+is story-point effort. Features with dependencies that are not `done` receive an
+additional `-100` penalty so they naturally fall to the end of the list.
+
+Use `monozukuri backlog list --score-explain <id>` to inspect the exact
+calculation for one item.
 
 ---
 
