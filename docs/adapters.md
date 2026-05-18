@@ -58,7 +58,9 @@ flow stays as a fallback. Sessions live in Redis with a 30-day TTL.
 
 ````
 
-<!-- CONFIRM: exact front matter keys supported (priority, labels, size_hint, depends_on) -->
+The markdown adapter recognizes inline metadata lines for `priority`, `effort`, `labels`,
+agent compatibility (`agent`, `agents`, `compatible_agents`, or `agent-compatibility`),
+and dependencies (`depends_on`, `depends on`, `depends`, or `dependencies`).
 
 **Editing as the loop runs.** The file is re-read at the start of each feature, so you can edit `features.md` while a `checkpoint` or `full_auto` run is in progress. Features marked complete in `state.json` are skipped on the next pass; new features added below the cursor are picked up. This makes the markdown adapter convenient for OSS projects where the maintainer wants to steer the backlog mid-run.
 

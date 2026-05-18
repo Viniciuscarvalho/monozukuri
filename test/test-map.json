@@ -48,6 +48,18 @@
       "test/unit/adapter_skill_detect.bats",
       "test/integration/skill_routing.bats"
     ],
+    "lib/backlog/list.js": [
+      "test/unit/backlog_list.bats",
+      "test/integration/backlog_list.bats"
+    ],
+    "lib/backlog/validate.js": [
+      "test/unit/backlog_validate.bats",
+      "test/integration/backlog_validate.bats"
+    ],
+    "lib/ingest/adapters/markdown.js": [
+      "test/integration/backlog_list.bats",
+      "test/integration/backlog_validate.bats"
+    ],
     "lib/cli/emit.sh": [
       "test/unit/event_emit.bats"
     ],
@@ -159,6 +171,12 @@
     ],
     "cmd/agent.sh": [
       "test/unit/cmd_agent.bats"
+    ],
+    "cmd/backlog.sh": [
+      "test/unit/backlog_list.bats",
+      "test/unit/backlog_validate.bats",
+      "test/integration/backlog_list.bats",
+      "test/integration/backlog_validate.bats"
     ],
     "cmd/calibrate.sh": [
       "test/unit/cmd_calibrate.bats",

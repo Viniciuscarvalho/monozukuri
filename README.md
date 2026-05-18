@@ -25,6 +25,7 @@ cd your-project
 monozukuri init
 monozukuri backlog list  # inspect ranked features
 monozukuri backlog list --label cli,docs --agent codex
+monozukuri backlog validate feat-001 feat-002
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 ```

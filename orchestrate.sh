@@ -143,6 +143,8 @@ OPT_BACKLOG_LIMIT="50"
 OPT_BACKLOG_LABEL=""
 OPT_BACKLOG_STATUS="ready"
 OPT_BACKLOG_AGENT=""
+OPT_BACKLOG_IDS=""
+OPT_BACKLOG_STRICT=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -269,6 +271,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --strict)
+      if [ "$SUBCOMMAND" = "backlog" ]; then
+        OPT_BACKLOG_STRICT=true
+      else
+        err "Unknown argument: --strict"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --resume)
       OPT_RESUME=true
       ;;
@@ -325,6 +336,7 @@ while [ $# -gt 0 ]; do
       ;;
     validate)
       [ "$SUBCOMMAND" = "config" ] && OPT_CONFIG_ACTION="$1"
+      [ "$SUBCOMMAND" = "backlog" ] && OPT_BACKLOG_ACTION=validate
       ;;
     show)
       [ "$SUBCOMMAND" = "config" ]       && OPT_CONFIG_ACTION="$1"
@@ -338,11 +350,13 @@ while [ $# -gt 0 ]; do
       ;;
     --help|-h)
       if [ "$SUBCOMMAND" = "backlog" ]; then
-        echo "Usage: monozukuri backlog list [--format table|json|csv] [--limit N] [filters]"
+        echo "Usage:"
+        echo "  monozukuri backlog list [--format table|json|csv] [--limit N] [filters]"
+        echo "  monozukuri backlog validate [--strict] <id> [id...]"
         echo ""
-        echo "List backlog items ranked by priority, then age."
+        echo "Inspect and validate backlog selections."
         echo ""
-        echo "Flags:"
+        echo "List flags:"
         echo "  --format table|json|csv   Output format (default: table)"
         echo "  --limit N                 Maximum items to print (default: 50, max: 500)"
         echo "  --label foo,bar           Include items with any listed label"
@@ -351,6 +365,9 @@ while [ $# -gt 0 ]; do
         echo "  --exclude-blocked         Shortcut for --status ready"
         echo "  --agent claude-code|codex|gemini"
         echo "                            Include items explicitly compatible with an agent"
+        echo ""
+        echo "Validate flags:"
+        echo "  --strict                  Report dependency warnings as errors"
         echo "  --help                    Show this help"
         exit 0
       fi
@@ -363,6 +380,7 @@ while [ $# -gt 0 ]; do
       echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
       echo "  backlog list                 List ranked backlog items"
+      echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -433,6 +451,7 @@ while [ $# -gt 0 ]; do
       echo "  --status <status>            Filter backlog list by status"
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
       echo "  --agent <agent>              Filter backlog list or target setup by agent"
+      echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -455,6 +474,12 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_PHASE="$1"
       elif [ "$SUBCOMMAND" = "backlog" ] && [ -z "$OPT_BACKLOG_ACTION" ]; then
         OPT_BACKLOG_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "backlog" ] && [ "$OPT_BACKLOG_ACTION" = "validate" ]; then
+        if [ -n "$OPT_BACKLOG_IDS" ]; then
+          OPT_BACKLOG_IDS="${OPT_BACKLOG_IDS},$1"
+        else
+          OPT_BACKLOG_IDS="$1"
+        fi
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
         if [ -n "${OPT_RETRY_FEATS:-}" ]; then
@@ -485,7 +510,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_SETUP_COPY OPT_SETUP_FORCE OPT_SETUP_YES \
        OPT_TELEMETRY_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
-       OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT
+       OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
+       OPT_BACKLOG_IDS OPT_BACKLOG_STRICT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
