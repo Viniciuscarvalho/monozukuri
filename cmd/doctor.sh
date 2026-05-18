@@ -9,6 +9,107 @@ _doctor_fail() {
   printf "  %s✗%s %s\n    → %s\n" "${T_DANGER:-\033[0;31m}" "${T_RESET:-\033[0m}" "$1" "$2" >&2
 }
 
+_doctor_config_path() {
+  if [ -n "${OPT_CONFIG:-}" ] && [ -f "${OPT_CONFIG}" ]; then
+    printf '%s\n' "${OPT_CONFIG}"
+  elif [ -f ".monozukuri/config.yaml" ]; then
+    printf '%s\n' ".monozukuri/config.yaml"
+  elif [ -f ".monozukuri/config.yml" ]; then
+    printf '%s\n' ".monozukuri/config.yml"
+  fi
+}
+
+_doctor_configured_agent() {
+  if [ -n "${MONOZUKURI_AGENT:-}" ]; then
+    printf '%s\n' "$MONOZUKURI_AGENT"
+    return
+  fi
+
+  local cfg
+  cfg="$(_doctor_config_path)"
+  if [ -z "$cfg" ]; then
+    return 0
+  fi
+
+  local agent
+  agent="$(awk -F: '
+    /^[[:space:]]*agent[[:space:]]*:/ {
+      value=$2
+      sub(/#.*/, "", value)
+      gsub(/^[[:space:]"'\''"]+|[[:space:]"'\''"]+$/, "", value)
+      print value
+      exit
+    }
+  ' "$cfg" | xargs 2>/dev/null || true)"
+  printf '%s\n' "${agent:-claude-code}"
+}
+
+_doctor_setup_agent_id() {
+  case "$1" in
+    gemini) echo "gemini-cli" ;;
+    *)      echo "$1" ;;
+  esac
+}
+
+_doctor_agent_display_name() {
+  local setup_id
+  setup_id="$(_doctor_setup_agent_id "$1")"
+  if declare -f setup_agent_name &>/dev/null; then
+    setup_agent_name "$setup_id"
+  else
+    case "$1" in
+      claude-code) echo "Claude Code" ;;
+      codex)       echo "OpenAI Codex CLI" ;;
+      gemini)      echo "Google Gemini CLI" ;;
+      kiro)        echo "Kiro" ;;
+      aider)       echo "Aider" ;;
+      *)           echo "$1" ;;
+    esac
+  fi
+}
+
+_doctor_agent_cli_bin() {
+  case "$1" in
+    claude-code) echo "claude" ;;
+    codex)       echo "codex" ;;
+    gemini)      echo "gemini" ;;
+    kiro)        echo "kiro" ;;
+    aider)       echo "aider" ;;
+    *)           echo "$1" ;;
+  esac
+}
+
+_doctor_agent_supports_native_skills() {
+  case "$1" in
+    claude-code) return 0 ;;
+    *)           return 1 ;;
+  esac
+}
+
+_doctor_check_active_agent() {
+  local agent="$1"
+  local adapter="${LIB_DIR}/agent/adapter-${agent}.sh"
+  if [ ! -f "$adapter" ]; then
+    _doctor_fail "$agent adapter not found" "Choose one of: claude-code, codex, gemini, kiro, aider"
+    return 1
+  fi
+
+  (
+    # shellcheck source=/dev/null
+    source "$adapter"
+    agent_doctor >/dev/null 2>&1
+  )
+  local rc=$?
+  if [ "$rc" -eq 0 ]; then
+    _doctor_pass "$(_doctor_agent_display_name "$agent") ready"
+  else
+    local bin
+    bin="$(_doctor_agent_cli_bin "$agent")"
+    _doctor_fail "$(_doctor_agent_display_name "$agent") not ready" "Install/authenticate ${bin}; hint: source ${adapter} && agent_login_hint"
+    return 1
+  fi
+}
+
 sub_doctor() {
   local failed=0
 
@@ -64,12 +165,15 @@ sub_doctor() {
     failed=1
   fi
 
-  # claude CLI
-  if command -v claude >/dev/null 2>&1; then
-    _doctor_pass "claude CLI found"
+  # Active agent CLI/auth is blocking only when a project config or
+  # MONOZUKURI_AGENT selects one. Otherwise, agent CLIs are advisory.
+  local active_agent
+  active_agent="$(_doctor_configured_agent)"
+  if [ -n "$active_agent" ]; then
+    _doctor_check_active_agent "$active_agent" || failed=1
   else
-    _doctor_fail "claude not found" "Install Claude Code: https://claude.ai/code"
-    failed=1
+    printf "  %s~%s no .monozukuri config found; agent CLI checks are advisory\n" \
+      "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
   fi
 
   # gum (optional — needed for interactive mode)
@@ -86,13 +190,19 @@ sub_doctor() {
     source "${LIB_DIR}/setup/detect.sh"
     source "${LIB_DIR}/setup/install.sh"
     source "${LIB_DIR}/agent/skill-detect.sh"
-    local detected_agents total_skills ag ok missing_list skill
+    local detected_agents total_skills ag ok missing_list skill active_setup_agent
     detected_agents="$(setup_detected_agents)"
     total_skills="$(setup_skills_list | wc -l | tr -d ' ')"
+    active_setup_agent="$(_doctor_setup_agent_id "${active_agent:-}")"
     if [ -z "$detected_agents" ]; then
       printf "  %s~%s mz-* skills: no agents detected\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
     else
       for ag in $detected_agents; do
+        if ! _doctor_agent_supports_native_skills "$ag"; then
+          _doctor_pass "$(setup_agent_name "$ag") uses rendered prompts; mz-* native skills not required"
+          continue
+        fi
+
         ok=0; missing_list=""
         while IFS= read -r skill; do
           if skill_installed "$ag" "$skill"; then
@@ -103,10 +213,14 @@ sub_doctor() {
         done < <(setup_skills_list)
         if [ -z "$missing_list" ]; then
           _doctor_pass "$(setup_agent_name "$ag") skills: ${ok}/${total_skills} installed"
-        else
+        elif [ -n "$active_setup_agent" ] && [ "$ag" = "$active_setup_agent" ]; then
           _doctor_fail "$(setup_agent_name "$ag") skills: missing — $missing_list" \
                        "monozukuri setup --agent $ag"
           failed=1
+        else
+          printf "  %s~%s %s skills: missing — %s (optional; run monozukuri setup --agent %s)\n" \
+            "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}" \
+            "$(setup_agent_name "$ag")" "$missing_list" "$ag"
         fi
       done
     fi
@@ -114,10 +228,11 @@ sub_doctor() {
     printf "  %s~%s mz-* skills: skipped (library path unavailable)\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
   fi
 
-  # Optional adapter CLIs (codex/gemini/kiro/aider — claude already checked above)
+  # Optional adapter CLIs
   local _pair _cli _cli_bin
-  for _pair in "codex:codex" "gemini:gemini" "kiro:kiro" "aider:aider"; do
+  for _pair in "claude-code:claude" "codex:codex" "gemini:gemini" "kiro:kiro" "aider:aider"; do
     _cli="${_pair%%:*}"; _cli_bin="${_pair##*:}"
+    [ -n "${active_agent:-}" ] && [ "$_cli" = "$active_agent" ] && continue
     if command -v "$_cli_bin" >/dev/null 2>&1; then
       _doctor_pass "${_cli} CLI found"
     else
