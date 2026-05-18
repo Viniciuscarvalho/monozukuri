@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.55.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.54.0...v1.55.0) (2026-05-18)
+
+
+### Features
+
+* **cli:** validate backlog selection dependencies ([#232](https://github.com/Viniciuscarvalho/monozukuri/issues/232)) ([587a6b8](https://github.com/Viniciuscarvalho/monozukuri/commit/587a6b81c017f83dac6afe5c35f1249cf94012a6))
+
 ## [1.54.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.53.0...v1.54.0) (2026-05-17)
 
 
