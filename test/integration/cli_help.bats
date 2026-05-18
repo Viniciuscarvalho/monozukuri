@@ -38,6 +38,11 @@ setup() {
   echo "$output" | grep -qE '^\s+backlog list\b'
 }
 
+@test "--help lists the 'backlog validate' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+backlog validate\b'
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do
