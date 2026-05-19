@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.57.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.56.0...v1.57.0) (2026-05-19)
+
+
+### Features
+
+* **cli:** add json backlog pick command ([#236](https://github.com/Viniciuscarvalho/monozukuri/issues/236)) ([4fc67ea](https://github.com/Viniciuscarvalho/monozukuri/commit/4fc67ea8155c1dea2b1df5c2327a462c943cb892))
+
 ## [1.56.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.55.0...v1.56.0) (2026-05-19)
 
 
