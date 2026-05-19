@@ -11,6 +11,9 @@ setup() {
   if [ ! -f "$UI_DIST" ]; then
     skip "ui/dist/index.js not built — run 'npm run build --prefix ui' first"
   fi
+  if [ ! -d "$REPO_ROOT/ui/node_modules/ink" ]; then
+    skip "ui dependencies not installed — run 'npm ci --prefix ui' first"
+  fi
 }
 
 _pipe_agent() {
