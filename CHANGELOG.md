@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.55.0...v1.56.0) (2026-05-19)
+
+
+### Features
+
+* **cli:** score backlog priority ranking ([#234](https://github.com/Viniciuscarvalho/monozukuri/issues/234)) ([3d0bd66](https://github.com/Viniciuscarvalho/monozukuri/commit/3d0bd66c00544225d113442229481f28925854dc))
+
 ## [1.55.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.54.0...v1.55.0) (2026-05-18)
 
 
