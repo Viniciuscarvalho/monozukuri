@@ -18,10 +18,12 @@ export type BacklogItemStatus = 'ready' | 'blocked' | 'in-progress' | 'done';
 export interface PickBacklogItem {
   id: string;
   title: string;
+  description?: string;
   priority: number;
   effort: number;
   status: BacklogItemStatus;
   score?: number;
+  deps?: string[];
 }
 
 export interface Feature {
