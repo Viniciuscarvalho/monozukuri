@@ -6,18 +6,18 @@ Tailored instructions for the `ui/` Ink TUI subpackage. Read the repo-root `AGEN
 
 - Ink 5 + React 18 (functional components only — no class components)
 - TypeScript 5, strict mode (`tsconfig.json`)
-- tsup for bundling (`npm run build`)
+- TypeScript compiler for ESM output (`npm run build`)
 - Jest + ink-testing-library for tests
 - ESLint for lint (`npm run lint`)
 
 ## Conventions
 
 - **Use `ink-testing-library`** for component tests — never spawn the real terminal. The repo-root `AGENTS.md`'s record-replay pattern (replay-claude, MOCK_CLAUDE_MODE) does **not** apply here; Ink has its own testing model.
-- **No new top-level dependencies** without justification. The current set (ink, ink-spinner, ink-testing-library, react, ts-jest, tsup) is intentional.
+- **No new top-level dependencies** without justification. The current set (ink, ink-spinner, ink-testing-library, react, ts-jest, tsup) is intentional, but `npm run build` emits ESM through `tsc`.
 - **Functional + hooks only**. Local state via `useReducer` (see `src/reducer.ts`); no Redux/MobX/Zustand.
 - **Design tokens** live in `src/tokens.ts` — colors, spacing, symbols. Don't hardcode hex/ANSI in components.
 - **No raw ANSI escape sequences**. Use Ink's `<Text color="…">` so `NO_COLOR` is honoured automatically (the repo-root convention).
-- **Bundle smoke test** (`npm run test:smoke`) must pass — it imports `dist/index.js` to catch ESM/CJS/exports regressions.
+- **Dist smoke test** (`npm run test:smoke`) must pass — it imports `dist/index.js` and rejects the known Ink `Dynamic require of "assert"` bundling regression.
 
 ## Commands
 
@@ -25,7 +25,7 @@ Tailored instructions for the `ui/` Ink TUI subpackage. Read the repo-root `AGEN
 - **Lint:** `npm run lint`
 - **Build:** `npm run build`
 - **Dev (watch):** `npm run dev`
-- **Smoke-test the bundle:** `npm run test:smoke`
+- **Smoke-test the compiled dist:** `npm run test:smoke`
 
 ## Layout
 

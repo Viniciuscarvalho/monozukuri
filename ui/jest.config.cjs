@@ -1,6 +1,7 @@
-/** @type {import('jest').Config} */
+const tsJestTransformer = require.resolve('ts-jest');
+
 module.exports = {
-  preset: 'ts-jest/presets/default-esm',
+  rootDir: __dirname,
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
@@ -8,13 +9,17 @@ module.exports = {
   },
   transform: {
     '^.+\\.tsx?$': [
-      'ts-jest',
+      tsJestTransformer,
       {
         useESM: true,
         tsconfig: {
           jsx: 'react-jsx',
-          moduleResolution: 'node16',
+          moduleResolution: 'bundler',
           module: 'ESNext',
+          baseUrl: '.',
+          paths: {
+            'ink-testing-library': ['./node_modules/ink-testing-library/build/index.d.ts'],
+          },
           strict: true,
           esModuleInterop: true,
           skipLibCheck: true,

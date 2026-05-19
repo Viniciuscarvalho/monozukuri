@@ -258,7 +258,7 @@ jobs:
 
       - name: Classify CI failures
         run: |
-          python3 .ci-guard/scripts/ci_watch.py --pr auto --once
+          python3 .ci-guard/scripts/ci_watch.py --pr "${{ github.event.pull_request.number }}" --once
         # Exit codes from ci_watch.py:
         #   0 — all checks green or only flakes (retryable within budget)
         #   2 — branch_failure detected or needs_help (blocks merge)
