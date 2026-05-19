@@ -10,6 +10,7 @@
 #   ./orchestrate.sh run --autonomy full_auto  # Override autonomy
 #   ./orchestrate.sh run --dry-run             # Show plan, don't execute
 #   ./orchestrate.sh backlog list              # List ranked backlog items
+#   ./orchestrate.sh pick --top 3 --json       # Pick ranked items for scripts
 #   ./orchestrate.sh status                    # Show current state
 #   ./orchestrate.sh clean                     # Remove all worktrees
 #
@@ -146,10 +147,11 @@ OPT_BACKLOG_AGENT=""
 OPT_BACKLOG_IDS=""
 OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
+OPT_PICK_TOP="5"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog)
+    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -231,7 +233,7 @@ while [ $# -gt 0 ]; do
       fi
       ;;
     --label)
-      if [ "$SUBCOMMAND" = "backlog" ]; then
+      if [ "$SUBCOMMAND" = "backlog" ] || [ "$SUBCOMMAND" = "pick" ]; then
         shift; OPT_BACKLOG_LABEL="$1"
       else
         err "Unknown argument: --label"
@@ -240,7 +242,7 @@ while [ $# -gt 0 ]; do
       fi
       ;;
     --status)
-      if [ "$SUBCOMMAND" = "backlog" ]; then
+      if [ "$SUBCOMMAND" = "backlog" ] || [ "$SUBCOMMAND" = "pick" ]; then
         shift; OPT_BACKLOG_STATUS="$1"
       elif [ "$SUBCOMMAND" = "setup" ]; then
         OPT_SETUP_ACTION=status
@@ -253,7 +255,7 @@ while [ $# -gt 0 ]; do
       fi
       ;;
     --exclude-blocked)
-      if [ "$SUBCOMMAND" = "backlog" ]; then
+      if [ "$SUBCOMMAND" = "backlog" ] || [ "$SUBCOMMAND" = "pick" ]; then
         OPT_BACKLOG_STATUS="ready"
       else
         err "Unknown argument: --exclude-blocked"
@@ -262,12 +264,21 @@ while [ $# -gt 0 ]; do
       fi
       ;;
     --agent)
-      if [ "$SUBCOMMAND" = "backlog" ]; then
+      if [ "$SUBCOMMAND" = "backlog" ] || [ "$SUBCOMMAND" = "pick" ]; then
         shift; OPT_BACKLOG_AGENT="$1"
       elif [ "$SUBCOMMAND" = "setup" ]; then
         shift; OPT_SETUP_AGENT="$1"
       else
         err "Unknown argument: --agent"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --top)
+      if [ "$SUBCOMMAND" = "pick" ]; then
+        shift; OPT_PICK_TOP="$1"
+      else
+        err "Unknown argument: --top"
         err "Run: monozukuri --help"
         exit 1
       fi
@@ -381,6 +392,23 @@ while [ $# -gt 0 ]; do
         echo "  --strict                  Report dependency warnings as errors"
         echo "  --help                    Show this help"
         exit 0
+      elif [ "$SUBCOMMAND" = "pick" ]; then
+        echo "Usage:"
+        echo "  monozukuri pick --json [--top N] [filters]"
+        echo ""
+        echo "Pick top-ranked backlog items for scripts and CI."
+        echo ""
+        echo "Flags:"
+        echo "  --json                    Emit JSON array output"
+        echo "  --top N                   Maximum items to print (default: 5, max: 50)"
+        echo "  --label foo,bar           Include items with any listed label"
+        echo "  --status ready|blocked|in-progress|done"
+        echo "                            Include items by status (default: ready)"
+        echo "  --exclude-blocked         Shortcut for --status ready"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Include items explicitly compatible with an agent"
+        echo "  --help                    Show this help"
+        exit 0
       fi
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
@@ -392,6 +420,7 @@ while [ $# -gt 0 ]; do
       echo "  run                          Execute the orchestration loop"
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
+      echo "  pick --top N --json          Emit top-ranked backlog items as JSON"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -463,6 +492,7 @@ while [ $# -gt 0 ]; do
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
       echo "  --agent <agent>              Filter backlog list or target setup by agent"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
+      echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -523,7 +553,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_TELEMETRY_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
-       OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN
+       OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
+       OPT_PICK_TOP
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -574,6 +605,7 @@ case "$SUBCOMMAND" in
   doctor)          source "$CMD_DIR/doctor.sh"; sub_doctor ;;
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
   backlog)         source "$CMD_DIR/backlog.sh"; sub_backlog ;;
+  pick)            source "$CMD_DIR/pick.sh"; sub_pick ;;
   run)
     source "$CMD_DIR/run.sh"
     if [ "$_use_tui" = "true" ]; then sub_run | node "$_TUI_SCRIPT"; else sub_run; fi
