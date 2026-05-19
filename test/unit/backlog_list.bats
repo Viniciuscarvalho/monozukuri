@@ -162,6 +162,35 @@ JSON
   [ "${ids##*,}" = "high-blocked" ]
 }
 
+@test "backlog pick emits JSON objects with id score priority effort and title" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --pick --top 2
+  [ "$status" -eq 0 ]
+  node -e '
+    const d = JSON.parse(process.argv[1]);
+    if (d.length !== 2) process.exit(1);
+    for (const item of d) {
+      const keys = Object.keys(item).sort().join(",");
+      if (keys !== "effort,id,priority,score,title") process.exit(2);
+      if (typeof item.score !== "number") process.exit(3);
+    }
+  ' "$output"
+}
+
+@test "backlog pick returns empty JSON array for no matches" {
+  _write_scoring_backlog
+  run node "$LIST_JS" --file "$BACKLOG" --pick --label missing
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "backlog pick enforces max top 50" {
+  _write_scoring_backlog
+  run node "$LIST_JS" --file "$BACKLOG" --pick --top 51
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Invalid --top"* ]]
+}
+
 @test "backlog list supports numeric effort story points" {
   _write_scoring_backlog
   run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --score-explain numeric-effort

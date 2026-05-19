@@ -106,6 +106,52 @@ _ids_from_json() {
   [ "$count" -eq 2 ]
 }
 
+@test "monozukuri pick emits top ranked JSON for CI scripts" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2 --json
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old,feat-high-new" ]
+  node -e '
+    const d = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    if (d.length !== 2) process.exit(1);
+    for (const item of d) {
+      const keys = Object.keys(item).sort().join(",");
+      if (keys !== "effort,id,priority,score,title") process.exit(2);
+    }
+  ' <<< "$output"
+}
+
+@test "monozukuri pick accepts SEL-02 filters" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --json --top 5 --label cli,docs --agent codex
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  [ "$ids" = "feat-high-old" ]
+}
+
+@test "monozukuri pick returns empty array and exit 0 for no matches" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --json --label missing
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "monozukuri pick rejects top above 50" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --json --top 51
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Invalid --top"* ]]
+}
+
+@test "README pick pipe example is valid" {
+  _write_features
+  run bash -c "bash '$ORCHESTRATE' pick --top 3 --json | jq '.[].id'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"feat-high-old"* ]]
+  [[ "$output" == *"feat-high-new"* ]]
+}
+
 @test "monozukuri backlog list supports csv format" {
   _write_features
   run bash "$ORCHESTRATE" backlog list --format csv --limit 1
