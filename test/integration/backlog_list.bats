@@ -122,6 +122,28 @@ _ids_from_json() {
   ' <<< "$output"
 }
 
+@test "monozukuri pick TUI test keys confirm selected IDs on stdout" {
+  _write_features
+  run env MONOZUKURI_PICK_TEST_KEYS=space,enter bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  [ "$output" = "feat-high-old" ]
+}
+
+@test "monozukuri pick TUI test keys cancel with exit 130 and empty stdout" {
+  _write_features
+  run env MONOZUKURI_PICK_TEST_KEYS=q bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 130 ]
+  [ "$output" = "" ]
+}
+
+@test "monozukuri pick without TTY suggests json mode" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Interactive pick requires a TTY"* ]]
+  [[ "$output" == *"monozukuri pick --json"* ]]
+}
+
 @test "monozukuri pick accepts SEL-02 filters" {
   _write_features
   run bash "$ORCHESTRATE" pick --json --top 5 --label cli,docs --agent codex

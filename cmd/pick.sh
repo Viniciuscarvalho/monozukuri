@@ -1,18 +1,19 @@
 #!/bin/bash
-# cmd/pick.sh — non-interactive JSON backlog selection
+# cmd/pick.sh — backlog selection for JSON scripts and interactive TUI
 
 set -euo pipefail
 
 _pick_help() {
   cat <<'EOF'
 Usage:
+  monozukuri pick [--top N] [filters]
   monozukuri pick --json [--top N] [filters]
 
 Pick top-ranked backlog items for scripts and CI.
 
 Flags:
-  --json                    Emit JSON array output
-  --top N                   Maximum items to print (default: 5, max: 50)
+  --json                    Emit JSON array output instead of TUI
+  --top N                   Maximum items (default: 30 TUI, 5 JSON, max: 50)
   --label foo,bar           Include items with any listed label
   --status ready|blocked|in-progress|done
                             Include items by status (default: ready)
@@ -24,7 +25,10 @@ EOF
 }
 
 sub_pick() {
-  local top="${OPT_PICK_TOP:-5}"
+  local json="${OPT_JSON:-false}"
+  local default_top="30"
+  [ "$json" = "true" ] && default_top="5"
+  local top="${OPT_PICK_TOP:-$default_top}"
   local label="${OPT_BACKLOG_LABEL:-}"
   local status="${OPT_BACKLOG_STATUS:-ready}"
   local agent="${OPT_BACKLOG_AGENT:-}"
@@ -53,9 +57,30 @@ sub_pick() {
   source "$CMD_DIR/backlog.sh"
   _backlog_adapter_output_file
 
-  local args=(--file "$BACKLOG_ADAPTER_OUTPUT_FILE" --pick --top "$top" --status "$status")
+  local args=(--file "$BACKLOG_ADAPTER_OUTPUT_FILE" --top "$top" --status "$status")
   [ -n "$label" ] && args+=(--label "$label")
   [ -n "$agent" ] && args+=(--agent "$agent")
 
-  node "$LIB_DIR/backlog/list.js" "${args[@]}"
+  if [ "$json" = "true" ]; then
+    node "$LIB_DIR/backlog/list.js" --pick "${args[@]}"
+    return
+  fi
+
+  local tui_script="${MONOZUKURI_HOME:-$SCRIPT_DIR}/ui/dist/pick.js"
+  if [ ! -f "$tui_script" ]; then
+    err "Interactive pick TUI is not built. Run: npm run build --prefix ui"
+    return 11
+  fi
+
+  local tmpfile
+  tmpfile="$(mktemp -t monozukuri-pick.XXXXXX.json)"
+  trap "rm -f '$tmpfile'" RETURN
+  node "$LIB_DIR/backlog/list.js" --pick-card "${args[@]}" > "$tmpfile"
+
+  if [ ! -t 0 ] && [ -z "${MONOZUKURI_PICK_TEST_KEYS:-}" ]; then
+    err "Interactive pick requires a TTY. Use: monozukuri pick --json"
+    return 2
+  fi
+
+  node "$tui_script" "$tmpfile"
 }

@@ -20,6 +20,7 @@ async function collectJavaScriptFiles(directoryUrl) {
 }
 
 await import('../dist/index.js');
+await import('../dist/pick.js');
 
 const compiledFiles = await collectJavaScriptFiles(distRoot);
 for (const fileUrl of compiledFiles) {
@@ -28,4 +29,3 @@ for (const fileUrl of compiledFiles) {
     throw new Error(`Ink bundle regression: ${fileUrl.pathname} contains Dynamic require of assert`);
   }
 }
-

@@ -177,6 +177,20 @@ JSON
   ' "$output"
 }
 
+@test "backlog pick-card emits rich objects for interactive TUI" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --pick-card --top 1
+  [ "$status" -eq 0 ]
+  node -e '
+    const d = JSON.parse(process.argv[1]);
+    if (d.length !== 1) process.exit(1);
+    const keys = Object.keys(d[0]).sort().join(",");
+    if (keys !== "deps,description,effort,id,priority,score,status,title") process.exit(2);
+    if (!Array.isArray(d[0].deps)) process.exit(3);
+    if (typeof d[0].description !== "string") process.exit(4);
+  ' "$output"
+}
+
 @test "backlog pick returns empty JSON array for no matches" {
   _write_scoring_backlog
   run node "$LIST_JS" --file "$BACKLOG" --pick --label missing
