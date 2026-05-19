@@ -46,6 +46,11 @@ source:
 
 autonomy: checkpoint # supervised | checkpoint | full_auto
 
+scoring:
+  priority_weight: 10 # points per priority level (high=3, medium=2, low=1)
+  age_weight: 1 # points per complete week since creation
+  effort_weight: 2 # points subtracted per story point
+
 # Model selection — which Claude model to use.
 # Supported: opus | sonnet | haiku | opusplan | full model IDs (claude-opus-4-7)
 # "opusplan" uses Opus for planning, Sonnet for execution automatically.

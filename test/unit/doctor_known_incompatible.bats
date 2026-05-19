@@ -22,6 +22,14 @@ setup() {
   FAKE_LIB="$TMPDIR_TEST/lib"
   mkdir -p "$FAKE_LIB/agent" "$FAKE_LIB/cli"
   cp "$REAL_LIB_DIR/agent/known-incompatible.sh" "$FAKE_LIB/agent/known-incompatible.sh"
+  cat > "$FAKE_LIB/agent/adapter-claude-code.sh" <<'EOF'
+agent_doctor() {
+  command -v claude >/dev/null 2>&1
+}
+agent_login_hint() {
+  printf 'claude login\n'
+}
+EOF
   # colors.sh sources tokens.sh via [ -f ] && source; under set -e the [ -f ]
   # returns 1 (missing file) aborts — copy both files to avoid that trap.
   cp "$REAL_LIB_DIR/cli/colors.sh" "$FAKE_LIB/cli/colors.sh"

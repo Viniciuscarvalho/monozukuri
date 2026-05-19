@@ -114,6 +114,31 @@ _ids_from_json() {
   [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 2 ]
 }
 
+@test "monozukuri backlog list uses scoring weights from config" {
+  _write_features
+  cat >> .monozukuri/config.yaml <<'YAML'
+scoring:
+  priority_weight: 0
+  age_weight: 0
+  effort_weight: 10
+YAML
+  run bash "$ORCHESTRATE" backlog list --format json
+  [ "$status" -eq 0 ]
+  ids=$(printf '%s' "$output" | _ids_from_json)
+  first=${ids%%,*}
+  [ "$first" = "feat-low" ]
+}
+
+@test "monozukuri backlog list score-explain prints calculation breakdown" {
+  _write_features
+  run bash "$ORCHESTRATE" backlog list --score-explain feat-high-old
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ID: feat-high-old"* ]]
+  [[ "$output" == *"Formula:"* ]]
+  [[ "$output" == *"Priority:"* ]]
+  [[ "$output" == *"Effort:"* ]]
+}
+
 @test "monozukuri backlog list filters by label with OR semantics" {
   _write_features
   run bash "$ORCHESTRATE" backlog list --format json --label docs,ux

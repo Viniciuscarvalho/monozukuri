@@ -18,6 +18,7 @@ List flags:
   --exclude-blocked         Shortcut for --status ready
   --agent claude-code|codex|gemini
                             Include items explicitly compatible with an agent
+  --score-explain id        Show the ranking score breakdown for one item
 
 Validate flags:
   --strict                  Report dependency warnings as errors
@@ -63,7 +64,8 @@ _backlog_adapter_output_file() {
 
   load_config "$config_file"
   run_adapter >/dev/null
-  printf '%s\n' "$ROOT_DIR/$BACKLOG_OUTPUT"
+  BACKLOG_ADAPTER_OUTPUT_FILE="$ROOT_DIR/$BACKLOG_OUTPUT"
+  export BACKLOG_ADAPTER_OUTPUT_FILE
 }
 
 sub_backlog_list() {
@@ -72,6 +74,7 @@ sub_backlog_list() {
   local label="${OPT_BACKLOG_LABEL:-}"
   local status="${OPT_BACKLOG_STATUS:-ready}"
   local agent="${OPT_BACKLOG_AGENT:-}"
+  local score_explain="${OPT_BACKLOG_SCORE_EXPLAIN:-}"
 
   case "$format" in
     table|json|csv) ;;
@@ -100,11 +103,13 @@ sub_backlog_list() {
   esac
 
   local backlog_file
-  backlog_file="$(_backlog_adapter_output_file)"
+  _backlog_adapter_output_file
+  backlog_file="$BACKLOG_ADAPTER_OUTPUT_FILE"
 
   local args=(--file "$backlog_file" --format "$format" --limit "$limit" --status "$status")
   [ -n "$label" ] && args+=(--label "$label")
   [ -n "$agent" ] && args+=(--agent "$agent")
+  [ -n "$score_explain" ] && args+=(--score-explain "$score_explain")
 
   node "$LIB_DIR/backlog/list.js" "${args[@]}"
 }
@@ -120,7 +125,8 @@ sub_backlog_validate() {
   fi
 
   local backlog_file
-  backlog_file="$(_backlog_adapter_output_file)"
+  _backlog_adapter_output_file
+  backlog_file="$BACKLOG_ADAPTER_OUTPUT_FILE"
 
   local args=(--file "$backlog_file" --ids "$ids")
   [ "$strict" = "true" ] && args+=(--strict)
