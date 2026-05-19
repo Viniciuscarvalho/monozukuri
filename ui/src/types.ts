@@ -13,6 +13,17 @@ export type Phase = 'prd' | 'techspec' | 'tasks' | 'code' | 'tests' | 'pr';
 export type PhaseStatus = 'pending' | 'in_progress' | 'done' | 'failed';
 export type FeatureStatus = 'queued' | 'active' | 'done' | 'failed' | 'skipped' | 'deferred' | 'pr_failed';
 
+export type BacklogItemStatus = 'ready' | 'blocked' | 'in-progress' | 'done';
+
+export interface PickBacklogItem {
+  id: string;
+  title: string;
+  priority: number;
+  effort: number;
+  status: BacklogItemStatus;
+  score?: number;
+}
+
 export interface Feature {
   id: string;
   title: string;
