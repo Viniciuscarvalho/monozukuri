@@ -147,7 +147,7 @@ OPT_BACKLOG_AGENT=""
 OPT_BACKLOG_IDS=""
 OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
-OPT_PICK_TOP="5"
+OPT_PICK_TOP=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
