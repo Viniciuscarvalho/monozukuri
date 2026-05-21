@@ -44,8 +44,10 @@ phase_to_skill() {
   local phase="$1" agent_id="${2:-claude-code}"
 
   local agent_norm="${agent_id//-/_}"
-  agent_norm="${agent_norm^^}"
-  local cfg_var="CFG_AGENTS_${agent_norm}_SKILLS_${phase^^}"
+  local agent_upper phase_upper
+  agent_upper="$(printf '%s' "$agent_norm" | tr '[:lower:]' '[:upper:]')"
+  phase_upper="$(printf '%s' "$phase" | tr '[:lower:]' '[:upper:]')"
+  local cfg_var="CFG_AGENTS_${agent_upper}_SKILLS_${phase_upper}"
   local override="${!cfg_var:-}"
   [ -n "$override" ] && { echo "$override"; return; }
 
