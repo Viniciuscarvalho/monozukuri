@@ -122,11 +122,110 @@ _ids_from_json() {
   ' <<< "$output"
 }
 
+@test "monozukuri pick --json records top selection history" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2 --json
+  [ "$status" -eq 0 ]
+  node -e '
+    const fs = require("fs");
+    const lines = fs.readFileSync(".monozukuri/state/pick-history.jsonl", "utf8").trim().split("\n");
+    const entry = JSON.parse(lines.at(-1));
+    if (entry.source !== "top") process.exit(1);
+    if (entry.ids.join(",") !== "feat-high-old,feat-high-new") process.exit(2);
+  '
+}
+
 @test "monozukuri pick --top emits ranked IDs without opening TUI" {
   _write_features
   run bash "$ORCHESTRATE" pick --top 2
   [ "$status" -eq 0 ]
   [ "$output" = $'feat-high-old\nfeat-high-new' ]
+}
+
+@test "monozukuri pick --top records selection history" {
+  _write_features
+  run env USER=tester bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  [ -f .monozukuri/state/pick-history.jsonl ]
+  node -e '
+    const fs = require("fs");
+    const lines = fs.readFileSync(".monozukuri/state/pick-history.jsonl", "utf8").trim().split("\n");
+    const entry = JSON.parse(lines.at(-1));
+    if (!entry.timestamp) process.exit(1);
+    if (entry.source !== "top") process.exit(2);
+    if (entry.user !== "tester") process.exit(3);
+    if (entry.ids.join(",") !== "feat-high-old,feat-high-new") process.exit(4);
+  '
+}
+
+@test "monozukuri pick explicit IDs records selection history" {
+  _write_features
+  run env USER=tester bash "$ORCHESTRATE" pick feat-high-old feat-low
+  [ "$status" -eq 0 ]
+  [ "$output" = $'feat-high-old\nfeat-low' ]
+  node -e '
+    const fs = require("fs");
+    const lines = fs.readFileSync(".monozukuri/state/pick-history.jsonl", "utf8").trim().split("\n");
+    const entry = JSON.parse(lines.at(-1));
+    if (entry.source !== "explicit") process.exit(1);
+    if (entry.user !== "tester") process.exit(2);
+    if (entry.ids.join(",") !== "feat-high-old,feat-low") process.exit(3);
+  '
+}
+
+@test "monozukuri pick --replay prints the latest recorded selection" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  run bash "$ORCHESTRATE" pick --replay
+  [ "$status" -eq 0 ]
+  [ "$output" = $'feat-high-old\nfeat-high-new' ]
+}
+
+@test "monozukuri pick --replay N prints the Nth latest selection" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  run bash "$ORCHESTRATE" pick --top 3 --label docs
+  [ "$status" -eq 0 ]
+  run bash "$ORCHESTRATE" pick --replay 2
+  [ "$status" -eq 0 ]
+  [ "$output" = $'feat-high-old\nfeat-high-new' ]
+}
+
+@test "monozukuri pick --history lists recent selections" {
+  _write_features
+  run env USER=tester bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  run bash "$ORCHESTRATE" pick --top 3 --label docs
+  [ "$status" -eq 0 ]
+  run bash "$ORCHESTRATE" pick --history
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WHEN"*"SOURCE"*"USER"*"IDS"* ]]
+  [[ "$output" == *"top"*"tester"*"feat-high-old,feat-high-new"* ]]
+  [[ "$output" == *"feat-low"* ]]
+}
+
+@test "monozukuri pick --history lists only the latest 20 selections" {
+  _write_features
+  for _ in $(seq 1 21); do
+    run bash "$ORCHESTRATE" pick --top 1
+    [ "$status" -eq 0 ]
+  done
+  run bash "$ORCHESTRATE" pick --history
+  [ "$status" -eq 0 ]
+  row_count=$(printf '%s\n' "$output" | tail -n +2 | wc -l | tr -d ' ')
+  [ "$row_count" -eq 20 ]
+}
+
+@test "monozukuri pick history rotates at 100 entries" {
+  _write_features
+  for _ in $(seq 1 101); do
+    run bash "$ORCHESTRATE" pick --top 1
+    [ "$status" -eq 0 ]
+  done
+  line_count=$(wc -l < .monozukuri/state/pick-history.jsonl | tr -d ' ')
+  [ "$line_count" -eq 100 ]
 }
 
 @test "monozukuri pick --top combines with filters" {
@@ -141,6 +240,20 @@ _ids_from_json() {
   run env MONOZUKURI_PICK_TEST_KEYS=space,enter bash "$ORCHESTRATE" pick
   [ "$status" -eq 0 ]
   [ "$output" = "feat-high-old" ]
+}
+
+@test "monozukuri pick TUI records selection history" {
+  _write_features
+  run env USER=tester MONOZUKURI_PICK_TEST_KEYS=space,enter bash "$ORCHESTRATE" pick
+  [ "$status" -eq 0 ]
+  node -e '
+    const fs = require("fs");
+    const lines = fs.readFileSync(".monozukuri/state/pick-history.jsonl", "utf8").trim().split("\n");
+    const entry = JSON.parse(lines.at(-1));
+    if (entry.source !== "tui") process.exit(1);
+    if (entry.user !== "tester") process.exit(2);
+    if (entry.ids.join(",") !== "feat-high-old") process.exit(3);
+  '
 }
 
 @test "monozukuri pick TUI test keys cancel with exit 130 and empty stdout" {
