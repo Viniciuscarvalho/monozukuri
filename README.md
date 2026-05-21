@@ -27,6 +27,7 @@ monozukuri backlog list  # inspect ranked features
 monozukuri backlog list --label cli,docs --agent codex
 monozukuri backlog list --score-explain feat-001
 monozukuri pick             # interactive ranked picker
+monozukuri pick --top 3     # print the top 3 IDs without opening TUI
 monozukuri pick --top 3 --json | jq '.[].id'
 monozukuri backlog validate feat-001 feat-002
 monozukuri run --dry-run    # preview the plan
@@ -36,6 +37,8 @@ monozukuri run              # execute
 `monozukuri pick` opens an interactive terminal picker with vim-style navigation:
 `j/k` moves, `space` selects, `/` filters, `enter` confirms, and `q` cancels
 with exit code 130. Confirmed selections print one feature ID per line on stdout.
+Use `monozukuri pick --top N` for a non-interactive shortcut that prints the
+top-ranked IDs directly; add `--json` when a pipeline needs score metadata.
 
 > Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, `gemini`, or `kiro`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.
 

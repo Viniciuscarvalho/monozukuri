@@ -48,6 +48,13 @@ setup() {
   echo "$output" | grep -qE '^\s+pick\b'
 }
 
+@test "pick --help documents top shortcut output" {
+  run "$ORCHESTRATE" pick --help
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "monozukuri pick --top N"
+  echo "$output" | grep -q "Emit top-ranked IDs without opening TUI"
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do

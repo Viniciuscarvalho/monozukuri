@@ -6,14 +6,15 @@ set -euo pipefail
 _pick_help() {
   cat <<'EOF'
 Usage:
-  monozukuri pick [--top N] [filters]
+  monozukuri pick
+  monozukuri pick --top N [filters]
   monozukuri pick --json [--top N] [filters]
 
 Pick top-ranked backlog items for scripts and CI.
 
 Flags:
   --json                    Emit JSON array output instead of TUI
-  --top N                   Maximum items (default: 30 TUI, 5 JSON, max: 50)
+  --top N                   Emit top-ranked IDs without opening TUI (max: 50)
   --label foo,bar           Include items with any listed label
   --status ready|blocked|in-progress|done
                             Include items by status (default: ready)
@@ -28,6 +29,7 @@ sub_pick() {
   local json="${OPT_JSON:-false}"
   local default_top="30"
   [ "$json" = "true" ] && default_top="5"
+  local requested_top="${OPT_PICK_TOP:-}"
   local top="${OPT_PICK_TOP:-$default_top}"
   local label="${OPT_BACKLOG_LABEL:-}"
   local status="${OPT_BACKLOG_STATUS:-ready}"
@@ -63,6 +65,12 @@ sub_pick() {
 
   if [ "$json" = "true" ]; then
     node "$LIB_DIR/backlog/list.js" --pick "${args[@]}"
+    return
+  fi
+
+  if [ -n "$requested_top" ]; then
+    node "$LIB_DIR/backlog/list.js" --pick "${args[@]}" |
+      node -e 'const fs = require("fs"); const items = JSON.parse(fs.readFileSync(0, "utf8")); process.stdout.write(items.map((item) => item.id).join("\n")); if (items.length) process.stdout.write("\n");'
     return
   fi
 
