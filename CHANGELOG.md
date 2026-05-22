@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.62.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.61.0...v1.62.0) (2026-05-22)
+
+
+### Features
+
+* **cli:** persist loop checkpoints ([#259](https://github.com/Viniciuscarvalho/monozukuri/issues/259)) ([6b843a1](https://github.com/Viniciuscarvalho/monozukuri/commit/6b843a1bb6d7c2a067de1a9680a2967fc3da916b))
+
 ## [1.61.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.60.0...v1.61.0) (2026-05-22)
 
 
