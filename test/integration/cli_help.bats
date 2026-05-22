@@ -55,6 +55,13 @@ setup() {
   echo "$output" | grep -q "Emit top-ranked IDs without opening TUI"
 }
 
+@test "pick --help documents replay and history" {
+  run "$ORCHESTRATE" pick --help
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q -- "--replay"
+  echo "$output" | grep -q -- "--history"
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do

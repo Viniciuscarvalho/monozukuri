@@ -148,6 +148,9 @@ OPT_BACKLOG_IDS=""
 OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
 OPT_PICK_TOP=""
+OPT_PICK_REPLAY=""
+OPT_PICK_HISTORY=false
+OPT_PICK_IDS=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -283,6 +286,30 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --replay)
+      if [ "$SUBCOMMAND" = "pick" ]; then
+        OPT_PICK_REPLAY="1"
+        if [ $# -gt 1 ]; then
+          case "$2" in
+            --*) ;;
+            *) shift; OPT_PICK_REPLAY="$1" ;;
+          esac
+        fi
+      else
+        err "Unknown argument: --replay"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --history)
+      if [ "$SUBCOMMAND" = "pick" ]; then
+        OPT_PICK_HISTORY=true
+      else
+        err "Unknown argument: --history"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -397,12 +424,16 @@ while [ $# -gt 0 ]; do
         echo "  monozukuri pick"
         echo "  monozukuri pick --top N [filters]"
         echo "  monozukuri pick --json [--top N] [filters]"
+        echo "  monozukuri pick --replay [N]"
+        echo "  monozukuri pick --history"
         echo ""
         echo "Pick top-ranked backlog items for scripts and CI."
         echo ""
         echo "Flags:"
         echo "  --json                    Emit JSON array output"
         echo "  --top N                   Emit top-ranked IDs without opening TUI (max: 50)"
+        echo "  --replay [N]              Print the Nth latest pick selection (default: 1)"
+        echo "  --history                 List the latest 20 pick selections"
         echo "  --label foo,bar           Include items with any listed label"
         echo "  --status ready|blocked|in-progress|done"
         echo "                            Include items by status (default: ready)"
@@ -425,6 +456,8 @@ while [ $# -gt 0 ]; do
       echo "  pick                         Open the interactive ranked picker"
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  pick --top N --json          Emit top-ranked backlog items as JSON"
+      echo "  pick --replay [N]            Replay the latest or Nth latest pick selection"
+      echo "  pick --history               List recent pick selections"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -497,6 +530,8 @@ while [ $# -gt 0 ]; do
       echo "  --agent <agent>              Filter backlog list or target setup by agent"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for non-interactive pick (max: 50)"
+      echo "  --replay [n]                 Replay recent pick selection"
+      echo "  --history                    List recent pick selections"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -525,6 +560,12 @@ while [ $# -gt 0 ]; do
           OPT_BACKLOG_IDS="${OPT_BACKLOG_IDS},$1"
         else
           OPT_BACKLOG_IDS="$1"
+        fi
+      elif [ "$SUBCOMMAND" = "pick" ]; then
+        if [ -n "$OPT_PICK_IDS" ]; then
+          OPT_PICK_IDS="${OPT_PICK_IDS},$1"
+        else
+          OPT_PICK_IDS="$1"
         fi
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
@@ -558,7 +599,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
        OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
-       OPT_PICK_TOP
+       OPT_PICK_TOP OPT_PICK_REPLAY OPT_PICK_HISTORY OPT_PICK_IDS
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

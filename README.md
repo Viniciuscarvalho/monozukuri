@@ -40,6 +40,14 @@ with exit code 130. Confirmed selections print one feature ID per line on stdout
 Use `monozukuri pick --top N` for a non-interactive shortcut that prints the
 top-ranked IDs directly; add `--json` when a pipeline needs score metadata.
 
+## Pick & Loop
+
+Every confirmed pick selection is saved to `.monozukuri/state/pick-history.jsonl`
+with a timestamp, selected IDs, source (`tui`, `top`, or `explicit`), and user.
+Use `monozukuri pick --replay` to print the latest selection again, or
+`monozukuri pick --replay 2` for the second latest. Use
+`monozukuri pick --history` to inspect the latest 20 selections.
+
 > Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, `gemini`, or `kiro`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.
 
 ## What Monozukuri does
