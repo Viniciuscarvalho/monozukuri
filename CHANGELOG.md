@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.59.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.58.0...v1.59.0) (2026-05-22)
+
+
+### Features
+
+* **cli:** add loop budget caps ([#253](https://github.com/Viniciuscarvalho/monozukuri/issues/253)) ([5dbf41d](https://github.com/Viniciuscarvalho/monozukuri/commit/5dbf41d0a9b44c9b063059d3b3e7d36748f83808))
+
 ## [1.58.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.57.0...v1.58.0) (2026-05-22)
 
 
