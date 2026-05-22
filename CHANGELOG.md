@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.61.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.60.0...v1.61.0) (2026-05-22)
+
+
+### Features
+
+* **cli:** add loop circuit breaker ([#257](https://github.com/Viniciuscarvalho/monozukuri/issues/257)) ([3dbb10e](https://github.com/Viniciuscarvalho/monozukuri/commit/3dbb10ee2dbf1a24279c3d72dac458c62f2f097c))
+
 ## [1.60.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.59.0...v1.60.0) (2026-05-22)
 
 
