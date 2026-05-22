@@ -43,17 +43,29 @@ cost_init() {
 
   node -e "
     const fs = require('fs');
+    const path = require('path');
+    function atomicWriteJson(file, data) {
+      const tmp = path.join(path.dirname(file), path.basename(file) + '.' + process.pid + '.' + Date.now() + '.tmp');
+      const fd = fs.openSync(tmp, 'w');
+      try {
+        fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+        fs.fsyncSync(fd);
+      } finally {
+        fs.closeSync(fd);
+      }
+      fs.renameSync(tmp, file);
+    }
     const file = '$cost_dir/cost.json';
     const prior = fs.existsSync(file)
       ? (JSON.parse(fs.readFileSync(file, 'utf-8')).cumulative_tokens || 0)
       : 0;
-    fs.writeFileSync(file, JSON.stringify({
+    atomicWriteJson(file, {
       feature_id: '$feat_id',
       created_at: new Date().toISOString(),
       phases: [],
       prior_tokens: prior,
       cumulative_tokens: prior
-    }, null, 2));
+    });
   "
 }
 
@@ -135,6 +147,18 @@ cost_record() {
 
   node -e "
     const fs = require('fs');
+    const path = require('path');
+    function atomicWriteJson(file, data) {
+      const tmp = path.join(path.dirname(file), path.basename(file) + '.' + process.pid + '.' + Date.now() + '.tmp');
+      const fd = fs.openSync(tmp, 'w');
+      try {
+        fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+        fs.fsyncSync(fd);
+      } finally {
+        fs.closeSync(fd);
+      }
+      fs.renameSync(tmp, file);
+    }
     const data = JSON.parse(fs.readFileSync('$cost_file', 'utf-8'));
     data.phases.push({
       phase: '$phase',
@@ -145,13 +169,25 @@ cost_record() {
     data.cumulative_tokens = (data.prior_tokens || 0) + data.phases.reduce((sum, p) => sum + p.estimated_tokens, 0);
     data.cumulative_usd = data.phases.reduce((sum, p) => sum + (p.estimated_usd || 0), 0);
     data.updated_at = new Date().toISOString();
-    fs.writeFileSync('$cost_file', JSON.stringify(data, null, 2));
+    atomicWriteJson('$cost_file', data);
   " 2>/dev/null || true
 
   if [ -n "${MONOZUKURI_LOOP_COST_FILE:-}" ]; then
     node - "$MONOZUKURI_LOOP_COST_FILE" "$feat_id" "$phase" "$estimate" "$estimated_usd" <<'JSEOF' 2>/dev/null || true
 const [,, loopCostFile, featureId, phase, estimatedTokens, estimatedUsd] = process.argv;
 const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
 if (!fs.existsSync(loopCostFile)) process.exit(0);
 const data = JSON.parse(fs.readFileSync(loopCostFile, 'utf8'));
 if (!Array.isArray(data.phase_events)) data.phase_events = [];
@@ -165,8 +201,14 @@ data.phase_events.push({
 data.total_tokens = data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_tokens || 0), 0);
 data.total_usd = Number(data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_usd || 0), 0).toFixed(4));
 data.updated_at = new Date().toISOString();
-fs.writeFileSync(loopCostFile, JSON.stringify(data, null, 2));
+atomicWriteJson(loopCostFile, data);
 JSEOF
+    if declare -f _loop_state_append_progress >/dev/null 2>&1 && [ -n "${MONOZUKURI_LOOP_STATE_DIR:-}" ]; then
+      _loop_state_append_progress "$MONOZUKURI_LOOP_STATE_DIR" "phase.cost_recorded" "$feat_id" "$phase" "recorded"
+    fi
+    if declare -f _loop_sync_legacy_cost >/dev/null 2>&1; then
+      _loop_sync_legacy_cost "$MONOZUKURI_LOOP_COST_FILE"
+    fi
   fi
 }
 

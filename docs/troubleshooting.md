@@ -14,6 +14,8 @@ Everything Monozukuri knows about your run is under `.monozukuri/` in your proje
 .monozukuri/
 ├── config.yaml              # your configuration (committed)
 ├── state.json               # current loop state (gitignored)
+├── state/
+│   └── loop-2026-05-22-a3b9c2/ # selected-loop manifest/progress/cost/checkpoint
 ├── worktrees/               # one directory per in-flight feature (gitignored)
 │   └── feat-001/
 ├── logs/                    # one log file per feature run (gitignored)
