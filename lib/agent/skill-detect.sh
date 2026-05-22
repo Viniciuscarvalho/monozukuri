@@ -43,9 +43,10 @@ _skill_lookup_in_manifest() {
 phase_to_skill() {
   local phase="$1" agent_id="${2:-claude-code}"
 
-  local agent_norm="${agent_id//-/_}"
-  agent_norm="${agent_norm^^}"
-  local cfg_var="CFG_AGENTS_${agent_norm}_SKILLS_${phase^^}"
+  local agent_norm phase_norm
+  agent_norm=$(printf '%s' "${agent_id//-/_}" | tr '[:lower:]' '[:upper:]')
+  phase_norm=$(printf '%s' "$phase" | tr '[:lower:]' '[:upper:]')
+  local cfg_var="CFG_AGENTS_${agent_norm}_SKILLS_${phase_norm}"
   local override="${!cfg_var:-}"
   [ -n "$override" ] && { echo "$override"; return; }
 

@@ -11,6 +11,8 @@ setup() {
   # Per-test scoped temp dir — safe under parallel bats --jobs execution
   _CC_TEST_DIR=$(mktemp -d /tmp/cc-adapter-test-XXXXX)
   export _CC_TEST_DIR
+  CLAUDE_CONFIG_DIR="$_CC_TEST_DIR/claude-config"
+  export CLAUDE_CONFIG_DIR
 
   source "$LIB_DIR/agent/contract.sh"
   source "$LIB_DIR/prompt/render.sh"
@@ -26,7 +28,8 @@ setup() {
 
 teardown() {
   unset MONOZUKURI_PHASE CONTEXT_JSON MONOZUKURI_FEATURE_ID \
-        MONOZUKURI_WORKTREE MONOZUKURI_LOG_FILE MONOZUKURI_ERROR_FILE 2>/dev/null || true
+        MONOZUKURI_WORKTREE MONOZUKURI_LOG_FILE MONOZUKURI_ERROR_FILE \
+        CLAUDE_CONFIG_DIR 2>/dev/null || true
   rm -rf "${_CC_TEST_DIR:-}" 2>/dev/null || true
 }
 

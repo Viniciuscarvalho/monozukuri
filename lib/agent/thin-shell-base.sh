@@ -31,7 +31,17 @@ fi
 
 # adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
 if ! declare -f adapter_tee &>/dev/null; then
-  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+  adapter_tee() {
+    local _f="$1" _tmp _status
+    shift
+    [ "${1:-}" = "--" ] && shift
+    _tmp=$(mktemp)
+    "$@" > "$_tmp" 2>&1
+    _status=$?
+    tee "$_f" < "$_tmp"
+    rm -f "$_tmp"
+    return "$_status"
+  }
 fi
 
 # Default hook implementations — adapters override by defining these AFTER sourcing this file.
