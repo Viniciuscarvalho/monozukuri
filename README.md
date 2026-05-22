@@ -30,7 +30,7 @@ monozukuri pick --top 3 --json | jq '.[].id'
 monozukuri backlog validate feat-001 feat-002
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
-monozukuri loop feat-001 feat-002 feat-003 --max-cost 10 --max-time 480
+monozukuri loop feat-001 feat-002 feat-003 --max-cost 10 --max-time 480 --on-failure continue
 ```
 
 > Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, `gemini`, or `kiro`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.

@@ -175,6 +175,44 @@ _loop_model_for_agent() {
   esac
 }
 
+_loop_validate_failure_mode() {
+  local mode="$1"
+  case "$mode" in
+    continue|stop|pause) return 0 ;;
+    *)
+      err "--on-failure must be one of: continue, stop, pause"
+      return 1
+      ;;
+  esac
+}
+
+_loop_default_failure_mode() {
+  local autonomy="$1"
+  case "$autonomy" in
+    full_auto) echo "continue" ;;
+    checkpoint|supervised) echo "pause" ;;
+    *) echo "continue" ;;
+  esac
+}
+
+_loop_prompt_failure_action() {
+  local feat_id="$1" action
+  LOOP_PAUSE_ACTION="abort"
+  while true; do
+    printf 'Feature %s failed. Choose retry/skip/abort: ' "$feat_id"
+    IFS= read -r action || action="abort"
+    case "$action" in
+      retry|skip|abort)
+        LOOP_PAUSE_ACTION="$action"
+        return 0
+        ;;
+      *)
+        printf 'Invalid choice: %s. Expected retry, skip, or abort.\n' "$action"
+        ;;
+    esac
+  done
+}
+
 _loop_cost_init() {
   local cost_file="$1" loop_run_id="$2" max_cost="$3" max_time="$4" max_tokens="$5"
   node - "$cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens" <<'JSEOF'
@@ -276,6 +314,9 @@ sub_loop() {
   local max_time="${OPT_LOOP_MAX_TIME:-480}"
   local max_tokens="${OPT_LOOP_MAX_TOKENS_PER_TASK:-100000}"
   _loop_validate_caps "$max_cost" "$max_time" "$max_tokens" || return 1
+  local on_failure="${OPT_LOOP_ON_FAILURE:-}"
+  [ -n "$on_failure" ] || on_failure=$(_loop_default_failure_mode "$AUTONOMY")
+  _loop_validate_failure_mode "$on_failure" || return 1
 
   MONOZUKURI_MAX_FEATURE_TOKENS="$max_tokens"
   MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
@@ -308,7 +349,7 @@ sub_loop() {
   IFS="$IFS_ORIG"
 
   local total="${#ids[@]}"
-  local index=0 any_failed=0 cap_reached=0 cap_reason=""
+  local index=0 any_failed=0 cap_reached=0 cap_reason="" failure_stopped=0 failure_stop_reason=""
   local loop_started_at
   loop_started_at=$(date +%s)
   local feat_id item_json title body priority labels deps next_feat_id
@@ -345,22 +386,65 @@ sub_loop() {
     local loop_log="$CONFIG_DIR/runs/$loop_run_id/$feat_id/loop.log"
     mkdir -p "$(dirname "$loop_log")"
 
-    local feature_exit=0
-    run_feature "$feat_id" "$title" "$body" "$priority" "$labels" "$deps" "$index" "$total" "$next_feat_id" \
-      >"$loop_log" 2>&1 || feature_exit=$?
+    local retry_feature="true"
+    while [ "$retry_feature" = "true" ]; do
+      retry_feature="false"
+      local feature_exit=0
+      run_feature "$feat_id" "$title" "$body" "$priority" "$labels" "$deps" "$index" "$total" "$next_feat_id" \
+        >"$loop_log" 2>&1 || feature_exit=$?
 
-    local final_status label
-    final_status=$(fstate_get_status "$feat_id")
-    _loop_cost_record_feature "$loop_cost_file" "$feat_id" "$STATE_DIR/$feat_id/cost.json" "$final_status"
+      local final_status label
+      final_status=$(fstate_get_status "$feat_id")
+      _loop_cost_record_feature "$loop_cost_file" "$feat_id" "$STATE_DIR/$feat_id/cost.json" "$final_status"
 
-    if { [ "$feature_exit" -eq 0 ] && [ "$final_status" = "done" ]; } || [ "$final_status" = "pr-created" ]; then
-      label=$(_loop_pr_label "$feat_id" "$final_status")
-      printf '[%d/%d] %s ✓ %s\n' "$index" "$total" "$feat_id" "$label"
-    else
-      [ -n "$final_status" ] || final_status="failed"
-      printf '[%d/%d] %s ✗ %s\n' "$index" "$total" "$feat_id" "$final_status"
-      any_failed=1
-    fi
+      if { [ "$feature_exit" -eq 0 ] && [ "$final_status" = "done" ]; } || [ "$final_status" = "pr-created" ]; then
+        label=$(_loop_pr_label "$feat_id" "$final_status")
+        printf '[%d/%d] %s ✓ %s\n' "$index" "$total" "$feat_id" "$label"
+      else
+        [ -n "$final_status" ] || final_status="failed"
+        if [ "$final_status" != "failed" ]; then
+          fstate_transition "$feat_id" "failed" "loop-feature-failed"
+          final_status="failed"
+        fi
+        printf '[%d/%d] %s ✗ %s\n' "$index" "$total" "$feat_id" "$final_status"
+
+        case "$on_failure" in
+          continue)
+            any_failed=1
+            ;;
+          stop)
+            any_failed=1
+            failure_stopped=1
+            failure_stop_reason="$feat_id"
+            ;;
+          pause)
+            if [ ! -t 0 ]; then
+              any_failed=1
+              failure_stopped=1
+              failure_stop_reason="$feat_id"
+              printf 'Loop pause requested but stdin is not a TTY; stopping after failure: %s.\n' "$feat_id"
+            else
+              local pause_action
+              _loop_prompt_failure_action "$feat_id"
+              pause_action="$LOOP_PAUSE_ACTION"
+              case "$pause_action" in
+                retry)
+                  retry_feature="true"
+                  ;;
+                skip)
+                  any_failed=1
+                  ;;
+                abort)
+                  any_failed=1
+                  failure_stopped=1
+                  failure_stop_reason="$feat_id"
+                  ;;
+              esac
+            fi
+            ;;
+        esac
+      fi
+    done
 
     if [ "$AUTO_CLEANUP" = "true" ]; then
       wt_remove "$feat_id"
@@ -385,6 +469,9 @@ sub_loop() {
       cap_reason="tokens"
       break
     fi
+    if [ "$failure_stopped" -eq 1 ]; then
+      break
+    fi
   done
 
   rm -f "$backlog_file"
@@ -392,6 +479,8 @@ sub_loop() {
   elapsed_total=$(( $(date +%s) - loop_started_at ))
   if [ "$cap_reached" -eq 1 ]; then
     final_status="cap-reached"
+  elif [ "$failure_stopped" -eq 1 ]; then
+    final_status="stopped"
   elif [ "$any_failed" -eq 0 ]; then
     final_status="completed"
   else
@@ -405,6 +494,10 @@ sub_loop() {
   if [ "$cap_reached" -eq 1 ]; then
     printf 'Loop cap reached: %s; no further features will start.\n' "$cap_reason"
     return "${EXIT_BUDGET_CAP:-4}"
+  fi
+  if [ "$failure_stopped" -eq 1 ]; then
+    printf 'Loop stopped after failure: %s; no further features will start.\n' "$failure_stop_reason"
+    return "${EXIT_LOOP_STOPPED:-3}"
   fi
   [ "$any_failed" -eq 0 ] || return 1
   return 0

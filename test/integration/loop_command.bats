@@ -57,6 +57,36 @@ teardown() {
   rm -rf "$TMPDIR_TEST"
 }
 
+make_failing_claude_mock() {
+  local mock_dir="$TMPDIR_TEST/failing-claude"
+  mkdir -p "$mock_dir"
+  cat >"$mock_dir/claude" <<'EOFMOCK'
+#!/bin/bash
+set -euo pipefail
+
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-failing-mock"
+    exit 0
+  fi
+done
+
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as failing-mock@example.com"
+  exit 0
+fi
+
+if [ "${MONOZUKURI_PHASE:-}" = "code" ] && [ "${MONOZUKURI_FEATURE_ID:-}" = "feat-001" ]; then
+  echo "injected code failure for feat-001" >&2
+  exit 42
+fi
+
+exec "$REAL_CLAUDE_MOCK/claude" "$@"
+EOFMOCK
+  chmod +x "$mock_dir/claude"
+  printf '%s\n' "$mock_dir"
+}
+
 @test "loop --help documents IDs, stdin, and cleanup" {
   run bash "$ORCHESTRATE" loop --help
 
@@ -67,6 +97,7 @@ teardown() {
   [[ "$output" == *"--max-cost USD"* ]]
   [[ "$output" == *"--max-time MINUTES"* ]]
   [[ "$output" == *"--max-tokens-per-task N"* ]]
+  [[ "$output" == *"--on-failure MODE"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -156,4 +187,98 @@ teardown() {
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"--max-tokens-per-task hard ceiling is 500000"* ]]
+}
+
+@test "loop --on-failure stop aborts after a failed feature" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --on-failure stop --non-interactive --no-ui
+
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"[1/2] feat-001 ✗"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"Loop stopped after failure"* ]]
+}
+
+@test "loop --on-failure continue marks failed feature and runs the next one" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --on-failure continue --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+
+  status_file="$PROJ_DIR/.monozukuri/state/feat-001/status.json"
+  [ -f "$status_file" ]
+  node -e "
+    const fs = require('fs');
+    const data = JSON.parse(fs.readFileSync('$status_file', 'utf8'));
+    if (data.status !== 'failed') throw new Error('expected failed status');
+  "
+}
+
+@test "loop --on-failure pause in non-tty stops with a clear message" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --on-failure pause --non-interactive --no-ui
+
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"pause requested but stdin is not a TTY"* ]]
+}
+
+@test "loop defaults checkpoint autonomy to pause on failure" {
+  cd "$PROJ_DIR"
+  node -e "
+    const fs = require('fs');
+    const file = '$PROJ_DIR/.monozukuri/config.yaml';
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('autonomy: full_auto', 'autonomy: checkpoint'));
+  "
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --non-interactive --no-ui
+
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"pause requested but stdin is not a TTY"* ]]
+}
+
+@test "loop defaults full_auto autonomy to continue on failure" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+}
+
+@test "loop defaults supervised autonomy to pause on failure" {
+  cd "$PROJ_DIR"
+  node -e "
+    const fs = require('fs');
+    const file = '$PROJ_DIR/.monozukuri/config.yaml';
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('autonomy: full_auto', 'autonomy: supervised'));
+  "
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --non-interactive --no-ui
+
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"pause requested but stdin is not a TTY"* ]]
 }

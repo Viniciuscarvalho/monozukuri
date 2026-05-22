@@ -43,7 +43,7 @@ monozukuri pick --top 3 | monozukuri loop
 
 Loop worktrees are preserved by default under `.monozukuri/worktrees/loop-<date>-<random>/<feature-id>/` so failed features can be inspected. Pass `--cleanup` when you want the command to remove each loop worktree after the feature finishes.
 
-Each feature is isolated: if one selected ID is missing or fails, the loop reports that feature and continues with the remaining IDs. The command exits `0` only when every selected feature succeeds.
+Each feature is isolated. Missing IDs are reported and the loop continues. Failed features follow `--on-failure`: `continue` marks the feature failed and starts the next one, `stop` aborts the loop with exit code `3`, and `pause` asks for `retry`, `skip`, or `abort` when stdin is a TTY. In non-TTY contexts, `pause` behaves like `stop` with a clear message. Defaults follow autonomy: `full_auto` uses `continue`; `checkpoint` and `supervised` use `pause`.
 
 Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/runs/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. The token ceiling rejects values above `500000`.
 
