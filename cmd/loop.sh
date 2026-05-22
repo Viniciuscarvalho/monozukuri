@@ -115,6 +115,132 @@ _loop_pr_label() {
   fi
 }
 
+_loop_validate_caps() {
+  local max_cost="$1" max_time="$2" max_tokens="$3"
+
+  if ! awk -v n="$max_cost" 'BEGIN { exit !(n ~ /^[0-9]+([.][0-9]+)?$/ && n > 0) }'; then
+    err "--max-cost must be a positive USD amount"
+    return 1
+  fi
+  if ! awk -v n="$max_time" 'BEGIN { exit !(n ~ /^[0-9]+$/ && n > 0) }'; then
+    err "--max-time must be a positive integer number of minutes"
+    return 1
+  fi
+  if ! awk -v n="$max_tokens" 'BEGIN { exit !(n ~ /^[0-9]+$/ && n > 0) }'; then
+    err "--max-tokens-per-task must be a positive integer"
+    return 1
+  fi
+  if [ "${OPT_LOOP_MAX_COST_EXPLICIT:-false}" != "true" ] && \
+     ! awk -v n="$max_cost" 'BEGIN { exit !(n <= 50) }'; then
+    err "--max-cost without an explicit override is capped at 50 USD"
+    return 1
+  fi
+  if [ "${OPT_LOOP_MAX_TIME_EXPLICIT:-false}" != "true" ] && \
+     [ "$max_time" -gt 1440 ]; then
+    err "--max-time without an explicit override is capped at 1440 minutes"
+    return 1
+  fi
+  if [ "$max_tokens" -gt 500000 ]; then
+    err "--max-tokens-per-task hard ceiling is 500000"
+    return 1
+  fi
+}
+
+_loop_model_for_agent() {
+  local agent="$1" model="${2:-}"
+  case "$agent" in
+    claude-code)
+      case "$model" in
+        opus) echo "claude-opus-4-7" ;;
+        haiku) echo "claude-haiku-4-5" ;;
+        claude-*) echo "$model" ;;
+        *) echo "claude-sonnet-4-6" ;;
+      esac
+      ;;
+    codex)
+      case "$model" in
+        gpt-*) echo "$model" ;;
+        mini) echo "gpt-5.4-mini" ;;
+        *) echo "gpt-5.5" ;;
+      esac
+      ;;
+    gemini)
+      case "$model" in
+        gemini-*) echo "$model" ;;
+        flash) echo "gemini-2.5-flash" ;;
+        *) echo "gemini-2.5-pro" ;;
+      esac
+      ;;
+    *) echo "$model" ;;
+  esac
+}
+
+_loop_cost_init() {
+  local cost_file="$1" loop_run_id="$2" max_cost="$3" max_time="$4" max_tokens="$5"
+  node - "$cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens" <<'JSEOF'
+const [,, costFile, runId, maxCost, maxTime, maxTokens] = process.argv;
+const fs = require('fs');
+fs.writeFileSync(costFile, JSON.stringify({
+  run_id: runId,
+  status: 'running',
+  started_at: new Date().toISOString(),
+  limit_usd: Number(maxCost),
+  limit_minutes: Number(maxTime),
+  max_tokens_per_task: Number(maxTokens),
+  total_usd: 0,
+  total_tokens: 0,
+  phase_events: [],
+  features: []
+}, null, 2));
+JSEOF
+}
+
+_loop_cost_record_feature() {
+  local cost_file="$1" feat_id="$2" feature_cost_file="$3" status="$4"
+  node - "$cost_file" "$feat_id" "$feature_cost_file" "$status" <<'JSEOF'
+const [,, costFile, featId, featureCostFile, status] = process.argv;
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
+let feature = { cumulative_tokens: 0, cumulative_usd: 0, phases: [] };
+try {
+  feature = JSON.parse(fs.readFileSync(featureCostFile, 'utf8'));
+} catch (_) {}
+const entry = {
+  id: featId,
+  status,
+  tokens: Number(feature.cumulative_tokens || 0),
+  usd: Number(feature.cumulative_usd || 0),
+  phases: Array.isArray(feature.phases) ? feature.phases : [],
+  recorded_at: new Date().toISOString()
+};
+data.features.push(entry);
+data.total_tokens = data.features.reduce((sum, f) => sum + Number(f.tokens || 0), 0);
+data.total_usd = Number(data.features.reduce((sum, f) => sum + Number(f.usd || 0), 0).toFixed(4));
+data.updated_at = new Date().toISOString();
+fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+JSEOF
+}
+
+_loop_cost_finalize() {
+  local cost_file="$1" status="$2" elapsed_seconds="$3" reason="${4:-}"
+  node - "$cost_file" "$status" "$elapsed_seconds" "$reason" <<'JSEOF'
+const [,, costFile, status, elapsedSeconds, reason] = process.argv;
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
+data.status = status;
+data.elapsed_seconds = Number(elapsedSeconds);
+if (reason) data.reason = reason;
+data.finished_at = new Date().toISOString();
+fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+JSEOF
+}
+
+_loop_cost_field() {
+  local cost_file="$1" field="$2"
+  node -p "try{JSON.parse(require('fs').readFileSync('$cost_file','utf8'))['$field']||0}catch(e){0}" \
+    2>/dev/null || echo "0"
+}
+
 sub_loop() {
   trap 'exit 130' INT
 
@@ -146,6 +272,21 @@ sub_loop() {
   export WORKTREE_BASE BRANCH_PREFIX BASE_BRANCH ADAPTER AUTONOMY MODEL_DEFAULT MODEL_PLAN MODEL_EXECUTE
   mkdir -p "$STATE_DIR" "$RESULTS_DIR" "$WORKTREE_ROOT" "$CONFIG_DIR/runs/$loop_run_id"
 
+  local max_cost="${OPT_LOOP_MAX_COST:-10}"
+  local max_time="${OPT_LOOP_MAX_TIME:-480}"
+  local max_tokens="${OPT_LOOP_MAX_TOKENS_PER_TASK:-100000}"
+  _loop_validate_caps "$max_cost" "$max_time" "$max_tokens" || return 1
+
+  MONOZUKURI_MAX_FEATURE_TOKENS="$max_tokens"
+  MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
+  MODEL_PRIMARY=$(_loop_model_for_agent "$MODEL_AGENT" "${MODEL_DEFAULT:-}")
+  export MONOZUKURI_MAX_FEATURE_TOKENS MODEL_AGENT MODEL_PRIMARY
+
+  local loop_cost_file="$CONFIG_DIR/runs/$loop_run_id/cost.json"
+  _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
+  MONOZUKURI_LOOP_COST_FILE="$loop_cost_file"
+  export MONOZUKURI_LOOP_COST_FILE
+
   _run_check_incompatible_skills
   mem_refresh_env
 
@@ -167,12 +308,22 @@ sub_loop() {
   IFS="$IFS_ORIG"
 
   local total="${#ids[@]}"
-  local index=0 any_failed=0
+  local index=0 any_failed=0 cap_reached=0 cap_reason=""
+  local loop_started_at
+  loop_started_at=$(date +%s)
   local feat_id item_json title body priority labels deps next_feat_id
   for feat_id in "${ids[@]}"; do
     index=$((index + 1))
     feat_id=$(printf '%s' "$feat_id" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     [ -z "$feat_id" ] && continue
+
+    local elapsed_now
+    elapsed_now=$(( $(date +%s) - loop_started_at ))
+    if [ "$elapsed_now" -ge $(( max_time * 60 )) ]; then
+      cap_reached=1
+      cap_reason="time"
+      break
+    fi
 
     if ! item_json=$(_loop_item_for_id "$backlog_file" "$feat_id"); then
       printf '[%d/%d] %s ✗ not found\n' "$index" "$total" "$feat_id"
@@ -200,6 +351,8 @@ sub_loop() {
 
     local final_status label
     final_status=$(fstate_get_status "$feat_id")
+    _loop_cost_record_feature "$loop_cost_file" "$feat_id" "$STATE_DIR/$feat_id/cost.json" "$final_status"
+
     if { [ "$feature_exit" -eq 0 ] && [ "$final_status" = "done" ]; } || [ "$final_status" = "pr-created" ]; then
       label=$(_loop_pr_label "$feat_id" "$final_status")
       printf '[%d/%d] %s ✓ %s\n' "$index" "$total" "$feat_id" "$label"
@@ -212,9 +365,47 @@ sub_loop() {
     if [ "$AUTO_CLEANUP" = "true" ]; then
       wt_remove "$feat_id"
     fi
+
+    local total_usd feature_tokens elapsed_after
+    total_usd=$(_loop_cost_field "$loop_cost_file" "total_usd")
+    feature_tokens=$(node -p "try{const d=JSON.parse(require('fs').readFileSync('$STATE_DIR/$feat_id/cost.json','utf8'));d.cumulative_tokens||0}catch(e){0}" 2>/dev/null || echo "0")
+    elapsed_after=$(( $(date +%s) - loop_started_at ))
+    if awk -v c="$total_usd" -v limit="$max_cost" 'BEGIN { exit !(c >= limit) }'; then
+      cap_reached=1
+      cap_reason="cost"
+      break
+    fi
+    if [ "$elapsed_after" -ge $(( max_time * 60 )) ]; then
+      cap_reached=1
+      cap_reason="time"
+      break
+    fi
+    if [ "$feature_tokens" -ge "$max_tokens" ]; then
+      cap_reached=1
+      cap_reason="tokens"
+      break
+    fi
   done
 
   rm -f "$backlog_file"
+  local elapsed_total final_status final_cost final_tokens
+  elapsed_total=$(( $(date +%s) - loop_started_at ))
+  if [ "$cap_reached" -eq 1 ]; then
+    final_status="cap-reached"
+  elif [ "$any_failed" -eq 0 ]; then
+    final_status="completed"
+  else
+    final_status="failed"
+  fi
+  _loop_cost_finalize "$loop_cost_file" "$final_status" "$elapsed_total" "$cap_reason"
+  final_cost=$(_loop_cost_field "$loop_cost_file" "total_usd")
+  final_tokens=$(_loop_cost_field "$loop_cost_file" "total_tokens")
+  printf 'Loop cost: $%.4f / $%s, tokens: %s, elapsed: %ss / %sm\n' \
+    "$final_cost" "$max_cost" "$final_tokens" "$elapsed_total" "$max_time"
+  if [ "$cap_reached" -eq 1 ]; then
+    printf 'Loop cap reached: %s; no further features will start.\n' "$cap_reason"
+    return "${EXIT_BUDGET_CAP:-4}"
+  fi
   [ "$any_failed" -eq 0 ] || return 1
   return 0
 }

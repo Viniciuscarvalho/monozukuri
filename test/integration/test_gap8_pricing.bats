@@ -93,17 +93,16 @@ make_feature_cost() {
 @test "pricing_load populates env vars from pricing.yaml" {
   pricing_load
   [ -n "$PRICING_VERSION" ]
-  [ "$PRICING_VERSION" = "1.0.0" ]
   [ -n "$PRICING_CLAUDE_CODE_CLAUDE_SONNET_4_6_INPUT_PER_1M" ]
 }
 
 @test "pricing_cost_usd returns correct USD for known token counts" {
   pricing_load
   # 100k input, 30k output with sonnet-4-6 pricing (3.00/15.00 per 1M)
-  # = (100000/1M * 3.00) + (30000/1M * 15.00) = 0.30 + 0.45 = 0.75
+  # = (100000/1M * 3.00) + (30000/1M * 15.00) = 0.75, plus 5% safety margin
   run pricing_cost_usd "claude-code" "claude-sonnet-4-6" 100000 30000
   [ "$status" -eq 0 ]
-  [[ "$output" =~ ^0\.75 ]]
+  [[ "$output" =~ ^0\.7875 ]]
 }
 
 @test "cost_record adds estimated_usd to cost.json" {

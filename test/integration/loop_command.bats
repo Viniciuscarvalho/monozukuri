@@ -64,6 +64,9 @@ teardown() {
   [[ "$output" == *"monozukuri loop <id...> [--cleanup]"* ]]
   [[ "$output" == *"printf 'feat-001\\nfeat-002\\n' | monozukuri loop"* ]]
   [[ "$output" == *"--cleanup"* ]]
+  [[ "$output" == *"--max-cost USD"* ]]
+  [[ "$output" == *"--max-time MINUTES"* ]]
+  [[ "$output" == *"--max-tokens-per-task N"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -111,4 +114,46 @@ teardown() {
   [[ "$output" == *"[1/1] feat-001 ✓ done"* ]]
   [ ! -d "$PROJ_DIR/.monozukuri/worktrees" ] || \
     [ -z "$(find "$PROJ_DIR/.monozukuri/worktrees" -mindepth 2 -maxdepth 2 -type d -name 'feat-001' -print -quit)" ]
+}
+
+@test "loop stops before the next feature when max cost is reached" {
+  cd "$PROJ_DIR"
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --max-cost 0.01 --non-interactive --no-ui
+
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"[1/2] feat-001 ✓ done"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"Loop cost:"* ]]
+  [[ "$output" == *"cap reached"* ]]
+
+  cost_file=$(find "$PROJ_DIR/.monozukuri/runs" -maxdepth 2 -type f -path '*/loop-*/cost.json' | head -1)
+  [ -n "$cost_file" ]
+  node -e "
+    const fs = require('fs');
+    const data = JSON.parse(fs.readFileSync('$cost_file', 'utf8'));
+    if (data.limit_usd !== 0.01) throw new Error('wrong limit_usd');
+    if (data.status !== 'cap-reached') throw new Error('wrong status');
+    if (!Array.isArray(data.phase_events) || data.phase_events.length === 0) throw new Error('missing phase events');
+    if (!data.features.some((f) => f.id === 'feat-001')) throw new Error('missing feat-001');
+  "
+}
+
+@test "loop stops before the next feature when per-task token cap is reached" {
+  cd "$PROJ_DIR"
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 feat-002 --max-tokens-per-task 1000 --non-interactive --no-ui
+
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"[1/2] feat-001 ✓ done"* ]]
+  [[ "$output" != *"[2/2] feat-002"* ]]
+  [[ "$output" == *"Loop cap reached: tokens"* ]]
+}
+
+@test "loop rejects max tokens per task above hard ceiling" {
+  cd "$PROJ_DIR"
+  run bash "$ORCHESTRATE" loop feat-001 --max-tokens-per-task 500001 --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"--max-tokens-per-task hard ceiling is 500000"* ]]
 }

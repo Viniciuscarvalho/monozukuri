@@ -16,33 +16,77 @@ set -euo pipefail
 _PRICING_LOADED=false
 
 # ── pricing_load ──────────────────────────────────────────────────────
-# Load pricing.yaml into environment variables
+# Load pricing tables into environment variables
 # Populates: PRICING_VERSION, PRICING_UPDATED_AT, PRICING_<PROVIDER>_<MODEL>_*
 # Usage: pricing_load
+
+_pricing_load_file() {
+  local pricing_file="$1"
+  local providers
+
+  if [ "$(yq eval 'has("providers")' "$pricing_file" 2>/dev/null || echo "false")" = "true" ]; then
+    providers=$(yq eval '.providers | keys | .[]' "$pricing_file" 2>/dev/null || echo "")
+  else
+    providers=$(yq eval '.provider // ""' "$pricing_file" 2>/dev/null || echo "")
+  fi
+
+  local pricing_version pricing_updated_at
+  pricing_version=$(yq eval '.version // ""' "$pricing_file" 2>/dev/null || echo "")
+  pricing_updated_at=$(yq eval '.updated_at // ""' "$pricing_file" 2>/dev/null || echo "")
+  [ -n "$pricing_version" ] && PRICING_VERSION="$pricing_version"
+  [ -n "$pricing_updated_at" ] && PRICING_UPDATED_AT="$pricing_updated_at"
+
+  local pricing_provider
+  while IFS= read -r pricing_provider; do
+    [ -z "$pricing_provider" ] && continue
+
+    local models_path calibration_path pricing_models
+    if [ "$(yq eval 'has("providers")' "$pricing_file" 2>/dev/null || echo "false")" = "true" ]; then
+      models_path=".providers[\"$pricing_provider\"].models"
+      calibration_path=".calibration[\"$pricing_provider\"]"
+    else
+      models_path=".models"
+      calibration_path=".calibration"
+    fi
+
+    pricing_models=$(yq eval "$models_path | keys | .[]" "$pricing_file" 2>/dev/null || echo "")
+
+    local pricing_model
+    while IFS= read -r pricing_model; do
+      [ -z "$pricing_model" ] && continue
+
+      # Normalize provider/model names (replace hyphens/dots with underscores)
+      local model_norm provider_norm
+      model_norm=$(echo "$pricing_model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
+      provider_norm=$(echo "$pricing_provider" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
+
+      local input_price output_price
+      input_price=$(yq eval "${models_path}[\"$pricing_model\"].input_per_1m // 0.0" "$pricing_file" 2>/dev/null || echo "0.0")
+      output_price=$(yq eval "${models_path}[\"$pricing_model\"].output_per_1m // 0.0" "$pricing_file" 2>/dev/null || echo "0.0")
+
+      export "PRICING_${provider_norm}_${model_norm}_INPUT_PER_1M=$input_price"
+      export "PRICING_${provider_norm}_${model_norm}_OUTPUT_PER_1M=$output_price"
+
+      for phase in prd techspec tasks code tests pr phase0 phase1 phase2 phase3 phase4; do
+        local coeff phase_norm
+        coeff=$(yq eval "${calibration_path}[\"$pricing_model\"].$phase // 1.0" "$pricing_file" 2>/dev/null || echo "1.0")
+        phase_norm=$(echo "$phase" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
+        export "CALIBRATION_${provider_norm}_${model_norm}_${phase_norm}=$coeff"
+      done
+    done <<< "$pricing_models"
+  done <<< "$providers"
+}
 
 pricing_load() {
   # Skip if already loaded
   [ "$_PRICING_LOADED" = true ] && return 0
 
-  # Locate pricing.yaml. Priority:
-  #   1. Project override: $PROJECT_ROOT/config/pricing.yaml (user-managed)
-  #   2. Install-dir override: $SCRIPT_DIR/config/pricing.yaml (set by orchestrate.sh)
-  #   3. BASH_SOURCE-relative: always resolves to $MONOZUKURI_HOME/config/pricing.yaml
-  #      regardless of whether $SCRIPT_DIR is set correctly. This is the safe fallback.
+  # Locate pricing tables. Install tables are versioned under lib/pricing;
+  # project config/pricing.yaml remains a user-managed override for calibration.
   local _self_dir
   _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local pricing_file=""
-  if [ -f "${PROJECT_ROOT:-}/config/pricing.yaml" ]; then
-    pricing_file="${PROJECT_ROOT}/config/pricing.yaml"
-  elif [ -f "${SCRIPT_DIR:-}/config/pricing.yaml" ]; then
-    pricing_file="${SCRIPT_DIR}/config/pricing.yaml"
-  elif [ -f "${_self_dir}/../../config/pricing.yaml" ]; then
-    pricing_file="${_self_dir}/../../config/pricing.yaml"
-  else
-    warn "pricing.yaml not found — budget checks will use \$0 cost estimates"
-    _PRICING_LOADED=true
-    return 1
-  fi
+  local install_root
+  install_root="$(cd "$_self_dir/../.." && pwd)"
 
   # Check yq availability
   if ! command -v yq &>/dev/null; then
@@ -51,55 +95,28 @@ pricing_load() {
     return 1
   fi
 
-  # Parse metadata
-  PRICING_VERSION=$(yq eval '.version' "$pricing_file" 2>/dev/null || echo "1.0.0")
-  PRICING_UPDATED_AT=$(yq eval '.updated_at' "$pricing_file" 2>/dev/null || echo "unknown")
+  PRICING_VERSION="unknown"
+  PRICING_UPDATED_AT="unknown"
 
-  # Parse provider pricing (claude-code and aider)
-  # Format: PRICING_CLAUDE_CODE_CLAUDE_SONNET_4_6_INPUT_PER_1M=3.00
-  for provider in claude-code aider; do
-    local models
-    models=$(yq eval ".providers.$provider.models | keys | .[]" "$pricing_file" 2>/dev/null || echo "")
-
-    while IFS= read -r model; do
-      [ -z "$model" ] && continue
-
-      # Normalize model name (replace hyphens/dots with underscores)
-      local model_norm
-      model_norm=$(echo "$model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
-      local provider_norm
-      provider_norm=$(echo "$provider" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-
-      local input_price output_price
-      input_price=$(yq eval ".providers.$provider.models.$model.input_per_1m" "$pricing_file" 2>/dev/null || echo "0.0")
-      output_price=$(yq eval ".providers.$provider.models.$model.output_per_1m" "$pricing_file" 2>/dev/null || echo "0.0")
-
-      # Export as env vars
-      export "PRICING_${provider_norm}_${model_norm}_INPUT_PER_1M=$input_price"
-      export "PRICING_${provider_norm}_${model_norm}_OUTPUT_PER_1M=$output_price"
-    done <<< "$models"
+  local pricing_files=()
+  [ -f "$install_root/config/pricing.yaml" ] && pricing_files+=("$install_root/config/pricing.yaml")
+  local pricing_table
+  for pricing_table in "$install_root"/lib/pricing/*.yaml; do
+    [ -f "$pricing_table" ] && pricing_files+=("$pricing_table")
   done
+  if [ -f "${PROJECT_ROOT:-}/config/pricing.yaml" ] && \
+     [ "${PROJECT_ROOT:-}/config/pricing.yaml" != "$install_root/config/pricing.yaml" ]; then
+    pricing_files+=("${PROJECT_ROOT}/config/pricing.yaml")
+  fi
 
-  # Parse calibration coefficients
-  # Format: CALIBRATION_CLAUDE_CODE_CLAUDE_SONNET_4_6_PRD=1.0
-  for provider in claude-code aider; do
-    local models
-    models=$(yq eval ".calibration.$provider | keys | .[]" "$pricing_file" 2>/dev/null || echo "")
+  if [ "${#pricing_files[@]}" -eq 0 ]; then
+    warn "pricing tables not found — budget checks will use \$0 cost estimates"
+    _PRICING_LOADED=true
+    return 1
+  fi
 
-    while IFS= read -r model; do
-      [ -z "$model" ] && continue
-
-      local model_norm provider_norm
-      model_norm=$(echo "$model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
-      provider_norm=$(echo "$provider" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-
-      for phase in prd techspec tasks code tests pr; do
-        local coeff phase_norm
-        coeff=$(yq eval ".calibration.$provider.$model.$phase" "$pricing_file" 2>/dev/null || echo "1.0")
-        phase_norm=$(echo "$phase" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-        export "CALIBRATION_${provider_norm}_${model_norm}_${phase_norm}=$coeff"
-      done
-    done <<< "$models"
+  for pricing_table in "${pricing_files[@]}"; do
+    _pricing_load_file "$pricing_table"
   done
 
   _PRICING_LOADED=true
@@ -114,7 +131,7 @@ pricing_load() {
 
 pricing_cost_usd() {
   local agent=$1
-  local model=$2
+  local requested_model=$2
   local input_tokens=$3
   local output_tokens=${4:-}
 
@@ -130,7 +147,7 @@ pricing_cost_usd() {
   # Normalize agent and model names
   local agent_norm model_norm
   agent_norm=$(echo "$agent" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
-  model_norm=$(echo "$model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
+  model_norm=$(echo "$requested_model" | tr '.-' '_' | tr '[:lower:]' '[:upper:]')
 
   # Lookup pricing from env vars
   local input_price_var="PRICING_${agent_norm}_${model_norm}_INPUT_PER_1M"
@@ -145,10 +162,11 @@ pricing_cost_usd() {
   fi
 
   # Calculate cost: (input / 1M * input_price) + (output / 1M * output_price)
+  # A 5% safety margin is applied to avoid undercounting token estimates.
   # Use awk for portable floating point math with guaranteed leading zero
   awk -v inp="$input_tokens" -v out="$output_tokens" \
       -v inp_price="$input_price" -v out_price="$output_price" \
-      'BEGIN { printf "%.4f\n", (inp / 1000000 * inp_price) + (out / 1000000 * out_price) }'
+      'BEGIN { printf "%.4f\n", ((inp / 1000000 * inp_price) + (out / 1000000 * out_price)) * 1.05 }'
 }
 
 # ── pricing_calibration_factor ────────────────────────────────────────
