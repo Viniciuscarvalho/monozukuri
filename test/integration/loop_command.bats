@@ -87,6 +87,36 @@ EOFMOCK
   printf '%s\n' "$mock_dir"
 }
 
+make_always_failing_claude_mock() {
+  local mock_dir="$TMPDIR_TEST/always-failing-claude"
+  mkdir -p "$mock_dir"
+  cat >"$mock_dir/claude" <<'EOFMOCK'
+#!/bin/bash
+set -euo pipefail
+
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-always-failing-mock"
+    exit 0
+  fi
+done
+
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as always-failing-mock@example.com"
+  exit 0
+fi
+
+if [ "${MONOZUKURI_PHASE:-}" = "code" ]; then
+  echo "injected code failure for ${MONOZUKURI_FEATURE_ID:-unknown}" >&2
+  exit 42
+fi
+
+exec "$REAL_CLAUDE_MOCK/claude" "$@"
+EOFMOCK
+  chmod +x "$mock_dir/claude"
+  printf '%s\n' "$mock_dir"
+}
+
 @test "loop --help documents IDs, stdin, and cleanup" {
   run bash "$ORCHESTRATE" loop --help
 
@@ -98,6 +128,7 @@ EOFMOCK
   [[ "$output" == *"--max-time MINUTES"* ]]
   [[ "$output" == *"--max-tokens-per-task N"* ]]
   [[ "$output" == *"--on-failure MODE"* ]]
+  [[ "$output" == *"--circuit-breaker N"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -220,6 +251,51 @@ EOFMOCK
     const data = JSON.parse(fs.readFileSync('$status_file', 'utf8'));
     if (data.status !== 'failed') throw new Error('expected failed status');
   "
+}
+
+@test "loop trips circuit breaker after three consecutive failures even with continue mode" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_always_failing_claude_mock)
+  stdout_file="$TMPDIR_TEST/loop-stdout.txt"
+  stderr_file="$TMPDIR_TEST/loop-stderr.txt"
+
+  run bash -c '
+    PATH="$1:$PATH" REAL_CLAUDE_MOCK="$2" PROGRESS_INTERVAL=0 \
+      bash "$3" loop feat-001 feat-002 feat-003 --on-failure continue --non-interactive --no-ui \
+      >"$4" 2>"$5"
+    printf "%s" "$?"
+  ' _ "$failing_mock" "$MOCK_CLAUDE_DIR" "$ORCHESTRATE" "$stdout_file" "$stderr_file"
+
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 5 ]
+  grep -q "\\[1/3\\] feat-001 ✗ failed" "$stdout_file"
+  grep -q "\\[2/3\\] feat-002 ✗ failed" "$stdout_file"
+  grep -q "\\[3/3\\] feat-003 ✗ failed" "$stdout_file"
+  grep -q "Circuit breaker tripped: 3 consecutive failures" "$stdout_file"
+  grep -q "Circuit breaker tripped: 3 consecutive failures" "$stderr_file"
+
+  cost_file=$(find "$PROJ_DIR/.monozukuri/runs" -maxdepth 2 -type f -path '*/loop-*/cost.json' | head -1)
+  [ -n "$cost_file" ]
+  node -e "
+    const fs = require('fs');
+    const data = JSON.parse(fs.readFileSync('$cost_file', 'utf8'));
+    if (data.status !== 'circuit-breaker-tripped') throw new Error('wrong status');
+    if (!data.circuit_breaker || data.circuit_breaker.tripped !== true) throw new Error('missing circuit breaker state');
+    if (data.circuit_breaker.consecutive_failures !== 3) throw new Error('wrong failure count');
+    if (!Array.isArray(data.circuit_breaker.failed_feature_ids) || data.circuit_breaker.failed_feature_ids.length !== 3) {
+      throw new Error('missing failed feature ids');
+    }
+  "
+}
+
+@test "loop rejects disabling the circuit breaker without explicit danger acknowledgement" {
+  cd "$PROJ_DIR"
+
+  run bash "$ORCHESTRATE" loop feat-001 --circuit-breaker 0 --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"--circuit-breaker 0 disables a safety guard"* ]]
+  [[ "$output" == *"--i-know-what-im-doing"* ]]
 }
 
 @test "loop --on-failure pause in non-tty stops with a clear message" {

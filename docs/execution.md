@@ -45,6 +45,8 @@ Loop worktrees are preserved by default under `.monozukuri/worktrees/loop-<date>
 
 Each feature is isolated. Missing IDs are reported and the loop continues. Failed features follow `--on-failure`: `continue` marks the feature failed and starts the next one, `stop` aborts the loop with exit code `3`, and `pause` asks for `retry`, `skip`, or `abort` when stdin is a TTY. In non-TTY contexts, `pause` behaves like `stop` with a clear message. Defaults follow autonomy: `full_auto` uses `continue`; `checkpoint` and `supervised` use `pause`.
 
+The loop also has a consecutive-failure circuit breaker independent of `--on-failure`. By default, `--circuit-breaker 3` aborts after three failed features in a row, prints `Circuit breaker tripped: 3 consecutive failures` to stdout and stderr, writes the tripped state to `.monozukuri/runs/loop-<id>/cost.json`, and exits `5`. Set `--circuit-breaker 0 --i-know-what-im-doing` only when you explicitly want to disable this safety guard.
+
 Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/runs/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. The token ceiling rejects values above `500000`.
 
 ---
