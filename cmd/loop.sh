@@ -225,12 +225,224 @@ _loop_prompt_failure_action() {
   done
 }
 
+_loop_sync_legacy_cost() {
+  local cost_file="$1"
+  local legacy_cost_file="${MONOZUKURI_LOOP_LEGACY_COST_FILE:-}"
+  [ -n "$legacy_cost_file" ] || return 0
+  [ "$legacy_cost_file" != "$cost_file" ] || return 0
+  [ -f "$cost_file" ] || return 0
+
+  mkdir -p "$(dirname "$legacy_cost_file")"
+  local tmp_file
+  tmp_file=$(mktemp "$(dirname "$legacy_cost_file")/cost.XXXXXX")
+  cp "$cost_file" "$tmp_file"
+  mv "$tmp_file" "$legacy_cost_file"
+}
+
+_loop_state_append_progress() {
+  local state_dir="$1" event="$2" task_id="${3:-}" phase="${4:-}" status="${5:-}" detail="${6:-}"
+  [ -n "$state_dir" ] || return 0
+  mkdir -p "$state_dir"
+  local progress_file="$state_dir/progress.jsonl"
+  local lock_file="$state_dir/.progress.lock"
+
+  if command -v flock >/dev/null 2>&1; then
+    (
+      flock 9
+      node - "$progress_file" "$event" "$task_id" "$phase" "$status" "$detail" <<'JSEOF'
+const [,, progressFile, event, taskId, phase, status, detail] = process.argv;
+const fs = require('fs');
+const runId = require('path').basename(require('path').dirname(progressFile));
+const entry = {
+  schema_version: 1,
+  run_id: runId,
+  event,
+  ts: new Date().toISOString()
+};
+if (taskId) entry.task_id = taskId;
+if (phase) entry.phase = phase;
+if (status) entry.status = status;
+if (detail) entry.detail = detail;
+fs.appendFileSync(progressFile, JSON.stringify(entry) + '\n');
+JSEOF
+    ) 9>"$lock_file"
+  else
+    node - "$progress_file" "$event" "$task_id" "$phase" "$status" "$detail" <<'JSEOF'
+const [,, progressFile, event, taskId, phase, status, detail] = process.argv;
+const fs = require('fs');
+const runId = require('path').basename(require('path').dirname(progressFile));
+const entry = {
+  schema_version: 1,
+  run_id: runId,
+  event,
+  ts: new Date().toISOString()
+};
+if (taskId) entry.task_id = taskId;
+if (phase) entry.phase = phase;
+if (status) entry.status = status;
+if (detail) entry.detail = detail;
+fs.appendFileSync(progressFile, JSON.stringify(entry) + '\n');
+JSEOF
+  fi
+}
+
+_loop_state_init() {
+  local state_dir="$1" loop_run_id="$2" ids_csv="$3"
+  mkdir -p "$state_dir"
+  : > "$state_dir/progress.jsonl"
+
+  node - "$state_dir" "$loop_run_id" "$ids_csv" <<'JSEOF'
+const [,, stateDir, runId, idsCsv] = process.argv;
+const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+const now = new Date().toISOString();
+const ids = idsCsv.split(',').map((id) => id.trim()).filter(Boolean);
+atomicWriteJson(path.join(stateDir, 'manifest.json'), {
+  schema_version: 1,
+  run_id: runId,
+  status: 'running',
+  started_at: now,
+  updated_at: now,
+  tasks: ids.map((id, index) => ({
+    id,
+    order: index + 1,
+    status: 'pending',
+    updated_at: now
+  }))
+});
+atomicWriteJson(path.join(stateDir, 'checkpoint.json'), {
+  schema_version: 1,
+  run_id: runId,
+  status: 'running',
+  last_safe_task_id: '',
+  next_task_index: 1,
+  next_task_id: ids[0] || '',
+  updated_at: now
+});
+JSEOF
+  _loop_state_append_progress "$state_dir" "loop.started" "" "" "running"
+}
+
+_loop_state_update_task() {
+  local state_dir="$1" task_id="$2" status="$3" phase="${4:-}"
+  node - "$state_dir/manifest.json" "$task_id" "$status" "$phase" <<'JSEOF'
+const [,, manifestFile, taskId, status, phase] = process.argv;
+const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const task = manifest.tasks.find((entry) => entry.id === taskId);
+if (task) {
+  task.status = status;
+  if (phase) task.phase = phase;
+  task.updated_at = new Date().toISOString();
+}
+manifest.updated_at = new Date().toISOString();
+atomicWriteJson(manifestFile, manifest);
+JSEOF
+}
+
+_loop_state_checkpoint() {
+  local state_dir="$1" status="$2" next_task_index="$3" next_task_id="${4:-}" last_safe_task_id="${5:-}" reason="${6:-}"
+  node - "$state_dir/checkpoint.json" "$status" "$next_task_index" "$next_task_id" "$last_safe_task_id" "$reason" <<'JSEOF'
+const [,, checkpointFile, status, nextTaskIndex, nextTaskId, lastSafeTaskId, reason] = process.argv;
+const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+const checkpoint = JSON.parse(fs.readFileSync(checkpointFile, 'utf8'));
+checkpoint.status = status;
+checkpoint.next_task_index = Number(nextTaskIndex || 0);
+checkpoint.next_task_id = nextTaskId || '';
+checkpoint.last_safe_task_id = lastSafeTaskId || checkpoint.last_safe_task_id || '';
+if (reason) checkpoint.reason = reason;
+checkpoint.updated_at = new Date().toISOString();
+atomicWriteJson(checkpointFile, checkpoint);
+JSEOF
+}
+
+_loop_state_finalize() {
+  local state_dir="$1" status="$2" reason="${3:-}"
+  node - "$state_dir/manifest.json" "$state_dir/checkpoint.json" "$status" "$reason" <<'JSEOF'
+const [,, manifestFile, checkpointFile, status, reason] = process.argv;
+const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+const now = new Date().toISOString();
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+manifest.status = status;
+manifest.updated_at = now;
+manifest.completed_at = now;
+if (reason) manifest.reason = reason;
+atomicWriteJson(manifestFile, manifest);
+const checkpoint = JSON.parse(fs.readFileSync(checkpointFile, 'utf8'));
+checkpoint.status = status;
+checkpoint.updated_at = now;
+if (reason) checkpoint.reason = reason;
+atomicWriteJson(checkpointFile, checkpoint);
+JSEOF
+  _loop_state_append_progress "$state_dir" "loop.completed" "" "" "$status" "$reason"
+}
+
 _loop_cost_init() {
   local cost_file="$1" loop_run_id="$2" max_cost="$3" max_time="$4" max_tokens="$5"
   node - "$cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens" <<'JSEOF'
 const [,, costFile, runId, maxCost, maxTime, maxTokens] = process.argv;
 const fs = require('fs');
-fs.writeFileSync(costFile, JSON.stringify({
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+atomicWriteJson(costFile, {
+  schema_version: 1,
   run_id: runId,
   status: 'running',
   started_at: new Date().toISOString(),
@@ -241,8 +453,9 @@ fs.writeFileSync(costFile, JSON.stringify({
   total_tokens: 0,
   phase_events: [],
   features: []
-}, null, 2));
+});
 JSEOF
+  _loop_sync_legacy_cost "$cost_file"
 }
 
 _loop_cost_record_feature() {
@@ -250,6 +463,18 @@ _loop_cost_record_feature() {
   node - "$cost_file" "$feat_id" "$feature_cost_file" "$status" <<'JSEOF'
 const [,, costFile, featId, featureCostFile, status] = process.argv;
 const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
 const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
 let feature = { cumulative_tokens: 0, cumulative_usd: 0, phases: [] };
 try {
@@ -267,8 +492,9 @@ data.features.push(entry);
 data.total_tokens = data.features.reduce((sum, f) => sum + Number(f.tokens || 0), 0);
 data.total_usd = Number(data.features.reduce((sum, f) => sum + Number(f.usd || 0), 0).toFixed(4));
 data.updated_at = new Date().toISOString();
-fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+atomicWriteJson(costFile, data);
 JSEOF
+  _loop_sync_legacy_cost "$cost_file"
 }
 
 _loop_cost_record_circuit_breaker() {
@@ -276,6 +502,18 @@ _loop_cost_record_circuit_breaker() {
   node - "$cost_file" "$limit" "$consecutive_failures" "$failed_feature_ids" <<'JSEOF'
 const [,, costFile, limit, consecutiveFailures, failedFeatureIds] = process.argv;
 const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
 const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
 data.circuit_breaker = {
   tripped: true,
@@ -285,8 +523,9 @@ data.circuit_breaker = {
   resume_requires: '--circuit-breaker 0 --i-know-what-im-doing'
 };
 data.updated_at = new Date().toISOString();
-fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+atomicWriteJson(costFile, data);
 JSEOF
+  _loop_sync_legacy_cost "$cost_file"
 }
 
 _loop_cost_finalize() {
@@ -294,13 +533,26 @@ _loop_cost_finalize() {
   node - "$cost_file" "$status" "$elapsed_seconds" "$reason" <<'JSEOF'
 const [,, costFile, status, elapsedSeconds, reason] = process.argv;
 const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
 const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
 data.status = status;
 data.elapsed_seconds = Number(elapsedSeconds);
 if (reason) data.reason = reason;
 data.finished_at = new Date().toISOString();
-fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+atomicWriteJson(costFile, data);
 JSEOF
+  _loop_sync_legacy_cost "$cost_file"
 }
 
 _loop_cost_field() {
@@ -329,6 +581,7 @@ sub_loop() {
 
   local loop_run_id
   loop_run_id=$(_loop_make_run_id)
+  local loop_state_dir="$STATE_DIR/$loop_run_id"
   WORKTREE_ROOT="$ROOT_DIR/.monozukuri/worktrees/$loop_run_id"
   AUTO_CLEANUP=false
   if [ "${OPT_LOOP_CLEANUP:-false}" = "true" ]; then
@@ -338,7 +591,7 @@ sub_loop() {
 
   export ROOT_DIR CONFIG_DIR STATE_DIR RESULTS_DIR WORKTREE_ROOT
   export WORKTREE_BASE BRANCH_PREFIX BASE_BRANCH ADAPTER AUTONOMY MODEL_DEFAULT MODEL_PLAN MODEL_EXECUTE
-  mkdir -p "$STATE_DIR" "$RESULTS_DIR" "$WORKTREE_ROOT" "$CONFIG_DIR/runs/$loop_run_id"
+  mkdir -p "$STATE_DIR" "$RESULTS_DIR" "$WORKTREE_ROOT" "$CONFIG_DIR/runs/$loop_run_id" "$loop_state_dir"
 
   local max_cost="${OPT_LOOP_MAX_COST:-10}"
   local max_time="${OPT_LOOP_MAX_TIME:-480}"
@@ -354,11 +607,6 @@ sub_loop() {
   MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
   MODEL_PRIMARY=$(_loop_model_for_agent "$MODEL_AGENT" "${MODEL_DEFAULT:-}")
   export MONOZUKURI_MAX_FEATURE_TOKENS MODEL_AGENT MODEL_PRIMARY
-
-  local loop_cost_file="$CONFIG_DIR/runs/$loop_run_id/cost.json"
-  _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
-  MONOZUKURI_LOOP_COST_FILE="$loop_cost_file"
-  export MONOZUKURI_LOOP_COST_FILE
 
   _run_check_incompatible_skills
   mem_refresh_env
@@ -380,6 +628,15 @@ sub_loop() {
   read -r -a ids <<< "$ids_csv"
   IFS="$IFS_ORIG"
 
+  local loop_cost_file="$loop_state_dir/cost.json"
+  local legacy_loop_cost_file="$CONFIG_DIR/runs/$loop_run_id/cost.json"
+  MONOZUKURI_LOOP_COST_FILE="$loop_cost_file"
+  MONOZUKURI_LOOP_LEGACY_COST_FILE="$legacy_loop_cost_file"
+  MONOZUKURI_LOOP_STATE_DIR="$loop_state_dir"
+  export MONOZUKURI_LOOP_COST_FILE MONOZUKURI_LOOP_LEGACY_COST_FILE MONOZUKURI_LOOP_STATE_DIR
+  _loop_state_init "$loop_state_dir" "$loop_run_id" "$ids_csv"
+  _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
+
   local total="${#ids[@]}"
   local index=0 any_failed=0 cap_reached=0 cap_reason="" failure_stopped=0 failure_stop_reason=""
   local circuit_tripped=0 circuit_message="" consecutive_failures=0 consecutive_failed_ids=""
@@ -390,6 +647,9 @@ sub_loop() {
     index=$((index + 1))
     feat_id=$(printf '%s' "$feat_id" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     [ -z "$feat_id" ] && continue
+    _loop_state_update_task "$loop_state_dir" "$feat_id" "running"
+    _loop_state_checkpoint "$loop_state_dir" "running" "$index" "$feat_id" "" ""
+    _loop_state_append_progress "$loop_state_dir" "task.started" "$feat_id" "" "running"
 
     local elapsed_now
     elapsed_now=$(( $(date +%s) - loop_started_at ))
@@ -402,6 +662,12 @@ sub_loop() {
     if ! item_json=$(_loop_item_for_id "$backlog_file" "$feat_id"); then
       printf '[%d/%d] %s ✗ not found\n' "$index" "$total" "$feat_id"
       any_failed=1
+      local next_index=$((index + 1))
+      local next_id=""
+      [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+      _loop_state_update_task "$loop_state_dir" "$feat_id" "skipped"
+      _loop_state_checkpoint "$loop_state_dir" "running" "$next_index" "$next_id" "$feat_id" "not-found"
+      _loop_state_append_progress "$loop_state_dir" "task.skipped" "$feat_id" "" "skipped" "not-found"
       consecutive_failures=$((consecutive_failures + 1))
       if [ -n "$consecutive_failed_ids" ]; then
         consecutive_failed_ids="${consecutive_failed_ids},$feat_id"
@@ -414,6 +680,7 @@ sub_loop() {
         printf '%s\n' "$circuit_message"
         printf '%s\n' "$circuit_message" >&2
         _loop_cost_record_circuit_breaker "$loop_cost_file" "$circuit_breaker" "$consecutive_failures" "$consecutive_failed_ids"
+        _loop_state_checkpoint "$loop_state_dir" "circuit-breaker-tripped" "$next_index" "$next_id" "$feat_id" "$circuit_message"
         break
       fi
       continue
@@ -447,6 +714,12 @@ sub_loop() {
       if { [ "$feature_exit" -eq 0 ] && [ "$final_status" = "done" ]; } || [ "$final_status" = "pr-created" ]; then
         label=$(_loop_pr_label "$feat_id" "$final_status")
         printf '[%d/%d] %s ✓ %s\n' "$index" "$total" "$feat_id" "$label"
+        local next_index=$((index + 1))
+        local next_id=""
+        [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+        _loop_state_update_task "$loop_state_dir" "$feat_id" "completed"
+        _loop_state_checkpoint "$loop_state_dir" "running" "$next_index" "$next_id" "$feat_id" ""
+        _loop_state_append_progress "$loop_state_dir" "task.completed" "$feat_id" "" "completed"
         consecutive_failures=0
         consecutive_failed_ids=""
       else
@@ -469,17 +742,35 @@ sub_loop() {
           printf '%s\n' "$circuit_message"
           printf '%s\n' "$circuit_message" >&2
           _loop_cost_record_circuit_breaker "$loop_cost_file" "$circuit_breaker" "$consecutive_failures" "$consecutive_failed_ids"
+          local next_index=$((index + 1))
+          local next_id=""
+          [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+          _loop_state_update_task "$loop_state_dir" "$feat_id" "failed"
+          _loop_state_checkpoint "$loop_state_dir" "circuit-breaker-tripped" "$next_index" "$next_id" "$feat_id" "$circuit_message"
+          _loop_state_append_progress "$loop_state_dir" "task.failed" "$feat_id" "" "failed" "$circuit_message"
           break
         fi
 
         case "$on_failure" in
           continue)
             any_failed=1
+            local next_index=$((index + 1))
+            local next_id=""
+            [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+            _loop_state_update_task "$loop_state_dir" "$feat_id" "failed"
+            _loop_state_checkpoint "$loop_state_dir" "running" "$next_index" "$next_id" "$feat_id" "feature-failed"
+            _loop_state_append_progress "$loop_state_dir" "task.failed" "$feat_id" "" "failed" "feature-failed"
             ;;
           stop)
             any_failed=1
             failure_stopped=1
             failure_stop_reason="$feat_id"
+            local next_index=$((index + 1))
+            local next_id=""
+            [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+            _loop_state_update_task "$loop_state_dir" "$feat_id" "failed"
+            _loop_state_checkpoint "$loop_state_dir" "stopped" "$next_index" "$next_id" "$feat_id" "feature-failed"
+            _loop_state_append_progress "$loop_state_dir" "task.failed" "$feat_id" "" "failed" "feature-failed"
             ;;
           pause)
             if [ ! -t 0 ]; then
@@ -487,6 +778,12 @@ sub_loop() {
               failure_stopped=1
               failure_stop_reason="$feat_id"
               printf 'Loop pause requested but stdin is not a TTY; stopping after failure: %s.\n' "$feat_id"
+              local next_index=$((index + 1))
+              local next_id=""
+              [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+              _loop_state_update_task "$loop_state_dir" "$feat_id" "failed"
+              _loop_state_checkpoint "$loop_state_dir" "stopped" "$next_index" "$next_id" "$feat_id" "pause-non-tty"
+              _loop_state_append_progress "$loop_state_dir" "task.failed" "$feat_id" "" "failed" "pause-non-tty"
             else
               local pause_action
               _loop_prompt_failure_action "$feat_id"
@@ -497,11 +794,23 @@ sub_loop() {
                   ;;
                 skip)
                   any_failed=1
+                  local next_index=$((index + 1))
+                  local next_id=""
+                  [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+                  _loop_state_update_task "$loop_state_dir" "$feat_id" "skipped"
+                  _loop_state_checkpoint "$loop_state_dir" "running" "$next_index" "$next_id" "$feat_id" "operator-skip"
+                  _loop_state_append_progress "$loop_state_dir" "task.skipped" "$feat_id" "" "skipped" "operator-skip"
                   ;;
                 abort)
                   any_failed=1
                   failure_stopped=1
                   failure_stop_reason="$feat_id"
+                  local next_index=$((index + 1))
+                  local next_id=""
+                  [ "$index" -lt "$total" ] && next_id="${ids[$index]}"
+                  _loop_state_update_task "$loop_state_dir" "$feat_id" "failed"
+                  _loop_state_checkpoint "$loop_state_dir" "stopped" "$next_index" "$next_id" "$feat_id" "operator-abort"
+                  _loop_state_append_progress "$loop_state_dir" "task.failed" "$feat_id" "" "failed" "operator-abort"
                   ;;
               esac
             fi
@@ -556,6 +865,7 @@ sub_loop() {
     final_status="failed"
   fi
   _loop_cost_finalize "$loop_cost_file" "$final_status" "$elapsed_total" "$cap_reason"
+  _loop_state_finalize "$loop_state_dir" "$final_status" "$cap_reason"
   final_cost=$(_loop_cost_field "$loop_cost_file" "total_usd")
   final_tokens=$(_loop_cost_field "$loop_cost_file" "total_tokens")
   printf 'Loop cost: $%.4f / $%s, tokens: %s, elapsed: %ss / %sm\n' \

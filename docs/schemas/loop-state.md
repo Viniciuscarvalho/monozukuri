@@ -1,0 +1,108 @@
+# Loop State Schema
+
+`monozukuri loop` persists resumable run state under:
+
+```text
+.monozukuri/state/loop-<date>-<random>/
+```
+
+The state directory is the canonical source for selected-loop recovery. The legacy
+`.monozukuri/runs/loop-<id>/cost.json` file is still mirrored for older tooling.
+
+## `manifest.json`
+
+Tracks the selected tasks, their execution order, and terminal status.
+
+```json
+{
+  "schema_version": 1,
+  "run_id": "loop-2026-05-22-a3b9c2",
+  "status": "running",
+  "started_at": "2026-05-22T19:00:00.000Z",
+  "updated_at": "2026-05-22T19:01:00.000Z",
+  "completed_at": "2026-05-22T19:02:00.000Z",
+  "reason": "cost",
+  "tasks": [
+    {
+      "id": "feat-001",
+      "order": 1,
+      "status": "completed",
+      "phase": "code",
+      "updated_at": "2026-05-22T19:01:00.000Z"
+    }
+  ]
+}
+```
+
+Task statuses are `pending`, `running`, `completed`, `failed`, or `skipped`.
+
+Run status mirrors the loop result: `running`, `completed`, `failed`, `stopped`,
+`cap-reached`, or `circuit-breaker-tripped`.
+
+## `progress.jsonl`
+
+Append-only event log. Each line is one JSON object, so readers can stream it
+without rewriting the whole file.
+
+```json
+{"schema_version":1,"run_id":"loop-2026-05-22-a3b9c2","event":"task.started","ts":"2026-05-22T19:00:00.000Z","task_id":"feat-001","status":"running"}
+{"schema_version":1,"run_id":"loop-2026-05-22-a3b9c2","event":"phase.cost_recorded","ts":"2026-05-22T19:00:30.000Z","task_id":"feat-001","phase":"phase1","status":"recorded"}
+```
+
+Known events include `loop.started`, `task.started`, `task.completed`,
+`task.failed`, `task.skipped`, `phase.cost_recorded`, and `loop.completed`.
+
+## `cost.json`
+
+Loop-level cost accumulator, updated as phase costs are recorded.
+
+```json
+{
+  "schema_version": 1,
+  "run_id": "loop-2026-05-22-a3b9c2",
+  "status": "running",
+  "started_at": "2026-05-22T19:00:00.000Z",
+  "limit_usd": 10,
+  "limit_minutes": 480,
+  "max_tokens_per_task": 100000,
+  "total_usd": 0.042,
+  "total_tokens": 42000,
+  "phase_events": [
+    {
+      "feature_id": "feat-001",
+      "phase": "phase1",
+      "estimated_tokens": 25000,
+      "estimated_usd": 0.025,
+      "recorded_at": "2026-05-22T19:00:30.000Z"
+    }
+  ],
+  "features": []
+}
+```
+
+When the consecutive-failure circuit breaker trips, `cost.json` also includes
+`circuit_breaker` with the configured limit and failed feature IDs.
+
+## `checkpoint.json`
+
+Last known safe resume point. If the process dies mid-task, resume tooling should
+restart from `next_task_index`.
+
+```json
+{
+  "schema_version": 1,
+  "run_id": "loop-2026-05-22-a3b9c2",
+  "status": "running",
+  "last_safe_task_id": "feat-001",
+  "next_task_index": 2,
+  "next_task_id": "feat-002",
+  "reason": "feature-failed",
+  "updated_at": "2026-05-22T19:01:00.000Z"
+}
+```
+
+## Write Discipline
+
+`manifest.json`, `cost.json`, and `checkpoint.json` are written with
+write-temp, `fsync`, and rename. `progress.jsonl` is append-only and guarded with
+`flock` when available.

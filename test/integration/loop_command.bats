@@ -117,6 +117,32 @@ EOFMOCK
   printf '%s\n' "$mock_dir"
 }
 
+make_slow_claude_mock() {
+  local mock_dir="$TMPDIR_TEST/slow-claude"
+  mkdir -p "$mock_dir"
+  cat >"$mock_dir/claude" <<'EOFMOCK'
+#!/bin/bash
+set -euo pipefail
+
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-slow-mock"
+    exit 0
+  fi
+done
+
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as slow-mock@example.com"
+  exit 0
+fi
+
+sleep "${SLOW_CLAUDE_DELAY:-0.2}"
+exec "$REAL_CLAUDE_MOCK/claude" "$@"
+EOFMOCK
+  chmod +x "$mock_dir/claude"
+  printf '%s\n' "$mock_dir"
+}
+
 @test "loop --help documents IDs, stdin, and cleanup" {
   run bash "$ORCHESTRATE" loop --help
 
@@ -148,6 +174,72 @@ EOFMOCK
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-003 ]
 }
 
+@test "loop persists checkpoint schema files for a completed run" {
+  cd "$PROJ_DIR"
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  [ -f "$loop_state_dir/manifest.json" ]
+  [ -f "$loop_state_dir/progress.jsonl" ]
+  [ -f "$loop_state_dir/cost.json" ]
+  [ -f "$loop_state_dir/checkpoint.json" ]
+
+  node -e "
+    const fs = require('fs');
+    const path = '$loop_state_dir';
+    const manifest = JSON.parse(fs.readFileSync(path + '/manifest.json', 'utf8'));
+    const cost = JSON.parse(fs.readFileSync(path + '/cost.json', 'utf8'));
+    const checkpoint = JSON.parse(fs.readFileSync(path + '/checkpoint.json', 'utf8'));
+    const lines = fs.readFileSync(path + '/progress.jsonl', 'utf8').trim().split(/\n+/).filter(Boolean).map(JSON.parse);
+    if (manifest.run_id !== path.split('/').pop()) throw new Error('manifest run_id mismatch');
+    if (!Array.isArray(manifest.tasks) || manifest.tasks.length !== 1) throw new Error('missing manifest task');
+    if (manifest.tasks[0].id !== 'feat-001') throw new Error('wrong task id');
+    if (manifest.tasks[0].order !== 1) throw new Error('wrong task order');
+    if (manifest.tasks[0].status !== 'completed') throw new Error('wrong task status');
+    if (cost.run_id !== manifest.run_id) throw new Error('cost run_id mismatch');
+    if (!Array.isArray(cost.phase_events) || cost.phase_events.length === 0) throw new Error('missing cost phase events');
+    if (checkpoint.status !== 'completed') throw new Error('wrong checkpoint status');
+    if (checkpoint.next_task_index !== 2) throw new Error('wrong checkpoint next index');
+    if (!lines.some((entry) => entry.event === 'task.completed' && entry.task_id === 'feat-001')) {
+      throw new Error('missing task completed progress event');
+    }
+    if (!lines.some((entry) => entry.event === 'phase.cost_recorded' && entry.task_id === 'feat-001')) {
+      throw new Error('missing phase progress event');
+    }
+  "
+}
+
+@test "loop checkpoint files stay parseable across interrupted runs" {
+  cd "$PROJ_DIR"
+  slow_mock=$(make_slow_claude_mock)
+
+  for delay in 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50; do
+    env PATH="$slow_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" SLOW_CLAUDE_DELAY=0.25 PROGRESS_INTERVAL=0 \
+      bash "$ORCHESTRATE" loop feat-001 --non-interactive --no-ui \
+      >"$TMPDIR_TEST/interrupted-$delay.out" 2>"$TMPDIR_TEST/interrupted-$delay.err" &
+    loop_pid=$!
+    sleep "$delay"
+    kill -INT "$loop_pid" 2>/dev/null || true
+    wait "$loop_pid" 2>/dev/null || true
+
+    while IFS= read -r json_file; do
+      node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$json_file"
+    done < <(find "$PROJ_DIR/.monozukuri/state" -path '*/loop-*/*.json' -type f 2>/dev/null)
+
+    while IFS= read -r progress_file; do
+      node -e "
+        const fs = require('fs');
+        const lines = fs.readFileSync(process.argv[1], 'utf8').split(/\n/).filter(Boolean);
+        for (const line of lines) JSON.parse(line);
+      " "$progress_file"
+    done < <(find "$PROJ_DIR/.monozukuri/state" -path '*/loop-*/progress.jsonl' -type f 2>/dev/null)
+  done
+}
+
 @test "loop reads feature IDs from stdin when no positional IDs are provided" {
   cd "$PROJ_DIR"
   run bash -c 'printf "%s\n" feat-001 | PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" loop --non-interactive --no-ui' \
@@ -165,6 +257,17 @@ EOFMOCK
   [ "$status" -eq 1 ]
   [[ "$output" == *"[1/2] missing-feature ✗ not found"* ]]
   [[ "$output" == *"[2/2] feat-001 ✓ done"* ]]
+
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  node -e "
+    const fs = require('fs');
+    const manifest = JSON.parse(fs.readFileSync('$loop_state_dir/manifest.json', 'utf8'));
+    const missing = manifest.tasks.find((task) => task.id === 'missing-feature');
+    const completed = manifest.tasks.find((task) => task.id === 'feat-001');
+    if (!missing || missing.status !== 'skipped') throw new Error('missing feature was not skipped');
+    if (!completed || completed.status !== 'completed') throw new Error('feat-001 was not completed');
+  "
 }
 
 @test "loop --cleanup removes loop worktrees after successful features" {
@@ -250,6 +353,17 @@ EOFMOCK
     const fs = require('fs');
     const data = JSON.parse(fs.readFileSync('$status_file', 'utf8'));
     if (data.status !== 'failed') throw new Error('expected failed status');
+  "
+
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  node -e "
+    const fs = require('fs');
+    const manifest = JSON.parse(fs.readFileSync('$loop_state_dir/manifest.json', 'utf8'));
+    const failed = manifest.tasks.find((task) => task.id === 'feat-001');
+    const completed = manifest.tasks.find((task) => task.id === 'feat-002');
+    if (!failed || failed.status !== 'failed') throw new Error('feat-001 was not failed');
+    if (!completed || completed.status !== 'completed') throw new Error('feat-002 was not completed');
   "
 }
 
