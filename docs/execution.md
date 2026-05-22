@@ -45,6 +45,8 @@ Loop worktrees are preserved by default under `.monozukuri/worktrees/loop-<date>
 
 Each feature is isolated: if one selected ID is missing or fails, the loop reports that feature and continues with the remaining IDs. The command exits `0` only when every selected feature succeeds.
 
+Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/runs/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. The token ceiling rejects values above `500000`.
+
 ---
 
 ## Supervised mode (Ink TUI)

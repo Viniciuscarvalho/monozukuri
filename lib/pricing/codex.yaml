@@ -1,0 +1,36 @@
+version: "2026-05-22"
+updated_at: "2026-05-22"
+provider: codex
+source: "https://openai.com/api/pricing/"
+models:
+  gpt-5.5:
+    input_per_1m: 5.00
+    output_per_1m: 30.00
+  gpt-5.4:
+    input_per_1m: 2.50
+    output_per_1m: 15.00
+  gpt-5.4-mini:
+    input_per_1m: 0.75
+    output_per_1m: 4.50
+calibration:
+  gpt-5.5:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0
+  gpt-5.4:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0
+  gpt-5.4-mini:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0

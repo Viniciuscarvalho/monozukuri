@@ -151,6 +151,11 @@ OPT_BACKLOG_SCORE_EXPLAIN=""
 OPT_PICK_TOP="5"
 OPT_LOOP_IDS=""
 OPT_LOOP_CLEANUP=false
+OPT_LOOP_MAX_COST="10"
+OPT_LOOP_MAX_COST_EXPLICIT=false
+OPT_LOOP_MAX_TIME="480"
+OPT_LOOP_MAX_TIME_EXPLICIT=false
+OPT_LOOP_MAX_TOKENS_PER_TASK="100000"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -295,6 +300,33 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --max-cost)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_MAX_COST="$1"; OPT_LOOP_MAX_COST_EXPLICIT=true
+      else
+        err "Unknown argument: --max-cost"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --max-time)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_MAX_TIME="$1"; OPT_LOOP_MAX_TIME_EXPLICIT=true
+      else
+        err "Unknown argument: --max-time"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --max-tokens-per-task)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_MAX_TOKENS_PER_TASK="$1"
+      else
+        err "Unknown argument: --max-tokens-per-task"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -430,6 +462,9 @@ while [ $# -gt 0 ]; do
         echo ""
         echo "Flags:"
         echo "  --cleanup                 Remove loop worktrees after each feature"
+        echo "  --max-cost USD            Stop before next feature after cap (default: 10)"
+        echo "  --max-time MINUTES        Stop before next feature after cap (default: 480)"
+        echo "  --max-tokens-per-task N   Per-feature token ceiling (default: 100000, max: 500000)"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
@@ -520,6 +555,9 @@ while [ $# -gt 0 ]; do
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
       echo "  --cleanup                    Remove loop worktrees after each feature"
+      echo "  --max-cost <usd>             Max loop cost for loop command (default: 10)"
+      echo "  --max-time <minutes>         Max loop runtime for loop command (default: 480)"
+      echo "  --max-tokens-per-task <n>    Max tokens per loop feature (default: 100000)"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -587,7 +625,10 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
        OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
-       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP
+       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP \
+       OPT_LOOP_MAX_COST OPT_LOOP_MAX_COST_EXPLICIT \
+       OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
+       OPT_LOOP_MAX_TOKENS_PER_TASK
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

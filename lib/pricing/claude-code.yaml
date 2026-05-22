@@ -1,0 +1,36 @@
+version: "2026-05-22"
+updated_at: "2026-05-22"
+provider: claude-code
+source: "https://www.anthropic.com/pricing"
+models:
+  claude-opus-4-7:
+    input_per_1m: 5.00
+    output_per_1m: 25.00
+  claude-sonnet-4-6:
+    input_per_1m: 3.00
+    output_per_1m: 15.00
+  claude-haiku-4-5:
+    input_per_1m: 1.00
+    output_per_1m: 5.00
+calibration:
+  claude-opus-4-7:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0
+  claude-sonnet-4-6:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0
+  claude-haiku-4-5:
+    prd: 1.0
+    techspec: 1.0
+    tasks: 1.0
+    code: 1.0
+    tests: 1.0
+    pr: 1.0

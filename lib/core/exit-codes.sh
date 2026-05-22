@@ -5,6 +5,7 @@
 readonly EXIT_OK=0
 readonly EXIT_GENERIC=1
 readonly EXIT_MISUSE=2
+readonly EXIT_BUDGET_CAP=4
 readonly EXIT_CONFIG_INVALID=10
 readonly EXIT_DEPENDENCY_MISSING=11
 readonly EXIT_SIZE_GATE=12

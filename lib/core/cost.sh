@@ -147,6 +147,27 @@ cost_record() {
     data.updated_at = new Date().toISOString();
     fs.writeFileSync('$cost_file', JSON.stringify(data, null, 2));
   " 2>/dev/null || true
+
+  if [ -n "${MONOZUKURI_LOOP_COST_FILE:-}" ]; then
+    node - "$MONOZUKURI_LOOP_COST_FILE" "$feat_id" "$phase" "$estimate" "$estimated_usd" <<'JSEOF' 2>/dev/null || true
+const [,, loopCostFile, featureId, phase, estimatedTokens, estimatedUsd] = process.argv;
+const fs = require('fs');
+if (!fs.existsSync(loopCostFile)) process.exit(0);
+const data = JSON.parse(fs.readFileSync(loopCostFile, 'utf8'));
+if (!Array.isArray(data.phase_events)) data.phase_events = [];
+data.phase_events.push({
+  feature_id: featureId,
+  phase,
+  estimated_tokens: Number(estimatedTokens || 0),
+  estimated_usd: Number(estimatedUsd || 0),
+  recorded_at: new Date().toISOString()
+});
+data.total_tokens = data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_tokens || 0), 0);
+data.total_usd = Number(data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_usd || 0), 0).toFixed(4));
+data.updated_at = new Date().toISOString();
+fs.writeFileSync(loopCostFile, JSON.stringify(data, null, 2));
+JSEOF
+  fi
 }
 
 # ── cost_summary ─────────────────────────────────────────────────────

@@ -14,7 +14,6 @@ setup() {
 
   # Verify version loaded
   [ -n "$PRICING_VERSION" ]
-  [ "$PRICING_VERSION" = "1.0.0" ]
 }
 
 @test "pricing_load populates env vars for claude-code models" {
@@ -39,12 +38,12 @@ setup() {
 
   # Test: 100k input tokens, 30k output tokens
   # Cost = (100000 / 1M * 3.00) + (30000 / 1M * 15.00)
-  #      = 0.30 + 0.45 = 0.75
+  #      = 0.30 + 0.45 = 0.75, plus 5% safety margin = 0.7875
   local cost
   cost=$(pricing_cost_usd "claude-code" "claude-sonnet-4-6" 100000 30000)
 
   # Check result (allowing for floating point precision)
-  [[ "$cost" =~ ^0\.75 ]]
+  [[ "$cost" =~ ^0\.7875 ]]
 }
 
 @test "pricing_cost_usd splits 70/30 for token-only estimates" {
@@ -53,12 +52,32 @@ setup() {
   # Test: 100k total tokens (no output specified)
   # Split: 70k input, 30k output
   # Cost = (70000 / 1M * 3.00) + (30000 / 1M * 15.00)
-  #      = 0.21 + 0.45 = 0.66
+  #      = 0.21 + 0.45 = 0.66, plus 5% safety margin = 0.6930
   local cost
   cost=$(pricing_cost_usd "claude-code" "claude-sonnet-4-6" 100000 "")
 
   # Check result
-  [[ "$cost" =~ ^0\.66 ]]
+  [[ "$cost" =~ ^0\.6930 ]]
+}
+
+@test "pricing_load populates versioned pricing for codex and gemini" {
+  pricing_load
+
+  [ "$PRICING_CODEX_GPT_5_5_INPUT_PER_1M" = "5.00" ]
+  [ "$PRICING_CODEX_GPT_5_5_OUTPUT_PER_1M" = "30.00" ]
+  [ "$PRICING_GEMINI_GEMINI_2_5_FLASH_INPUT_PER_1M" = "0.30" ]
+  [ "$PRICING_GEMINI_GEMINI_2_5_FLASH_OUTPUT_PER_1M" = "2.50" ]
+}
+
+@test "pricing_cost_usd calculates USD for codex and gemini models" {
+  pricing_load
+
+  local codex_cost gemini_cost
+  codex_cost=$(pricing_cost_usd "codex" "gpt-5.5" 100000 30000)
+  gemini_cost=$(pricing_cost_usd "gemini" "gemini-2.5-flash" 100000 30000)
+
+  [[ "$codex_cost" =~ ^1\.4700 ]]
+  [[ "$gemini_cost" =~ ^0\.1103 ]]
 }
 
 @test "pricing_calibration_factor returns default 1.0" {
