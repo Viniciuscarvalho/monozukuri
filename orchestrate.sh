@@ -159,6 +159,9 @@ OPT_LOOP_MAX_TOKENS_PER_TASK="100000"
 OPT_LOOP_ON_FAILURE=""
 OPT_LOOP_CIRCUIT_BREAKER="3"
 OPT_LOOP_I_KNOW_WHAT_IM_DOING=false
+OPT_LOOP_RESUME_ID=""
+OPT_LOOP_RETRY_FAILED=false
+OPT_LOOP_LIST_RUNS=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -357,6 +360,24 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --retry-failed)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_RETRY_FAILED=true
+      else
+        err "Unknown argument: --retry-failed"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --list-runs)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_LIST_RUNS=true
+      else
+        err "Unknown argument: --list-runs"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -377,6 +398,15 @@ while [ $# -gt 0 ]; do
       ;;
     --resume)
       OPT_RESUME=true
+      if [ "$SUBCOMMAND" = "loop" ] && [ $# -gt 1 ]; then
+        case "$2" in
+          --*) ;;
+          *)
+            shift
+            OPT_LOOP_RESUME_ID="$1"
+            ;;
+        esac
+      fi
       ;;
     list|archive|promote)
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
@@ -486,6 +516,8 @@ while [ $# -gt 0 ]; do
       elif [ "$SUBCOMMAND" = "loop" ]; then
         echo "Usage:"
         echo "  monozukuri loop <id...> [--cleanup]"
+        echo "  monozukuri loop --resume [run-id]"
+        echo "  monozukuri loop --list-runs"
         echo "  printf 'feat-001\\nfeat-002\\n' | monozukuri loop"
         echo ""
         echo "Run selected backlog features sequentially through the full pipeline."
@@ -497,6 +529,9 @@ while [ $# -gt 0 ]; do
         echo "  --max-tokens-per-task N   Per-feature token ceiling (default: 100000, max: 500000)"
         echo "  --on-failure MODE         continue, stop, or pause on feature failure"
         echo "  --circuit-breaker N       Abort after N consecutive failures (default: 3)"
+        echo "  --resume [run-id]         Resume a selected loop run"
+        echo "  --retry-failed            Re-run failed tasks during resume"
+        echo "  --list-runs               List resumable selected loop runs"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
@@ -592,6 +627,8 @@ while [ $# -gt 0 ]; do
       echo "  --max-tokens-per-task <n>    Max tokens per loop feature (default: 100000)"
       echo "  --on-failure <mode>          Loop failure mode: continue, stop, or pause"
       echo "  --circuit-breaker <n>        Abort after n consecutive loop failures"
+      echo "  --retry-failed               Re-run failed tasks during loop resume"
+      echo "  --list-runs                  List resumable selected loop runs"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -663,7 +700,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_MAX_COST OPT_LOOP_MAX_COST_EXPLICIT \
        OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
        OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \
-       OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING
+       OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
+       OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

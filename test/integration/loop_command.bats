@@ -30,6 +30,16 @@ Build the second mocked loop feature.
 - priority: low
 
 Build the third mocked loop feature.
+
+## [FEAT] feat-004: Fourth loop feature
+- priority: low
+
+Build the fourth mocked loop feature.
+
+## [FEAT] feat-005: Fifth loop feature
+- priority: low
+
+Build the fifth mocked loop feature.
 EOFEAT
 
   cat >"$PROJ_DIR/.monozukuri/config.yaml" <<'EOCFG'
@@ -143,6 +153,102 @@ EOFMOCK
   printf '%s\n' "$mock_dir"
 }
 
+make_resume_tracking_claude_mock() {
+  local mock_dir="$TMPDIR_TEST/resume-tracking-claude"
+  mkdir -p "$mock_dir"
+  cat >"$mock_dir/claude" <<'EOFMOCK'
+#!/bin/bash
+set -euo pipefail
+
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    echo "claude 1.0.0-resume-tracking-mock"
+    exit 0
+  fi
+done
+
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "Authenticated as resume-tracking-mock@example.com"
+  exit 0
+fi
+
+if [ "${MONOZUKURI_PHASE:-}" = "code" ]; then
+  printf '%s\n' "${MONOZUKURI_FEATURE_ID:-unknown}" >>"${RESUME_TRACK_FILE:?}"
+  if [ "${MONOZUKURI_FEATURE_ID:-}" = "feat-003" ] && \
+     [ "${RESUME_BLOCK_ON_FEAT3:-0}" = "1" ] && \
+     [ ! -f "${RESUME_RELEASE_FILE:?}" ]; then
+    touch "${RESUME_FEAT3_STARTED:?}"
+    while [ ! -f "$RESUME_RELEASE_FILE" ]; do
+      sleep 0.1
+    done
+  fi
+fi
+
+exec "$REAL_CLAUDE_MOCK/claude" "$@"
+EOFMOCK
+  chmod +x "$mock_dir/claude"
+  printf '%s\n' "$mock_dir"
+}
+
+seed_loop_run() {
+  local run_id="$1" run_status="$2" task_spec="$3" total_usd="${4:-0}"
+  local state_dir="$PROJ_DIR/.monozukuri/state/$run_id"
+  mkdir -p "$state_dir" "$PROJ_DIR/.monozukuri/runs/$run_id"
+  node - "$state_dir" "$run_id" "$run_status" "$task_spec" "$total_usd" <<'JSEOF'
+const [,, stateDir, runId, runStatus, taskSpec, totalUsd] = process.argv;
+const fs = require('fs');
+const path = require('path');
+const now = new Date().toISOString();
+const tasks = taskSpec.split(',').filter(Boolean).map((pair, index) => {
+  const [id, status] = pair.split(':');
+  return { id, order: index + 1, status, updated_at: now };
+});
+const next = tasks.find((task) => !['completed', 'skipped', 'failed'].includes(task.status));
+const manifest = {
+  schema_version: 1,
+  run_id: runId,
+  status: runStatus,
+  started_at: now,
+  updated_at: now,
+  tasks
+};
+if (runStatus === 'completed') manifest.completed_at = now;
+const checkpoint = {
+  schema_version: 1,
+  run_id: runId,
+  status: runStatus,
+  last_safe_task_id: '',
+  next_task_index: next ? next.order : tasks.length + 1,
+  next_task_id: next ? next.id : '',
+  updated_at: now
+};
+const cost = {
+  schema_version: 1,
+  run_id: runId,
+  status: runStatus,
+  started_at: now,
+  limit_usd: 10,
+  limit_minutes: 480,
+  max_tokens_per_task: 100000,
+  total_usd: Number(totalUsd),
+  total_tokens: 0,
+  phase_events: Number(totalUsd) > 0 ? [{
+    feature_id: 'previous',
+    phase: 'seed',
+    estimated_tokens: 0,
+    estimated_usd: Number(totalUsd),
+    recorded_at: now
+  }] : [],
+  features: []
+};
+fs.writeFileSync(path.join(stateDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+fs.writeFileSync(path.join(stateDir, 'checkpoint.json'), JSON.stringify(checkpoint, null, 2));
+fs.writeFileSync(path.join(stateDir, 'cost.json'), JSON.stringify(cost, null, 2));
+fs.writeFileSync(path.join(stateDir, 'progress.jsonl'), '');
+fs.copyFileSync(path.join(stateDir, 'cost.json'), path.join(path.dirname(path.dirname(stateDir)), 'runs', runId, 'cost.json'));
+JSEOF
+}
+
 @test "loop --help documents IDs, stdin, and cleanup" {
   run bash "$ORCHESTRATE" loop --help
 
@@ -155,6 +261,9 @@ EOFMOCK
   [[ "$output" == *"--max-tokens-per-task N"* ]]
   [[ "$output" == *"--on-failure MODE"* ]]
   [[ "$output" == *"--circuit-breaker N"* ]]
+  [[ "$output" == *"--resume [run-id]"* ]]
+  [[ "$output" == *"--retry-failed"* ]]
+  [[ "$output" == *"--list-runs"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -471,4 +580,175 @@ EOFMOCK
   [[ "$output" == *"[1/2] feat-001 ✗ failed"* ]]
   [[ "$output" != *"[2/2] feat-002"* ]]
   [[ "$output" == *"pause requested but stdin is not a TTY"* ]]
+}
+
+@test "loop --list-runs shows only resumable loop runs" {
+  cd "$PROJ_DIR"
+  seed_loop_run "loop-2026-05-22-complete" "completed" "feat-001:completed"
+  seed_loop_run "loop-2026-05-22-resumable" "running" "feat-001:completed,feat-002:running,feat-003:pending"
+
+  run bash "$ORCHESTRATE" loop --list-runs --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RUN_ID STATUS PENDING"* ]]
+  [[ "$output" == *"loop-2026-05-22-resumable running 2"* ]]
+  [[ "$output" != *"loop-2026-05-22-complete"* ]]
+}
+
+@test "loop --resume skips completed tasks and restarts running tasks in a new worktree" {
+  cd "$PROJ_DIR"
+  seed_loop_run "loop-2026-05-22-resume" "running" "feat-001:completed,feat-002:running,feat-003:pending"
+  tracking_mock=$(make_resume_tracking_claude_mock)
+  track_file="$TMPDIR_TEST/resume-track.txt"
+  : >"$track_file"
+  mkdir -p "$PROJ_DIR/.monozukuri/worktrees/loop-2026-05-22-resume/feat-002"
+
+  run env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume loop-2026-05-22-resume --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Resuming loop run: loop-2026-05-22-resume"* ]]
+  [[ "$output" == *"[1/3] feat-001 ↷ skipped (completed)"* ]]
+  [[ "$output" == *"[2/3] feat-002 ✓ done"* ]]
+  [[ "$output" == *"[3/3] feat-003 ✓ done"* ]]
+  ! grep -q '^feat-001$' "$track_file"
+  grep -q '^feat-002$' "$track_file"
+  grep -q '^feat-003$' "$track_file"
+  [ -d "$PROJ_DIR/.monozukuri/worktrees/loop-2026-05-22-resume/feat-002" ]
+  new_feat2=$(find "$PROJ_DIR/.monozukuri/worktrees" -path '*/loop-2026-05-22-resume-resume-*/feat-002' -type d | head -1)
+  [ -n "$new_feat2" ]
+
+  node -e "
+    const fs = require('fs');
+    const dir = '$PROJ_DIR/.monozukuri/state/loop-2026-05-22-resume';
+    const manifest = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf8'));
+    const events = fs.readFileSync(dir + '/progress.jsonl', 'utf8').trim().split(/\n+/).filter(Boolean).map(JSON.parse);
+    for (const id of ['feat-001', 'feat-002', 'feat-003']) {
+      const task = manifest.tasks.find((entry) => entry.id === id);
+      if (!task || task.status !== 'completed') throw new Error(id + ' not completed');
+    }
+    if (!events.some((entry) => entry.event === 'task.inconclusive' && entry.task_id === 'feat-002')) {
+      throw new Error('missing inconclusive progress event');
+    }
+  "
+}
+
+@test "loop --resume skips failed tasks unless retry-failed is passed" {
+  cd "$PROJ_DIR"
+  tracking_mock=$(make_resume_tracking_claude_mock)
+  track_file="$TMPDIR_TEST/retry-failed-track.txt"
+  : >"$track_file"
+  seed_loop_run "loop-2026-05-22-failed-skip" "failed" "feat-001:failed,feat-002:pending"
+
+  run env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume loop-2026-05-22-failed-skip --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"[1/2] feat-001 ↷ skipped (failed)"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+  ! grep -q '^feat-001$' "$track_file"
+  grep -q '^feat-002$' "$track_file"
+
+  : >"$track_file"
+  seed_loop_run "loop-2026-05-22-failed-retry" "failed" "feat-001:failed"
+  run env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume loop-2026-05-22-failed-retry --retry-failed --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[1/1] feat-001 ✓ done"* ]]
+  grep -q '^feat-001$' "$track_file"
+}
+
+@test "loop --resume applies max-cost to the accumulated run total" {
+  cd "$PROJ_DIR"
+  tracking_mock=$(make_resume_tracking_claude_mock)
+  track_file="$TMPDIR_TEST/accumulated-cap-track.txt"
+  : >"$track_file"
+  seed_loop_run "loop-2026-05-22-cost-cap" "running" "feat-001:pending" "11"
+
+  run env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume loop-2026-05-22-cost-cap --max-cost 10 --non-interactive --no-ui
+
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"Resuming loop run: loop-2026-05-22-cost-cap"* ]]
+  [[ "$output" != *"[1/1] feat-001"* ]]
+  [[ "$output" == *"Loop cap reached: cost"* ]]
+  [ ! -s "$track_file" ]
+
+  node -e "
+    const fs = require('fs');
+    const cost = JSON.parse(fs.readFileSync('$PROJ_DIR/.monozukuri/state/loop-2026-05-22-cost-cap/cost.json', 'utf8'));
+    if (cost.total_usd < 11) throw new Error('cost accumulator was reset');
+    if (cost.status !== 'cap-reached') throw new Error('wrong cost status');
+  "
+}
+
+@test "loop resumes after kill during code phase without rerunning completed tasks" {
+  cd "$PROJ_DIR"
+  tracking_mock=$(make_resume_tracking_claude_mock)
+  track_file="$TMPDIR_TEST/kill-resume-track.txt"
+  started_file="$TMPDIR_TEST/feat3-started"
+  release_file="$TMPDIR_TEST/release-feat3"
+  : >"$track_file"
+  seed_loop_run "loop-2026-05-22-kill" "running" "feat-001:completed,feat-002:completed,feat-003:pending,feat-004:pending,feat-005:pending"
+  run_id="loop-2026-05-22-kill"
+
+  env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" RESUME_BLOCK_ON_FEAT3=1 \
+    RESUME_FEAT3_STARTED="$started_file" RESUME_RELEASE_FILE="$release_file" \
+    PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume "$run_id" --max-tokens-per-task 500000 --non-interactive --no-ui \
+    >"$TMPDIR_TEST/kill-loop.out" 2>"$TMPDIR_TEST/kill-loop.err" &
+  loop_pid=$!
+
+  for _ in $(seq 1 600); do
+    [ -f "$started_file" ] && break
+    sleep 0.1
+  done
+  [ -f "$started_file" ]
+  inconclusive_feat3=$(find "$PROJ_DIR/.monozukuri/worktrees" -path "*/$run_id-resume-*/feat-003" -type d | head -1)
+  [ -n "$inconclusive_feat3" ]
+
+  kill -9 "$loop_pid" 2>/dev/null || true
+  touch "$release_file"
+  wait "$loop_pid" 2>/dev/null || true
+  sleep 0.3
+
+  run env PATH="$tracking_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" \
+    RESUME_TRACK_FILE="$track_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop --resume "$run_id" --max-tokens-per-task 500000 --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Resuming loop run: $run_id"* ]]
+  [[ "$output" == *"[1/5] feat-001 ↷ skipped (completed)"* ]]
+  [[ "$output" == *"[2/5] feat-002 ↷ skipped (completed)"* ]]
+  [[ "$output" == *"[3/5] feat-003 ✓ done"* ]]
+  [[ "$output" == *"[4/5] feat-004 ✓ done"* ]]
+  [[ "$output" == *"[5/5] feat-005 ✓ done"* ]]
+
+  [ "$(grep -c '^feat-001$' "$track_file" || true)" -eq 0 ]
+  [ "$(grep -c '^feat-002$' "$track_file" || true)" -eq 0 ]
+  [ "$(grep -c '^feat-003$' "$track_file")" -eq 2 ]
+  [ "$(grep -c '^feat-004$' "$track_file")" -eq 1 ]
+  [ "$(grep -c '^feat-005$' "$track_file")" -eq 1 ]
+  [ -d "$inconclusive_feat3" ]
+  new_feat3=$(find "$PROJ_DIR/.monozukuri/worktrees" -path "*/$run_id-resume-*/feat-003" -type d | grep -v "^$inconclusive_feat3$" | head -1)
+  [ -n "$new_feat3" ]
+
+  node -e "
+    const fs = require('fs');
+    const dir = '$PROJ_DIR/.monozukuri/state/$run_id';
+    const manifest = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf8'));
+    const events = fs.readFileSync(dir + '/progress.jsonl', 'utf8').trim().split(/\n+/).filter(Boolean).map(JSON.parse);
+    for (const task of manifest.tasks) {
+      if (task.status !== 'completed') throw new Error(task.id + ' not completed');
+    }
+    if (!events.some((entry) => entry.event === 'task.inconclusive' && entry.task_id === 'feat-003')) {
+      throw new Error('missing feat-003 inconclusive event');
+    }
+  "
 }

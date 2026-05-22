@@ -34,7 +34,10 @@ Tracks the selected tasks, their execution order, and terminal status.
 }
 ```
 
-Task statuses are `pending`, `running`, `completed`, `failed`, or `skipped`.
+Task statuses are `pending`, `running`, `inconclusive`, `completed`, `failed`,
+or `skipped`. Resume marks a previously `running` task as `inconclusive` before
+re-enqueuing it in a new worktree so the interrupted worktree remains available
+for inspection.
 
 Run status mirrors the loop result: `running`, `completed`, `failed`, `stopped`,
 `cap-reached`, or `circuit-breaker-tripped`.
@@ -49,8 +52,9 @@ without rewriting the whole file.
 {"schema_version":1,"run_id":"loop-2026-05-22-a3b9c2","event":"phase.cost_recorded","ts":"2026-05-22T19:00:30.000Z","task_id":"feat-001","phase":"phase1","status":"recorded"}
 ```
 
-Known events include `loop.started`, `task.started`, `task.completed`,
-`task.failed`, `task.skipped`, `phase.cost_recorded`, and `loop.completed`.
+Known events include `loop.started`, `loop.resumed`, `task.started`,
+`task.completed`, `task.failed`, `task.skipped`, `task.inconclusive`,
+`task.retry_failed`, `phase.cost_recorded`, and `loop.completed`.
 
 ## `cost.json`
 
@@ -100,6 +104,23 @@ restart from `next_task_index`.
   "updated_at": "2026-05-22T19:01:00.000Z"
 }
 ```
+
+## Resume Behavior
+
+`monozukuri loop --resume <run_id>` loads `manifest.json` and `checkpoint.json`
+from the selected state directory. Without a run ID, the most recently updated
+non-completed loop state is selected.
+
+Resume skips tasks whose status is `completed` or `skipped`. Tasks whose status
+is `running` are marked `inconclusive`, logged in `progress.jsonl`, and run again
+in a new worktree under `.monozukuri/worktrees/<run_id>-resume-<suffix>/`.
+Existing worktrees are preserved. Tasks whose status is `failed` remain skipped
+unless `--retry-failed` is passed, in which case they are returned to `pending`.
+
+The loop-level `cost.json` is reused during resume. Caps such as `--max-cost`
+apply to the accumulated total already present in the file, not to a reset or
+remaining-only budget. `monozukuri loop --list-runs` lists non-completed loop
+state directories that can be resumed.
 
 ## Write Discipline
 
