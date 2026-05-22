@@ -20,7 +20,17 @@ fi
 # adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
 # Stub: tee to log file and pass through to stdout (non-dashboard behaviour).
 if ! declare -f adapter_tee &>/dev/null; then
-  adapter_tee() { local _f="$1"; shift; [ "${1:-}" = "--" ] && shift; "$@" 2>&1 | tee "$_f"; return "${PIPESTATUS[0]}"; }
+  adapter_tee() {
+    local _f="$1" _tmp _status
+    shift
+    [ "${1:-}" = "--" ] && shift
+    _tmp=$(mktemp)
+    "$@" > "$_tmp" 2>&1
+    _status=$?
+    tee "$_f" < "$_tmp"
+    rm -f "$_tmp"
+    return "$_status"
+  }
 fi
 
 agent_name() { echo "aider"; }
@@ -205,7 +215,9 @@ agent_run_phase() {
   # ADR-013: write error envelope
   if [ "$exit_code" -ne 0 ] && [ -n "${MONOZUKURI_ERROR_FILE:-}" ]; then
     if declare -f agent_error_classify &>/dev/null; then
-      agent_error_classify "$exit_code" "$log_file" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
+      local error_envelope
+      error_envelope=$(agent_error_classify "$exit_code" "$log_file" 2>/dev/null || true)
+      [ -n "$error_envelope" ] && printf '%s\n' "$error_envelope" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true
     else
       printf '{"class":"unknown","code":"exit-%d","message":"aider exited with code %d"}\n' \
         "$exit_code" "$exit_code" > "$MONOZUKURI_ERROR_FILE" 2>/dev/null || true

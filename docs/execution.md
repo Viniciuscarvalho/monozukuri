@@ -32,6 +32,21 @@ The dry run is the answer to "what is this thing about to do to my repo?" Use it
 
 ---
 
+## Selected loop mode
+
+`monozukuri loop <id...>` runs only the selected backlog items through the same six-phase pipeline as `monozukuri run`. It is built for scripted batches after you have already ranked and validated the backlog:
+
+```bash
+monozukuri loop feat-001 feat-002 feat-003
+monozukuri pick --top 3 | monozukuri loop
+```
+
+Loop worktrees are preserved by default under `.monozukuri/worktrees/loop-<date>-<random>/<feature-id>/` so failed features can be inspected. Pass `--cleanup` when you want the command to remove each loop worktree after the feature finishes.
+
+Each feature is isolated: if one selected ID is missing or fails, the loop reports that feature and continues with the remaining IDs. The command exits `0` only when every selected feature succeeds.
+
+---
+
 ## Supervised mode (Ink TUI)
 
 `monozukuri run --autonomy supervised` opens an interactive TUI. After each phase (PRD, TechSpec, Tasks, Code, Tests, PR) the run pauses for your approval. Use this mode when you are pairing with the agent or evaluating a new skill.

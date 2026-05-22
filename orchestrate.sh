@@ -7,6 +7,7 @@
 # Usage:
 #   ./orchestrate.sh init                      # Scaffold project
 #   ./orchestrate.sh run                       # Execute orchestration
+#   ./orchestrate.sh loop feat-001 feat-002    # Execute selected features in sequence
 #   ./orchestrate.sh run --autonomy full_auto  # Override autonomy
 #   ./orchestrate.sh run --dry-run             # Show plan, don't execute
 #   ./orchestrate.sh backlog list              # List ranked backlog items
@@ -148,10 +149,12 @@ OPT_BACKLOG_IDS=""
 OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
 OPT_PICK_TOP="5"
+OPT_LOOP_IDS=""
+OPT_LOOP_CLEANUP=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick)
+    init|run|loop|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -283,6 +286,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --cleanup)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_CLEANUP=true
+      else
+        err "Unknown argument: --cleanup"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -409,6 +421,19 @@ while [ $# -gt 0 ]; do
         echo "                            Include items explicitly compatible with an agent"
         echo "  --help                    Show this help"
         exit 0
+      elif [ "$SUBCOMMAND" = "loop" ]; then
+        echo "Usage:"
+        echo "  monozukuri loop <id...> [--cleanup]"
+        echo "  printf 'feat-001\\nfeat-002\\n' | monozukuri loop"
+        echo ""
+        echo "Run selected backlog features sequentially through the full pipeline."
+        echo ""
+        echo "Flags:"
+        echo "  --cleanup                 Remove loop worktrees after each feature"
+        echo "  --non-interactive         Skip all prompts; use defaults"
+        echo "  --no-ui                   Emit plain-text output"
+        echo "  --help                    Show this help"
+        exit 0
       fi
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
@@ -418,6 +443,7 @@ while [ $# -gt 0 ]; do
       echo "  config validate              Validate .monozukuri/config.yaml against schema"
       echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
+      echo "  loop <ids...>                Run selected features sequentially"
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  pick --top N --json          Emit top-ranked backlog items as JSON"
@@ -493,6 +519,7 @@ while [ $# -gt 0 ]; do
       echo "  --agent <agent>              Filter backlog list or target setup by agent"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
+      echo "  --cleanup                    Remove loop worktrees after each feature"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -521,6 +548,12 @@ while [ $# -gt 0 ]; do
           OPT_BACKLOG_IDS="${OPT_BACKLOG_IDS},$1"
         else
           OPT_BACKLOG_IDS="$1"
+        fi
+      elif [ "$SUBCOMMAND" = "loop" ]; then
+        if [ -n "$OPT_LOOP_IDS" ]; then
+          OPT_LOOP_IDS="${OPT_LOOP_IDS},$1"
+        else
+          OPT_LOOP_IDS="$1"
         fi
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
@@ -554,7 +587,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
        OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
-       OPT_PICK_TOP
+       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -606,6 +639,7 @@ case "$SUBCOMMAND" in
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
   backlog)         source "$CMD_DIR/backlog.sh"; sub_backlog ;;
   pick)            source "$CMD_DIR/pick.sh"; sub_pick ;;
+  loop)            source "$CMD_DIR/loop.sh"; sub_loop ;;
   run)
     source "$CMD_DIR/run.sh"
     if [ "$_use_tui" = "true" ]; then sub_run | node "$_TUI_SCRIPT"; else sub_run; fi
