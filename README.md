@@ -26,7 +26,8 @@ monozukuri init
 monozukuri backlog list  # inspect ranked features
 monozukuri backlog list --label cli,docs --agent codex
 monozukuri backlog list --score-explain feat-001
-monozukuri pick --top 3 --json | jq '.[].id'
+monozukuri pick --top 3 | monozukuri loop
+monozukuri pick --top 3 --json | jq -r '.[].id' | monozukuri loop
 monozukuri backlog validate feat-001 feat-002
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute

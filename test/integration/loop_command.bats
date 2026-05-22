@@ -358,6 +358,43 @@ JSEOF
   [[ "$output" == *"[1/1] feat-001 ✓ done"* ]]
 }
 
+@test "loop stdin ignores blank lines and comments" {
+  cd "$PROJ_DIR"
+  run bash -c '
+    printf "%s\n" "" "# picked by script" "feat-001" "   " "  # trailing comment" "feat-002" |
+      PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" loop --non-interactive --no-ui
+  ' _ "$MOCK_CLAUDE_DIR" "$ORCHESTRATE"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[1/2] feat-001 ✓ done"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+}
+
+@test "loop composes with pick top IDs over stdin" {
+  cd "$PROJ_DIR"
+  run bash -c '
+    PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" pick --top 2 |
+      PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" loop --non-interactive --no-ui
+  ' _ "$MOCK_CLAUDE_DIR" "$ORCHESTRATE"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[1/2] feat-001 ✓ done"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+}
+
+@test "loop composes with pick json and jq ids over stdin" {
+  cd "$PROJ_DIR"
+  run bash -c '
+    PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" pick --top 2 --json |
+      jq -r ".[].id" |
+      PATH="$1:$PATH" PROGRESS_INTERVAL=0 bash "$2" loop --non-interactive --no-ui
+  ' _ "$MOCK_CLAUDE_DIR" "$ORCHESTRATE"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[1/2] feat-001 ✓ done"* ]]
+  [[ "$output" == *"[2/2] feat-002 ✓ done"* ]]
+}
+
 @test "loop reports missing IDs and continues with later selected features" {
   cd "$PROJ_DIR"
   run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
