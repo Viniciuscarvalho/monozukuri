@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.58.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.57.0...v1.58.0) (2026-05-22)
+
+
+### Features
+
+* **cli:** add selected backlog loop command ([#251](https://github.com/Viniciuscarvalho/monozukuri/issues/251)) ([ad6d3da](https://github.com/Viniciuscarvalho/monozukuri/commit/ad6d3dac7968ed087aa56f2661f5c9a05bd84705))
+
 ## [1.57.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.56.0...v1.57.0) (2026-05-19)
 
 
