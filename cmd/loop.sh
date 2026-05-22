@@ -424,6 +424,124 @@ JSEOF
   _loop_state_append_progress "$state_dir" "loop.completed" "" "" "$status" "$reason"
 }
 
+_loop_resume_latest_run_id() {
+  local state_root="$1"
+  [ -d "$state_root" ] || return 1
+  find "$state_root" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | while IFS= read -r dir; do
+    [ -f "$dir/manifest.json" ] && [ -f "$dir/checkpoint.json" ] || continue
+    node - "$dir/manifest.json" "$dir" <<'JSEOF' 2>/dev/null || true
+const [,, manifestFile, dir] = process.argv;
+const fs = require('fs');
+const path = require('path');
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const status = manifest.status || '';
+if (status === 'completed') process.exit(0);
+const ts = manifest.updated_at || manifest.started_at || '';
+console.log(`${ts}|${path.basename(dir)}`);
+JSEOF
+  done | sort -r | head -1 | awk -F'|' '{print $2}'
+}
+
+_loop_list_runs() {
+  local state_root="$1"
+  if [ ! -d "$state_root" ]; then
+    printf 'No resumable loop runs found.\n'
+    return 0
+  fi
+  local output
+  output=$(find "$state_root" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | while IFS= read -r dir; do
+    [ -f "$dir/manifest.json" ] && [ -f "$dir/checkpoint.json" ] || continue
+    node - "$dir/manifest.json" "$dir" <<'JSEOF' 2>/dev/null || true
+const [,, manifestFile, dir] = process.argv;
+const fs = require('fs');
+const path = require('path');
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const tasks = Array.isArray(manifest.tasks) ? manifest.tasks : [];
+const pending = tasks.filter((task) => !['completed', 'skipped'].includes(task.status)).length;
+if ((manifest.status || '') === 'completed') process.exit(0);
+console.log(`${manifest.updated_at || manifest.started_at || ''}|${path.basename(dir)}|${manifest.status || 'unknown'}|${pending}`);
+JSEOF
+  done | sort -r)
+  if [ -z "$output" ]; then
+    printf 'No resumable loop runs found.\n'
+    return 0
+  fi
+  printf 'RUN_ID STATUS PENDING\n'
+  printf '%s\n' "$output" | awk -F'|' '{printf "%s %s %s\n", $2, $3, $4}'
+}
+
+_loop_manifest_ids_csv() {
+  local state_dir="$1"
+  node - "$state_dir/manifest.json" <<'JSEOF'
+const [,, manifestFile] = process.argv;
+const fs = require('fs');
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const ids = (manifest.tasks || [])
+  .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+  .map((task) => task.id)
+  .filter(Boolean);
+process.stdout.write(ids.join(','));
+JSEOF
+}
+
+_loop_state_task_status() {
+  local state_dir="$1" task_id="$2"
+  node - "$state_dir/manifest.json" "$task_id" <<'JSEOF' 2>/dev/null || echo ""
+const [,, manifestFile, taskId] = process.argv;
+const fs = require('fs');
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const task = (manifest.tasks || []).find((entry) => entry.id === taskId);
+process.stdout.write(task ? (task.status || '') : '');
+JSEOF
+}
+
+_loop_prepare_resume_state() {
+  local state_dir="$1" retry_failed="$2"
+  node - "$state_dir/manifest.json" "$state_dir/checkpoint.json" "$retry_failed" <<'JSEOF'
+const [,, manifestFile, checkpointFile, retryFailed] = process.argv;
+const fs = require('fs');
+const path = require('path');
+function atomicWriteJson(file, data) {
+  const tmp = path.join(path.dirname(file), `${path.basename(file)}.${process.pid}.${Date.now()}.tmp`);
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);
+}
+const now = new Date().toISOString();
+const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+const resumeEvents = [];
+for (const task of manifest.tasks || []) {
+  if (task.status === 'running') {
+    task.status = 'inconclusive';
+    task.updated_at = now;
+    resumeEvents.push(`inconclusive ${task.id}`);
+  }
+  if (task.status === 'failed' && retryFailed === 'true') {
+    task.status = 'pending';
+    task.updated_at = now;
+    resumeEvents.push(`retry-failed ${task.id}`);
+  }
+}
+manifest.status = 'running';
+manifest.updated_at = now;
+delete manifest.completed_at;
+atomicWriteJson(manifestFile, manifest);
+const checkpoint = JSON.parse(fs.readFileSync(checkpointFile, 'utf8'));
+const next = (manifest.tasks || []).find((task) => !['completed', 'skipped', 'failed'].includes(task.status));
+checkpoint.status = 'running';
+checkpoint.next_task_index = next ? Number(next.order || 1) : ((manifest.tasks || []).length + 1);
+checkpoint.next_task_id = next ? next.id : '';
+checkpoint.updated_at = now;
+atomicWriteJson(checkpointFile, checkpoint);
+process.stdout.write(resumeEvents.join('\n'));
+JSEOF
+}
+
 _loop_cost_init() {
   local cost_file="$1" loop_run_id="$2" max_cost="$3" max_time="$4" max_tokens="$5"
   node - "$cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens" <<'JSEOF'
@@ -489,8 +607,16 @@ const entry = {
   recorded_at: new Date().toISOString()
 };
 data.features.push(entry);
-data.total_tokens = data.features.reduce((sum, f) => sum + Number(f.tokens || 0), 0);
-data.total_usd = Number(data.features.reduce((sum, f) => sum + Number(f.usd || 0), 0).toFixed(4));
+const featureTokens = data.features.reduce((sum, f) => sum + Number(f.tokens || 0), 0);
+const featureUsd = data.features.reduce((sum, f) => sum + Number(f.usd || 0), 0);
+const phaseTokens = Array.isArray(data.phase_events)
+  ? data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_tokens || 0), 0)
+  : 0;
+const phaseUsd = Array.isArray(data.phase_events)
+  ? data.phase_events.reduce((sum, entry) => sum + Number(entry.estimated_usd || 0), 0)
+  : 0;
+data.total_tokens = Math.max(Number(data.total_tokens || 0), featureTokens, phaseTokens);
+data.total_usd = Number(Math.max(Number(data.total_usd || 0), featureUsd, phaseUsd).toFixed(4));
 data.updated_at = new Date().toISOString();
 atomicWriteJson(costFile, data);
 JSEOF
@@ -579,19 +705,66 @@ sub_loop() {
     routing_load "$ROOT_DIR"
   fi
 
+  if [ "${OPT_LOOP_LIST_RUNS:-false}" = "true" ]; then
+    _loop_list_runs "$STATE_DIR"
+    return 0
+  fi
+
+  local resume_mode=false
+  [ "${OPT_RESUME:-false}" = "true" ] && resume_mode=true
+
   local loop_run_id
-  loop_run_id=$(_loop_make_run_id)
+  if [ "$resume_mode" = "true" ]; then
+    loop_run_id="${OPT_LOOP_RESUME_ID:-}"
+    if [ -z "$loop_run_id" ]; then
+      loop_run_id=$(_loop_resume_latest_run_id "$STATE_DIR" || true)
+    fi
+    if [ -z "$loop_run_id" ]; then
+      err "No resumable loop runs found."
+      return 1
+    fi
+  else
+    loop_run_id=$(_loop_make_run_id)
+  fi
   local loop_state_dir="$STATE_DIR/$loop_run_id"
-  WORKTREE_ROOT="$ROOT_DIR/.monozukuri/worktrees/$loop_run_id"
+  local worktree_run_id="$loop_run_id"
+  if [ "$resume_mode" = "true" ]; then
+    worktree_run_id="${loop_run_id}-resume-$(date +%H%M%S)-$$"
+  fi
+  WORKTREE_ROOT="$ROOT_DIR/.monozukuri/worktrees/$worktree_run_id"
   AUTO_CLEANUP=false
   if [ "${OPT_LOOP_CLEANUP:-false}" = "true" ]; then
     AUTO_CLEANUP=true
   fi
-  BRANCH_PREFIX="${BRANCH_PREFIX:-feat}/$loop_run_id"
+  BRANCH_PREFIX="${BRANCH_PREFIX:-feat}/$worktree_run_id"
 
   export ROOT_DIR CONFIG_DIR STATE_DIR RESULTS_DIR WORKTREE_ROOT
   export WORKTREE_BASE BRANCH_PREFIX BASE_BRANCH ADAPTER AUTONOMY MODEL_DEFAULT MODEL_PLAN MODEL_EXECUTE
   mkdir -p "$STATE_DIR" "$RESULTS_DIR" "$WORKTREE_ROOT" "$CONFIG_DIR/runs/$loop_run_id" "$loop_state_dir"
+
+  if [ "$resume_mode" = "true" ]; then
+    [ -f "$loop_state_dir/manifest.json" ] || { err "Loop resume manifest not found: $loop_state_dir/manifest.json"; return 1; }
+    [ -f "$loop_state_dir/checkpoint.json" ] || { err "Loop resume checkpoint not found: $loop_state_dir/checkpoint.json"; return 1; }
+    printf 'Resuming loop run: %s\n' "$loop_run_id"
+    local resume_events
+    resume_events=$(_loop_prepare_resume_state "$loop_state_dir" "${OPT_LOOP_RETRY_FAILED:-false}")
+    if [ -n "$resume_events" ]; then
+      while IFS=' ' read -r resume_event resume_task_id; do
+        [ -n "$resume_event" ] && [ -n "$resume_task_id" ] || continue
+        case "$resume_event" in
+          inconclusive)
+            _loop_state_append_progress "$loop_state_dir" "task.inconclusive" "$resume_task_id" "" "inconclusive" "resume-running"
+            ;;
+          retry-failed)
+            _loop_state_append_progress "$loop_state_dir" "task.retry_failed" "$resume_task_id" "" "pending" "resume-retry-failed"
+            ;;
+        esac
+      done <<EOF
+$resume_events
+EOF
+    fi
+    _loop_state_append_progress "$loop_state_dir" "loop.resumed" "" "" "running"
+  fi
 
   local max_cost="${OPT_LOOP_MAX_COST:-10}"
   local max_time="${OPT_LOOP_MAX_TIME:-480}"
@@ -612,7 +785,11 @@ sub_loop() {
   mem_refresh_env
 
   local ids_csv
-  ids_csv=$(_loop_collect_ids)
+  if [ "$resume_mode" = "true" ]; then
+    ids_csv=$(_loop_manifest_ids_csv "$loop_state_dir")
+  else
+    ids_csv=$(_loop_collect_ids)
+  fi
   if [ -z "$ids_csv" ]; then
     err "No feature IDs provided."
     err "Usage: monozukuri loop <id...> or pipe IDs on stdin"
@@ -634,8 +811,14 @@ sub_loop() {
   MONOZUKURI_LOOP_LEGACY_COST_FILE="$legacy_loop_cost_file"
   MONOZUKURI_LOOP_STATE_DIR="$loop_state_dir"
   export MONOZUKURI_LOOP_COST_FILE MONOZUKURI_LOOP_LEGACY_COST_FILE MONOZUKURI_LOOP_STATE_DIR
-  _loop_state_init "$loop_state_dir" "$loop_run_id" "$ids_csv"
-  _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
+  if [ "$resume_mode" != "true" ]; then
+    _loop_state_init "$loop_state_dir" "$loop_run_id" "$ids_csv"
+    _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
+  elif [ ! -f "$loop_cost_file" ]; then
+    _loop_cost_init "$loop_cost_file" "$loop_run_id" "$max_cost" "$max_time" "$max_tokens"
+  else
+    _loop_sync_legacy_cost "$loop_cost_file"
+  fi
 
   local total="${#ids[@]}"
   local index=0 any_failed=0 cap_reached=0 cap_reason="" failure_stopped=0 failure_stop_reason=""
@@ -647,6 +830,40 @@ sub_loop() {
     index=$((index + 1))
     feat_id=$(printf '%s' "$feat_id" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     [ -z "$feat_id" ] && continue
+
+    if [ "$resume_mode" = "true" ]; then
+      local resume_task_status
+      resume_task_status=$(_loop_state_task_status "$loop_state_dir" "$feat_id")
+      case "$resume_task_status" in
+        completed)
+          printf '[%d/%d] %s ↷ skipped (completed)\n' "$index" "$total" "$feat_id"
+          _loop_state_append_progress "$loop_state_dir" "task.skipped" "$feat_id" "" "completed" "resume-completed"
+          continue
+          ;;
+        failed)
+          if [ "${OPT_LOOP_RETRY_FAILED:-false}" != "true" ]; then
+            any_failed=1
+            printf '[%d/%d] %s ↷ skipped (failed)\n' "$index" "$total" "$feat_id"
+            _loop_state_append_progress "$loop_state_dir" "task.skipped" "$feat_id" "" "failed" "resume-failed"
+            continue
+          fi
+          ;;
+        skipped)
+          printf '[%d/%d] %s ↷ skipped\n' "$index" "$total" "$feat_id"
+          _loop_state_append_progress "$loop_state_dir" "task.skipped" "$feat_id" "" "skipped" "resume-skipped"
+          continue
+          ;;
+      esac
+    fi
+
+    local current_total_usd
+    current_total_usd=$(_loop_cost_field "$loop_cost_file" "total_usd")
+    if awk -v c="$current_total_usd" -v limit="$max_cost" 'BEGIN { exit !(c >= limit) }'; then
+      cap_reached=1
+      cap_reason="cost"
+      break
+    fi
+
     _loop_state_update_task "$loop_state_dir" "$feat_id" "running"
     _loop_state_checkpoint "$loop_state_dir" "running" "$index" "$feat_id" "" ""
     _loop_state_append_progress "$loop_state_dir" "task.started" "$feat_id" "" "running"
