@@ -157,6 +157,8 @@ OPT_LOOP_MAX_TIME="480"
 OPT_LOOP_MAX_TIME_EXPLICIT=false
 OPT_LOOP_MAX_TOKENS_PER_TASK="100000"
 OPT_LOOP_ON_FAILURE=""
+OPT_LOOP_CIRCUIT_BREAKER="3"
+OPT_LOOP_I_KNOW_WHAT_IM_DOING=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -337,6 +339,24 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --circuit-breaker)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_CIRCUIT_BREAKER="$1"
+      else
+        err "Unknown argument: --circuit-breaker"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --i-know-what-im-doing)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_I_KNOW_WHAT_IM_DOING=true
+      else
+        err "Unknown argument: --i-know-what-im-doing"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -476,6 +496,7 @@ while [ $# -gt 0 ]; do
         echo "  --max-time MINUTES        Stop before next feature after cap (default: 480)"
         echo "  --max-tokens-per-task N   Per-feature token ceiling (default: 100000, max: 500000)"
         echo "  --on-failure MODE         continue, stop, or pause on feature failure"
+        echo "  --circuit-breaker N       Abort after N consecutive failures (default: 3)"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
@@ -570,6 +591,7 @@ while [ $# -gt 0 ]; do
       echo "  --max-time <minutes>         Max loop runtime for loop command (default: 480)"
       echo "  --max-tokens-per-task <n>    Max tokens per loop feature (default: 100000)"
       echo "  --on-failure <mode>          Loop failure mode: continue, stop, or pause"
+      echo "  --circuit-breaker <n>        Abort after n consecutive loop failures"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -640,7 +662,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP \
        OPT_LOOP_MAX_COST OPT_LOOP_MAX_COST_EXPLICIT \
        OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
-       OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE
+       OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \
+       OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

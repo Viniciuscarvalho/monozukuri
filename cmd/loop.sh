@@ -186,6 +186,18 @@ _loop_validate_failure_mode() {
   esac
 }
 
+_loop_validate_circuit_breaker() {
+  local limit="$1"
+  if ! awk -v n="$limit" 'BEGIN { exit !(n ~ /^[0-9]+$/) }'; then
+    err "--circuit-breaker must be a non-negative integer"
+    return 1
+  fi
+  if [ "$limit" -eq 0 ] && [ "${OPT_LOOP_I_KNOW_WHAT_IM_DOING:-false}" != "true" ]; then
+    err "--circuit-breaker 0 disables a safety guard; pass --i-know-what-im-doing to confirm"
+    return 1
+  fi
+}
+
 _loop_default_failure_mode() {
   local autonomy="$1"
   case "$autonomy" in
@@ -259,6 +271,24 @@ fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
 JSEOF
 }
 
+_loop_cost_record_circuit_breaker() {
+  local cost_file="$1" limit="$2" consecutive_failures="$3" failed_feature_ids="$4"
+  node - "$cost_file" "$limit" "$consecutive_failures" "$failed_feature_ids" <<'JSEOF'
+const [,, costFile, limit, consecutiveFailures, failedFeatureIds] = process.argv;
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync(costFile, 'utf8'));
+data.circuit_breaker = {
+  tripped: true,
+  limit: Number(limit),
+  consecutive_failures: Number(consecutiveFailures),
+  failed_feature_ids: failedFeatureIds ? failedFeatureIds.split(',').filter(Boolean) : [],
+  resume_requires: '--circuit-breaker 0 --i-know-what-im-doing'
+};
+data.updated_at = new Date().toISOString();
+fs.writeFileSync(costFile, JSON.stringify(data, null, 2));
+JSEOF
+}
+
 _loop_cost_finalize() {
   local cost_file="$1" status="$2" elapsed_seconds="$3" reason="${4:-}"
   node - "$cost_file" "$status" "$elapsed_seconds" "$reason" <<'JSEOF'
@@ -317,6 +347,8 @@ sub_loop() {
   local on_failure="${OPT_LOOP_ON_FAILURE:-}"
   [ -n "$on_failure" ] || on_failure=$(_loop_default_failure_mode "$AUTONOMY")
   _loop_validate_failure_mode "$on_failure" || return 1
+  local circuit_breaker="${OPT_LOOP_CIRCUIT_BREAKER:-3}"
+  _loop_validate_circuit_breaker "$circuit_breaker" || return 1
 
   MONOZUKURI_MAX_FEATURE_TOKENS="$max_tokens"
   MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
@@ -350,6 +382,7 @@ sub_loop() {
 
   local total="${#ids[@]}"
   local index=0 any_failed=0 cap_reached=0 cap_reason="" failure_stopped=0 failure_stop_reason=""
+  local circuit_tripped=0 circuit_message="" consecutive_failures=0 consecutive_failed_ids=""
   local loop_started_at
   loop_started_at=$(date +%s)
   local feat_id item_json title body priority labels deps next_feat_id
@@ -369,6 +402,20 @@ sub_loop() {
     if ! item_json=$(_loop_item_for_id "$backlog_file" "$feat_id"); then
       printf '[%d/%d] %s ✗ not found\n' "$index" "$total" "$feat_id"
       any_failed=1
+      consecutive_failures=$((consecutive_failures + 1))
+      if [ -n "$consecutive_failed_ids" ]; then
+        consecutive_failed_ids="${consecutive_failed_ids},$feat_id"
+      else
+        consecutive_failed_ids="$feat_id"
+      fi
+      if [ "$circuit_breaker" -gt 0 ] && [ "$consecutive_failures" -ge "$circuit_breaker" ]; then
+        circuit_tripped=1
+        circuit_message="Circuit breaker tripped: $consecutive_failures consecutive failures"
+        printf '%s\n' "$circuit_message"
+        printf '%s\n' "$circuit_message" >&2
+        _loop_cost_record_circuit_breaker "$loop_cost_file" "$circuit_breaker" "$consecutive_failures" "$consecutive_failed_ids"
+        break
+      fi
       continue
     fi
 
@@ -400,6 +447,8 @@ sub_loop() {
       if { [ "$feature_exit" -eq 0 ] && [ "$final_status" = "done" ]; } || [ "$final_status" = "pr-created" ]; then
         label=$(_loop_pr_label "$feat_id" "$final_status")
         printf '[%d/%d] %s ✓ %s\n' "$index" "$total" "$feat_id" "$label"
+        consecutive_failures=0
+        consecutive_failed_ids=""
       else
         [ -n "$final_status" ] || final_status="failed"
         if [ "$final_status" != "failed" ]; then
@@ -407,6 +456,21 @@ sub_loop() {
           final_status="failed"
         fi
         printf '[%d/%d] %s ✗ %s\n' "$index" "$total" "$feat_id" "$final_status"
+        consecutive_failures=$((consecutive_failures + 1))
+        if [ -n "$consecutive_failed_ids" ]; then
+          consecutive_failed_ids="${consecutive_failed_ids},$feat_id"
+        else
+          consecutive_failed_ids="$feat_id"
+        fi
+        if [ "$circuit_breaker" -gt 0 ] && [ "$consecutive_failures" -ge "$circuit_breaker" ]; then
+          any_failed=1
+          circuit_tripped=1
+          circuit_message="Circuit breaker tripped: $consecutive_failures consecutive failures"
+          printf '%s\n' "$circuit_message"
+          printf '%s\n' "$circuit_message" >&2
+          _loop_cost_record_circuit_breaker "$loop_cost_file" "$circuit_breaker" "$consecutive_failures" "$consecutive_failed_ids"
+          break
+        fi
 
         case "$on_failure" in
           continue)
@@ -472,12 +536,17 @@ sub_loop() {
     if [ "$failure_stopped" -eq 1 ]; then
       break
     fi
+    if [ "$circuit_tripped" -eq 1 ]; then
+      break
+    fi
   done
 
   rm -f "$backlog_file"
   local elapsed_total final_status final_cost final_tokens
   elapsed_total=$(( $(date +%s) - loop_started_at ))
-  if [ "$cap_reached" -eq 1 ]; then
+  if [ "$circuit_tripped" -eq 1 ]; then
+    final_status="circuit-breaker-tripped"
+  elif [ "$cap_reached" -eq 1 ]; then
     final_status="cap-reached"
   elif [ "$failure_stopped" -eq 1 ]; then
     final_status="stopped"
@@ -491,6 +560,9 @@ sub_loop() {
   final_tokens=$(_loop_cost_field "$loop_cost_file" "total_tokens")
   printf 'Loop cost: $%.4f / $%s, tokens: %s, elapsed: %ss / %sm\n' \
     "$final_cost" "$max_cost" "$final_tokens" "$elapsed_total" "$max_time"
+  if [ "$circuit_tripped" -eq 1 ]; then
+    return "${EXIT_CIRCUIT_BREAKER:-5}"
+  fi
   if [ "$cap_reached" -eq 1 ]; then
     printf 'Loop cap reached: %s; no further features will start.\n' "$cap_reason"
     return "${EXIT_BUDGET_CAP:-4}"
