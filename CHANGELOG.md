@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.60.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.59.0...v1.60.0) (2026-05-22)
+
+
+### Features
+
+* **cli:** add loop failure modes ([#255](https://github.com/Viniciuscarvalho/monozukuri/issues/255)) ([4cd1770](https://github.com/Viniciuscarvalho/monozukuri/commit/4cd1770b13cc94c723260ab07a42ac7290cb21a8))
+
 ## [1.59.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.58.0...v1.59.0) (2026-05-22)
 
 
