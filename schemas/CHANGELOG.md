@@ -1,5 +1,13 @@
 # schemas/ CHANGELOG
 
+## v1.1.2 — 2026-05-24 (MEM-03)
+
+### Added
+
+- Memory v2 prompt injection tracking writes per-feature
+  `memory-injections.jsonl` traces and increments `applied_count` after
+  successful phases.
+
 ## v1.1.1 — 2026-05-24 (MEM-02)
 
 ### Changed

@@ -37,6 +37,20 @@ context_pack_build() {
     | jq -R '{summary: .}' \
     | jq -s '.') || learnings_json='[]'
 
+  if ! declare -f memory_v2_context_entries &>/dev/null; then
+    local _mem_v2_sh
+    _mem_v2_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../memory/v2.sh"
+    [[ -f "$_mem_v2_sh" ]] && source "$_mem_v2_sh" 2>/dev/null || true
+  fi
+  if declare -f memory_v2_context_entries &>/dev/null; then
+    local _memory_v2_learnings
+    _memory_v2_learnings=$(memory_v2_context_entries "$feat_id" 2>/dev/null || echo '[]')
+    learnings_json=$(jq -n \
+      --argjson v2 "$_memory_v2_learnings" \
+      --argjson legacy "$learnings_json" \
+      '$v2 + $legacy' 2>/dev/null) || learnings_json='[]'
+  fi
+
   # Prepend project convention records (AGENTS.md, CLAUDE.md, etc.) when available.
   # Conventions are a separate read-only dataset — never written to the learning store.
   if ! declare -f read_project_conventions &>/dev/null; then
@@ -98,6 +112,9 @@ context_pack_build() {
     fi
   fi
 
+  local learnings_block
+  learnings_block=$(jq -r '.[] | "- " + (.summary // "")' <<<"$learnings_json" 2>/dev/null || true)
+
   jq -n \
     --arg FEATURE_ID             "$feat_id" \
     --arg MONOZUKURI_FEATURE_ID  "$feat_id" \
@@ -115,6 +132,7 @@ context_pack_build() {
     --arg ENTRY_POINTS           "${ENTRY_POINTS:-}" \
     --arg ORIGINAL_PROMPT        "${FEATURE_DESCRIPTION:-${FEATURE_TITLE:-}}" \
     --arg MAX_FILES              "${MAX_FILE_CHANGES:-8}" \
+    --arg LEARNINGS_BLOCK        "${learnings_block:-No prior learnings.}" \
     --argjson project_learnings  "$learnings_json" \
     '{
       FEATURE_ID:             $FEATURE_ID,
@@ -133,6 +151,7 @@ context_pack_build() {
       ENTRY_POINTS:           $ENTRY_POINTS,
       ORIGINAL_PROMPT:        $ORIGINAL_PROMPT,
       MAX_FILES:              $MAX_FILES,
+      LEARNINGS_BLOCK:        $LEARNINGS_BLOCK,
       project_learnings:      $project_learnings
     }' > "$out_file"
 }

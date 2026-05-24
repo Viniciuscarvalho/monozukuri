@@ -112,3 +112,25 @@ prints a no-store message when none exist.
 `.monozukuri/memory.v1.bak/`. `--dry-run` reports the migration plan without
 writing files. `--reverse` writes `.monozukuri/memory-v1.roundtrip.json` for
 roundtrip verification and compatibility checks.
+
+## Injection Tracking
+
+When a Memory v2 learning is injected into a phase prompt, the markdown context
+includes an HTML marker immediately before the insight:
+
+```markdown
+<!-- learning: lrn-2026-05-24-001 --> Use direct Bats for CLI behavior changes.
+```
+
+The marker makes rendered prompts auditable without changing how agents read the
+natural-language instruction. Each rendered phase also appends a trace record to
+`.monozukuri/runs/<feature-id>/memory-injections.jsonl`:
+
+```json
+{"phase":"prd","learnings":["lrn-2026-05-24-001"],"tokens":347,"timestamp":"2026-05-24T20:00:00.000Z"}
+```
+
+After a phase succeeds, each injected learning's `applied_count` increments and
+`last_applied` is set to the success timestamp. Corrupt or unreadable Memory v2
+stores are ignored for prompt injection so the pipeline can continue without
+blocking the agent call.

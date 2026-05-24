@@ -32,6 +32,10 @@
 _RENDER_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=skill-inject.sh
 source "${_RENDER_SH_DIR}/skill-inject.sh"
+if ! declare -f memory_v2_trace_prompt &>/dev/null; then
+  _MZ_MEMORY_V2_SH="${_RENDER_SH_DIR}/../memory/v2.sh"
+  [[ -f "$_MZ_MEMORY_V2_SH" ]] && source "$_MZ_MEMORY_V2_SH" 2>/dev/null || true
+fi
 
 monozukuri_render() {
   local template_path="${1:-}"
@@ -331,6 +335,10 @@ render_phase_prompt() {
   # Portable skill injection for non-Claude adapters. Keep this after schema
   # appending so the original rendered prompt remains intact below the prefix.
   _rendered=$(monozukuri_inject_skill_prompt "$phase" "$_rendered")
+
+  if declare -f memory_v2_trace_prompt &>/dev/null; then
+    memory_v2_trace_prompt "$phase" "$_rendered" 2>/dev/null || true
+  fi
 
   printf '%s\n' "$_rendered"
 }
