@@ -32,6 +32,7 @@ monozukuri backlog validate feat-001 feat-002
 monozukuri run --dry-run    # preview the plan
 monozukuri run              # execute
 monozukuri loop feat-001 feat-002 feat-003 --max-cost 10 --max-time 480 --on-failure continue --circuit-breaker 3
+monozukuri loop feat-001 feat-002 --report-format md
 monozukuri loop status            # show latest selected-loop progress
 monozukuri loop status --follow   # stream updates every 2 seconds
 monozukuri loop --list-runs

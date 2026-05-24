@@ -165,6 +165,7 @@ OPT_LOOP_LIST_RUNS=false
 OPT_LOOP_STATUS=false
 OPT_LOOP_STATUS_ID=""
 OPT_LOOP_STATUS_FOLLOW=false
+OPT_LOOP_REPORT_FORMAT="ascii"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -392,6 +393,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --report-format)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_REPORT_FORMAT="$1"
+      else
+        err "Unknown argument: --report-format"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -548,6 +558,7 @@ while [ $# -gt 0 ]; do
         echo "  --retry-failed            Re-run failed tasks during resume"
         echo "  --list-runs               List resumable selected loop runs"
         echo "  --follow                  Stream loop status updates every 2 seconds"
+        echo "  --report-format ascii|md  Final summary table format (default: ascii)"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
@@ -647,6 +658,7 @@ while [ $# -gt 0 ]; do
       echo "  --retry-failed               Re-run failed tasks during loop resume"
       echo "  --list-runs                  List resumable selected loop runs"
       echo "  --follow                     Stream loop status updates every 2 seconds"
+      echo "  --report-format <ascii|md>   Final loop summary table format"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -722,7 +734,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \
        OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
        OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
-       OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW
+       OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW \
+       OPT_LOOP_REPORT_FORMAT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

@@ -40,7 +40,7 @@ re-enqueuing it in a new worktree so the interrupted worktree remains available
 for inspection.
 
 Run status mirrors the loop result: `running`, `completed`, `failed`, `stopped`,
-`cap-reached`, or `circuit-breaker-tripped`.
+`cap-reached`, `circuit-breaker-tripped`, or `aborted`.
 
 ## `progress.jsonl`
 
@@ -108,6 +108,26 @@ restart from `next_task_index`.
   "updated_at": "2026-05-22T19:01:00.000Z"
 }
 ```
+
+## `summary.md`
+
+Final loop report written when the selected loop exits successfully, fails,
+stops, reaches a cap, trips the circuit breaker, or receives `SIGINT` after
+state initialization.
+
+```markdown
+| ID | Status | Phases done | Tokens | Cost | Duration | PR URL |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| feat-001 | completed | 6 | 42000 | $0.0420 | 120s | https://github.com/acme/app/pull/42 |
+| feat-002 | failed | 3 | 18000 | $0.0180 | 45s |  |
+| TOTAL | failed | 9 | 60000 | $0.0600 | 165s |  |
+```
+
+Terminal output uses an ASCII table by default and colorizes `completed`,
+`failed`, and `skipped` statuses when the terminal supports color. Passing
+`--report-format md` prints the markdown table instead. The persisted
+`summary.md` is always markdown so it can be copied into issues, PRs, or run
+notes without conversion.
 
 ## Resume Behavior
 
