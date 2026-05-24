@@ -201,6 +201,17 @@ _loop_validate_circuit_breaker() {
   fi
 }
 
+_loop_validate_report_format() {
+  local format="$1"
+  case "$format" in
+    ascii|md) return 0 ;;
+    *)
+      err "--report-format must be one of: ascii, md"
+      return 1
+      ;;
+  esac
+}
+
 _loop_default_failure_mode() {
   local autonomy="$1"
   case "$autonomy" in
@@ -814,8 +825,219 @@ _loop_cost_field() {
     2>/dev/null || echo "0"
 }
 
+_loop_summary_write_and_print() {
+  local state_dir="$1" report_format="$2" feature_state_root="$3"
+  local summary_file="$state_dir/summary.md"
+  mkdir -p "$state_dir"
+
+  local markdown_file
+  markdown_file=$(mktemp "$state_dir/summary.XXXXXX")
+  node - "$state_dir" "$feature_state_root" "$report_format" "$markdown_file" \
+    "${C_GREEN:-}" "${C_RED:-}" "${C_YELLOW:-}" "${C_NC:-}" <<'JSEOF'
+const [,, stateDir, featureStateRoot, reportFormat, markdownFile, green, red, yellow, reset] = process.argv;
+const fs = require('fs');
+const path = require('path');
+
+function readJson(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { return fallback; }
+}
+
+function readProgress(file) {
+  let content = '';
+  try { content = fs.readFileSync(file, 'utf8'); } catch (_) { return []; }
+  return content.split(/\n/).filter(Boolean).map((line) => {
+    try { return JSON.parse(line); } catch (_) { return null; }
+  }).filter(Boolean);
+}
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(4)}`;
+}
+
+function duration(seconds) {
+  const n = Math.max(0, Math.floor(Number(seconds || 0)));
+  return `${n}s`;
+}
+
+function markdownEscape(value) {
+  return String(value || '').replace(/\|/g, '\\|');
+}
+
+function statusColor(status) {
+  if (reportFormat !== 'ascii') return '';
+  if (status === 'completed') return green || '';
+  if (status === 'failed') return red || '';
+  if (status === 'skipped') return yellow || '';
+  return '';
+}
+
+function countPhases(feature, progressEvents, taskId) {
+  if (feature && Array.isArray(feature.phases) && feature.phases.length > 0) {
+    return feature.phases.length;
+  }
+  const phases = new Set();
+  for (const event of progressEvents) {
+    if (event.task_id === taskId && event.phase) phases.add(event.phase);
+  }
+  return phases.size;
+}
+
+function taskDurationSeconds(taskId, progressEvents, featureStateRoot) {
+  const taskEvents = progressEvents
+    .filter((event) => event.task_id === taskId && event.ts)
+    .map((event) => Date.parse(event.ts))
+    .filter((ts) => Number.isFinite(ts))
+    .sort((a, b) => a - b);
+  if (taskEvents.length >= 2) {
+    return Math.max(0, Math.floor((taskEvents[taskEvents.length - 1] - taskEvents[0]) / 1000));
+  }
+  const results = readJson(path.join(featureStateRoot, taskId, 'results.json'), {});
+  return Number(results.duration_seconds || 0);
+}
+
+function prUrl(taskId) {
+  const results = readJson(path.join(featureStateRoot, taskId, 'results.json'), {});
+  return results.pr_url || '';
+}
+
+function phaseTotals(cost) {
+  const totals = new Map();
+  for (const event of Array.isArray(cost.phase_events) ? cost.phase_events : []) {
+    const id = event.feature_id || event.task_id || '';
+    if (!id) continue;
+    const current = totals.get(id) || { tokens: 0, usd: 0, phases: new Set() };
+    current.tokens += Number(event.estimated_tokens || 0);
+    current.usd += Number(event.estimated_usd || 0);
+    if (event.phase) current.phases.add(event.phase);
+    totals.set(id, current);
+  }
+  return totals;
+}
+
+function latestFeatureCosts(cost) {
+  const byId = new Map();
+  for (const feature of Array.isArray(cost.features) ? cost.features : []) {
+    if (feature && feature.id) byId.set(feature.id, feature);
+  }
+  return byId;
+}
+
+function makeRows() {
+  const manifest = readJson(path.join(stateDir, 'manifest.json'), {});
+  const cost = readJson(path.join(stateDir, 'cost.json'), {});
+  const progressEvents = readProgress(path.join(stateDir, 'progress.jsonl'));
+  const featuresById = latestFeatureCosts(cost);
+  const phaseById = phaseTotals(cost);
+  const tasks = (Array.isArray(manifest.tasks) ? manifest.tasks : [])
+    .slice()
+    .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+
+  const rows = tasks.map((task) => {
+    const id = task.id || '';
+    const feature = featuresById.get(id);
+    const phaseFallback = phaseById.get(id) || { tokens: 0, usd: 0, phases: new Set() };
+    const tokens = feature ? Number(feature.tokens || 0) : Number(phaseFallback.tokens || 0);
+    const usd = feature ? Number(feature.usd || 0) : Number(phaseFallback.usd || 0);
+    const phasesDone = feature
+      ? countPhases(feature, progressEvents, id)
+      : Math.max(phaseFallback.phases ? phaseFallback.phases.size : 0, countPhases(feature, progressEvents, id));
+    return {
+      id,
+      status: task.status || 'pending',
+      phasesDone,
+      tokens,
+      cost: usd,
+      durationSeconds: taskDurationSeconds(id, progressEvents, featureStateRoot),
+      prUrl: prUrl(id)
+    };
+  });
+
+  rows.push({
+    id: 'TOTAL',
+    status: manifest.status || cost.status || '',
+    phasesDone: rows.reduce((sum, row) => sum + row.phasesDone, 0),
+    tokens: Number(cost.total_tokens || rows.reduce((sum, row) => sum + row.tokens, 0)),
+    cost: Number(cost.total_usd || rows.reduce((sum, row) => sum + row.cost, 0)),
+    durationSeconds: Number(cost.elapsed_seconds || rows.reduce((sum, row) => sum + row.durationSeconds, 0)),
+    prUrl: ''
+  });
+  return rows;
+}
+
+function markdown(rows) {
+  const lines = [
+    '| ID | Status | Phases done | Tokens | Cost | Duration | PR URL |',
+    '| --- | --- | ---: | ---: | ---: | ---: | --- |'
+  ];
+  for (const row of rows) {
+    lines.push(`| ${markdownEscape(row.id)} | ${markdownEscape(row.status)} | ${row.phasesDone} | ${row.tokens} | ${money(row.cost)} | ${duration(row.durationSeconds)} | ${markdownEscape(row.prUrl)} |`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function ascii(rows) {
+  const headers = ['ID', 'Status', 'Phases done', 'Tokens', 'Cost', 'Duration', 'PR URL'];
+  const body = rows.map((row) => [
+    row.id,
+    row.status,
+    String(row.phasesDone),
+    String(row.tokens),
+    money(row.cost),
+    duration(row.durationSeconds),
+    row.prUrl
+  ]);
+  const widths = headers.map((header, index) => Math.max(
+    header.length,
+    ...body.map((row) => String(row[index] || '').length)
+  ));
+  const border = `+${widths.map((width) => '-'.repeat(width + 2)).join('+')}+`;
+  const rowLine = (cells, colorStatus = false) => `|${cells.map((cell, index) => {
+    const plain = String(cell || '');
+    const padded = plain.padEnd(widths[index], ' ');
+    if (colorStatus && index === 1) {
+      const color = statusColor(plain);
+      return ` ${color}${padded}${color ? reset : ''} `;
+    }
+    return ` ${padded} `;
+  }).join('|')}|`;
+  const lines = [border, rowLine(headers), border];
+  for (const row of body) lines.push(rowLine(row, true));
+  lines.push(border);
+  return `${lines.join('\n')}\n`;
+}
+
+const rows = makeRows();
+const markdownOutput = markdown(rows);
+fs.writeFileSync(markdownFile, markdownOutput);
+process.stdout.write(reportFormat === 'md' ? markdownOutput : ascii(rows));
+JSEOF
+  mv "$markdown_file" "$summary_file"
+}
+
+_loop_handle_sigint() {
+  local state_dir="${MONOZUKURI_LOOP_STATE_DIR:-}"
+  local cost_file="${MONOZUKURI_LOOP_COST_FILE:-}"
+  local started_at="${MONOZUKURI_LOOP_STARTED_AT:-}"
+  local elapsed=0
+  if [ -n "$started_at" ]; then
+    elapsed=$(( $(date +%s) - started_at ))
+  fi
+  if [ -n "$cost_file" ] && [ -f "$cost_file" ]; then
+    _loop_cost_finalize "$cost_file" "aborted" "$elapsed" "sigint" || true
+  fi
+  if [ -n "$state_dir" ] && [ -f "$state_dir/manifest.json" ] && [ -f "$state_dir/checkpoint.json" ]; then
+    _loop_state_finalize "$state_dir" "aborted" "sigint" || true
+    if [ "${MONOZUKURI_LOOP_SUMMARY_PRINTED:-false}" != "true" ]; then
+      _loop_summary_write_and_print "$state_dir" "${OPT_LOOP_REPORT_FORMAT:-ascii}" "${STATE_DIR:-}" || true
+      MONOZUKURI_LOOP_SUMMARY_PRINTED=true
+      export MONOZUKURI_LOOP_SUMMARY_PRINTED
+    fi
+  fi
+  exit 130
+}
+
 sub_loop() {
-  trap 'exit 130' INT
+  trap '_loop_handle_sigint' INT
 
   _loop_bootstrap_modules
 
@@ -909,6 +1131,8 @@ EOF
   _loop_validate_failure_mode "$on_failure" || return 1
   local circuit_breaker="${OPT_LOOP_CIRCUIT_BREAKER:-3}"
   _loop_validate_circuit_breaker "$circuit_breaker" || return 1
+  local report_format="${OPT_LOOP_REPORT_FORMAT:-ascii}"
+  _loop_validate_report_format "$report_format" || return 1
 
   MONOZUKURI_MAX_FEATURE_TOKENS="$max_tokens"
   MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
@@ -962,6 +1186,9 @@ EOF
   local circuit_tripped=0 circuit_message="" consecutive_failures=0 consecutive_failed_ids=""
   local loop_started_at
   loop_started_at=$(date +%s)
+  MONOZUKURI_LOOP_STARTED_AT="$loop_started_at"
+  MONOZUKURI_LOOP_SUMMARY_PRINTED=false
+  export MONOZUKURI_LOOP_STARTED_AT MONOZUKURI_LOOP_SUMMARY_PRINTED
   local feat_id item_json title body priority labels deps next_feat_id
   for feat_id in "${ids[@]}"; do
     index=$((index + 1))
@@ -1222,6 +1449,9 @@ EOF
   fi
   _loop_cost_finalize "$loop_cost_file" "$final_status" "$elapsed_total" "$cap_reason"
   _loop_state_finalize "$loop_state_dir" "$final_status" "$cap_reason"
+  _loop_summary_write_and_print "$loop_state_dir" "$report_format" "$STATE_DIR"
+  MONOZUKURI_LOOP_SUMMARY_PRINTED=true
+  export MONOZUKURI_LOOP_SUMMARY_PRINTED
   final_cost=$(_loop_cost_field "$loop_cost_file" "total_usd")
   final_tokens=$(_loop_cost_field "$loop_cost_file" "total_tokens")
   printf 'Loop cost: $%.4f / $%s, tokens: %s, elapsed: %ss / %sm\n' \

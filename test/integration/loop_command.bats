@@ -266,6 +266,7 @@ JSEOF
   [[ "$output" == *"--list-runs"* ]]
   [[ "$output" == *"monozukuri loop status [run-id]"* ]]
   [[ "$output" == *"--follow"* ]]
+  [[ "$output" == *"--report-format ascii|md"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -277,12 +278,69 @@ JSEOF
   [[ "$output" == *"[1/3] feat-001 ✓ done"* ]]
   [[ "$output" == *"[2/3] feat-002 ✓ done"* ]]
   [[ "$output" == *"[3/3] feat-003 ✓ done"* ]]
+  [[ "$output" == *"+-"* ]]
+  [[ "$output" == *"| ID       | Status"* ]]
 
   loop_dir_count=$(find "$PROJ_DIR/.monozukuri/worktrees" -maxdepth 1 -type d -name 'loop-*' | wc -l | tr -d ' ')
   [ "$loop_dir_count" -eq 1 ]
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-001 ]
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-002 ]
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-003 ]
+}
+
+@test "loop prints and persists markdown summary report" {
+  cd "$PROJ_DIR"
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 --report-format md --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"| ID | Status | Phases done | Tokens | Cost | Duration | PR URL |"* ]]
+  [[ "$output" == *"| feat-001 | completed |"* ]]
+  [[ "$output" == *"| TOTAL | completed |"* ]]
+
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  [ -f "$loop_state_dir/summary.md" ]
+  grep -q "| ID | Status | Phases done | Tokens | Cost | Duration | PR URL |" "$loop_state_dir/summary.md"
+  grep -q "| feat-001 | completed |" "$loop_state_dir/summary.md"
+  grep -q "| TOTAL | completed |" "$loop_state_dir/summary.md"
+}
+
+@test "loop summary snapshot includes completed failed and skipped statuses" {
+  cd "$PROJ_DIR"
+  failing_mock=$(make_failing_claude_mock)
+
+  run env PATH="$failing_mock:$PATH" REAL_CLAUDE_MOCK="$MOCK_CLAUDE_DIR" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 missing-feature feat-002 --on-failure continue --report-format md --non-interactive --no-ui
+
+  [ "$status" -eq 1 ]
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  [ -f "$loop_state_dir/summary.md" ]
+
+  normalized=$(node - "$loop_state_dir/summary.md" <<'JSEOF'
+const fs = require('fs');
+const file = process.argv[2];
+const lines = fs.readFileSync(file, 'utf8').trim().split(/\n/);
+const output = lines.map((line, index) => {
+  if (index < 2) return line;
+  const cells = line.split('|').slice(1, -1).map((cell) => cell.trim());
+  cells[2] = '<phases>';
+  cells[3] = '<tokens>';
+  cells[4] = '$<cost>';
+  cells[5] = '<duration>';
+  return `| ${cells.join(' | ')} |`;
+});
+process.stdout.write(output.join('\n'));
+JSEOF
+)
+  expected='| ID | Status | Phases done | Tokens | Cost | Duration | PR URL |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| feat-001 | failed | <phases> | <tokens> | $<cost> | <duration> |  |
+| missing-feature | skipped | <phases> | <tokens> | $<cost> | <duration> |  |
+| feat-002 | completed | <phases> | <tokens> | $<cost> | <duration> |  |
+| TOTAL | failed | <phases> | <tokens> | $<cost> | <duration> |  |'
+  [ "$normalized" = "$expected" ]
 }
 
 @test "loop full_auto stdout includes structured progress lines" {
