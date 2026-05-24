@@ -11,7 +11,7 @@
 #   ./orchestrate.sh run --autonomy full_auto  # Override autonomy
 #   ./orchestrate.sh run --dry-run             # Show plan, don't execute
 #   ./orchestrate.sh backlog list              # List ranked backlog items
-#   ./orchestrate.sh pick --top 3 --json       # Pick ranked items for scripts
+#   ./orchestrate.sh pick --top 3              # Pick ranked item IDs for scripts
 #   ./orchestrate.sh status                    # Show current state
 #   ./orchestrate.sh clean                     # Remove all worktrees
 #
@@ -498,12 +498,12 @@ while [ $# -gt 0 ]; do
         exit 0
       elif [ "$SUBCOMMAND" = "pick" ]; then
         echo "Usage:"
-        echo "  monozukuri pick --json [--top N] [filters]"
+        echo "  monozukuri pick [--json] [--top N] [filters]"
         echo ""
         echo "Pick top-ranked backlog items for scripts and CI."
         echo ""
         echo "Flags:"
-        echo "  --json                    Emit JSON array output"
+        echo "  --json                    Emit JSON array output (default: IDs, one per line)"
         echo "  --top N                   Maximum items to print (default: 5, max: 50)"
         echo "  --label foo,bar           Include items with any listed label"
         echo "  --status ready|blocked|in-progress|done"
@@ -548,7 +548,7 @@ while [ $# -gt 0 ]; do
       echo "  loop <ids...>                Run selected features sequentially"
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
-      echo "  pick --top N --json          Emit top-ranked backlog items as JSON"
+      echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"

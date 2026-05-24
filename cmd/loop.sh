@@ -79,6 +79,9 @@ _loop_collect_ids() {
     while IFS= read -r line; do
       trimmed=$(printf '%s' "$line" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
       [ -z "$trimmed" ] && continue
+      case "$trimmed" in
+        \#*) continue ;;
+      esac
       if [ -n "$ids" ]; then
         ids="${ids},$trimmed"
       else

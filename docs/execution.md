@@ -39,6 +39,7 @@ The dry run is the answer to "what is this thing about to do to my repo?" Use it
 ```bash
 monozukuri loop feat-001 feat-002 feat-003
 monozukuri pick --top 3 | monozukuri loop
+monozukuri pick --top 3 --json | jq -r '.[].id' | monozukuri loop
 monozukuri loop --list-runs
 monozukuri loop --resume
 monozukuri loop --resume loop-2026-05-22-a3b9c2 --retry-failed
