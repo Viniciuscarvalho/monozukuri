@@ -48,6 +48,12 @@ For each feature in your backlog, Monozukuri creates an isolated git worktree, r
 
 It runs in three autonomy levels — from `supervised` (Ink TUI, you approve each phase) to `full_auto` (structured logs, runs the whole backlog unattended). It persists state under `.monozukuri/` so you can `--resume` after any interruption, and it writes learnings to a three-tier store (feature / project / global) that primes future runs.
 
+## Debugging Memory
+
+Use `monozukuri memory why <lrn-id>` to inspect why a Memory v2 learning exists, where it came from, and the last prompt injections that applied it. Omit the ID to list the 10 most-applied learnings as suggestions, or pass `--format json` for scripts.
+
+![monozukuri memory why output](docs/assets/memory-why-screenshot.svg)
+
 ## Documentation
 
 | Topic                                           | Where                                              |

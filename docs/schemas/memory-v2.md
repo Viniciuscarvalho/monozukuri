@@ -97,6 +97,8 @@ monozukuri memory lint path/to/learning-v2.yaml
 monozukuri memory migrate --dry-run
 monozukuri memory migrate
 monozukuri memory migrate --reverse
+monozukuri memory why lrn-2026-05-24-001
+monozukuri memory why lrn-2026-05-24-001 --format json
 ```
 
 The validator accepts a single entry object, an array of entries, or JSONL files
@@ -112,6 +114,11 @@ prints a no-store message when none exist.
 `.monozukuri/memory.v1.bak/`. `--dry-run` reports the migration plan without
 writing files. `--reverse` writes `.monozukuri/memory-v1.roundtrip.json` for
 roundtrip verification and compatibility checks.
+
+`memory why <lrn-id>` inspects one learning's provenance and recent application
+history. It prints the ID, insight, scope, source artifact, counters, and the
+last 10 prompt injections that referenced the learning. Without an ID, it lists
+the 10 most-applied learnings as suggestions for inspection.
 
 ## Injection Tracking
 

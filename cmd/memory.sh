@@ -471,6 +471,167 @@ try {
 JSEOF
 }
 
+_memory_why() {
+  node - \
+    "$ROOT_DIR" \
+    "$CONFIG_DIR" \
+    "${OPT_MEMORY_ID:-}" \
+    "${OPT_MEMORY_FORMAT:-text}" <<'JSEOF'
+const fs = require('fs');
+const path = require('path');
+
+const [,, rootDir, configDir, requestedId, formatRaw] = process.argv;
+const format = formatRaw || 'text';
+const storePath = path.join(configDir, 'memory-v2.json');
+const runsDir = path.join(configDir, 'runs');
+
+function rel(filePath) {
+  const relative = path.relative(rootDir, filePath);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+    ? relative
+    : filePath;
+}
+
+function readMemoryStore() {
+  if (!fs.existsSync(storePath)) return [];
+  const parsed = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+function walkFiles(dir, targetName, files = []) {
+  if (!fs.existsSync(dir)) return files;
+  for (const name of fs.readdirSync(dir).sort()) {
+    const fullPath = path.join(dir, name);
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      walkFiles(fullPath, targetName, files);
+    } else if (name === targetName) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+function applicationsFor(id) {
+  const applications = [];
+  for (const tracePath of walkFiles(runsDir, 'memory-injections.jsonl')) {
+    const featureFromPath = path.basename(path.dirname(tracePath));
+    const lines = fs.readFileSync(tracePath, 'utf8').split(/\n/).filter(Boolean);
+    for (const line of lines) {
+      let event;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (!Array.isArray(event.learnings) || !event.learnings.includes(id)) continue;
+      applications.push({
+        run_id: event.run_id || event.runId || featureFromPath,
+        feature_id: event.feature_id || event.featureId || featureFromPath,
+        phase: event.phase || '',
+        timestamp: event.timestamp || '',
+        tokens: Number.isFinite(event.tokens) ? event.tokens : null
+      });
+    }
+  }
+  return applications
+    .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
+    .slice(0, 10);
+}
+
+function sourceLabel(entry) {
+  const artifact = entry.source && entry.source.artifact ? entry.source.artifact : '';
+  if (!artifact) return 'unknown';
+  if (!process.stdout.isTTY) return artifact;
+  const target = path.join(rootDir, artifact);
+  return `\u001b]8;;file://${target}\u0007${artifact}\u001b]8;;\u0007`;
+}
+
+function suggestions(entries) {
+  return [...entries]
+    .sort((a, b) => {
+      const countDiff = (Number(b.applied_count) || 0) - (Number(a.applied_count) || 0);
+      return countDiff || String(a.id).localeCompare(String(b.id));
+    })
+    .slice(0, 10);
+}
+
+function emitJson(payload) {
+  process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+}
+
+function printSuggestions(entries) {
+  if (entries.length === 0) {
+    console.log(`No Memory v2 store found at ${rel(storePath)}.`);
+    console.log('Run monozukuri memory migrate or add .monozukuri/memory-v2.json.');
+    return;
+  }
+  console.log('Most applied learnings:');
+  for (const entry of suggestions(entries)) {
+    console.log(`${entry.id} ${entry.applied_count || 0} ${entry.scope || 'unknown'} ${entry.insight || ''}`);
+  }
+}
+
+function printEntry(entry, applications) {
+  console.log(`ID: ${entry.id}`);
+  console.log(`Insight: ${entry.insight || ''}`);
+  console.log(`Scope: ${entry.scope || ''}`);
+  console.log(`Source: ${sourceLabel(entry)}`);
+  console.log(`Applied count: ${entry.applied_count || 0}`);
+  console.log(`Last applied: ${entry.last_applied || 'never'}`);
+  console.log('Applications:');
+  if (applications.length === 0) {
+    console.log('  none found in memory-injections.jsonl');
+    return;
+  }
+  for (const app of applications) {
+    const details = [
+      `run_id=${app.run_id}`,
+      `feature_id=${app.feature_id}`,
+      app.phase ? `phase=${app.phase}` : '',
+      app.timestamp ? `timestamp=${app.timestamp}` : ''
+    ].filter(Boolean).join(' ');
+    console.log(`  - ${details}`);
+  }
+}
+
+try {
+  const entries = readMemoryStore();
+  if (format !== 'text' && format !== 'json') {
+    console.error(`Unsupported memory why format: ${format}`);
+    process.exit(1);
+  }
+
+  if (!requestedId) {
+    const top = suggestions(entries);
+    if (format === 'json') {
+      emitJson({entries: top, applications: []});
+    } else {
+      printSuggestions(entries);
+    }
+    process.exit(0);
+  }
+
+  const entry = entries.find((candidate) => candidate.id === requestedId);
+  if (!entry) {
+    if (format === 'json') emitJson({error: 'learning_not_found', id: requestedId});
+    else console.error(`Learning not found: ${requestedId}`);
+    process.exit(1);
+  }
+
+  const applications = applicationsFor(requestedId);
+  if (format === 'json') {
+    emitJson({...entry, applications});
+  } else {
+    printEntry(entry, applications);
+  }
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+JSEOF
+}
+
 sub_memory() {
   case "${OPT_MEMORY_ACTION:-}" in
     lint)
@@ -479,16 +640,20 @@ sub_memory() {
     migrate)
       _memory_migrate
       ;;
+    why)
+      _memory_why
+      ;;
     ""|--help|-h)
       echo "Usage:"
       echo "  monozukuri memory lint [file...]"
       echo "  monozukuri memory migrate [--dry-run] [--reverse]"
+      echo "  monozukuri memory why [lrn-id] [--format json]"
       echo ""
-      echo "Validate or migrate Memory learning entries."
+      echo "Validate, migrate, or inspect Memory learning entries."
       ;;
     *)
       err "Unknown memory action: $OPT_MEMORY_ACTION"
-      err "Available: lint, migrate"
+      err "Available: lint, migrate, why"
       return 1
       ;;
   esac
