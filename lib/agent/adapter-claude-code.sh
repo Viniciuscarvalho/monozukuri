@@ -30,7 +30,7 @@ fi
 
 # stream_parse_emit_file is sourced from lib/cli/stream-parse.sh when available.
 if ! declare -f stream_parse_emit_file &>/dev/null; then
-  local _sp_sh
+  _sp_sh=""
   _sp_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/cli/stream-parse.sh"
   [[ -f "$_sp_sh" ]] && source "$_sp_sh" || true
 fi
@@ -501,6 +501,17 @@ agent_run_phase() {
       fi
     elif declare -f agent_scan_for_blocker &>/dev/null; then
       agent_scan_for_blocker "$log_file" "${MONOZUKURI_ERROR_FILE:-}" || exit_code=${EXIT_AGENT_BLOCKED:-21}
+    fi
+  fi
+
+  if [ "$exit_code" -eq 0 ]; then
+    if ! declare -f memory_v2_mark_phase_success &>/dev/null; then
+      local _mem_v2_sh
+      _mem_v2_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../memory/v2.sh"
+      [[ -f "$_mem_v2_sh" ]] && source "$_mem_v2_sh" 2>/dev/null || true
+    fi
+    if declare -f memory_v2_mark_phase_success &>/dev/null; then
+      memory_v2_mark_phase_success "$phase" 2>/dev/null || true
     fi
   fi
 

@@ -109,5 +109,8 @@ agent_run_phase() {
   local exit_code=0
   _thin_shell_invoke "$rendered_prompt" "$log_file" "$feat_id" "$wt_path" || exit_code=$?
   _thin_shell_auth_check "$log_file" && return 15
+  if [ "$exit_code" -eq 0 ] && declare -f memory_v2_mark_phase_success &>/dev/null; then
+    memory_v2_mark_phase_success "$phase" 2>/dev/null || true
+  fi
   return "$exit_code"
 }
