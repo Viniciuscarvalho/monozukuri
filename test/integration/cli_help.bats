@@ -53,6 +53,11 @@ setup() {
   echo "$output" | grep -qE '^\s+memory lint\b'
 }
 
+@test "--help lists the 'memory migrate' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory migrate\b'
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do

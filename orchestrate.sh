@@ -168,6 +168,7 @@ OPT_LOOP_STATUS_FOLLOW=false
 OPT_LOOP_REPORT_FORMAT="ascii"
 OPT_MEMORY_ACTION=""
 OPT_MEMORY_FILES=""
+OPT_MEMORY_MIGRATE_REVERSE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -413,6 +414,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --reverse)
+      if [ "$SUBCOMMAND" = "memory" ]; then
+        OPT_MEMORY_MIGRATE_REVERSE=true
+      else
+        err "Unknown argument: --reverse"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --score-explain)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         shift; OPT_BACKLOG_SCORE_EXPLAIN="$1"
@@ -440,8 +450,8 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
-    lint)
-      [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION=lint
+    lint|migrate)
+      [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
       ;;
     install|status|uninstall)
       if [ "$SUBCOMMAND" = "setup" ]; then
@@ -571,10 +581,13 @@ while [ $# -gt 0 ]; do
       elif [ "$SUBCOMMAND" = "memory" ]; then
         echo "Usage:"
         echo "  monozukuri memory lint [file...]"
+        echo "  monozukuri memory migrate [--dry-run] [--reverse]"
         echo ""
-        echo "Validate Memory v2 learning entries."
+        echo "Validate or migrate Memory learning entries."
         echo ""
         echo "Flags:"
+        echo "  --dry-run                 Preview migration without writing files"
+        echo "  --reverse                 Convert Memory v2 back to v1-compatible JSON"
         echo "  --help                    Show this help"
         exit 0
       fi
@@ -592,6 +605,7 @@ while [ $# -gt 0 ]; do
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  memory lint [file...]        Validate Memory v2 learning entries"
+      echo "  memory migrate               Migrate Memory v1 stores to v2"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -675,6 +689,7 @@ while [ $# -gt 0 ]; do
       echo "  --follow                     Stream loop status updates every 2 seconds"
       echo "  --report-format <ascii|md>   Final loop summary table format"
       echo "  --strict                     Treat backlog validate warnings as errors"
+      echo "  --reverse                    Reverse memory migrate v2 back to v1 JSON"
       echo "  --help                       Show this help"
       exit 0
       ;;
