@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LearningV2",
+  "description": "Memory v2 learning entry with provenance, application count, recency, promotion source, agent specificity, and tags.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/learning"
+    },
+    {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/learning"
+      }
+    }
+  ],
+  "definitions": {
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scope",
+        "insight",
+        "source",
+        "applied_count",
+        "last_applied",
+        "promoted_from",
+        "agent_specific",
+        "tags"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^lrn-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{3}$"
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["feature", "project", "global"]
+        },
+        "insight": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feature_id", "phase", "run_id", "artifact"],
+          "properties": {
+            "feature_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "phase": {
+              "type": "string",
+              "enum": ["prd", "techspec", "tasks", "code", "tests", "pr"]
+            },
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "artifact": {
+              "type": "string",
+              "minLength": 1,
+              "not": {
+                "pattern": "^/"
+              }
+            },
+            "line_range": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "applied_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_applied": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "promoted_from": {
+          "type": "string",
+          "enum": ["feature", "user_correction", "manual", "auto_detected"]
+        },
+        "agent_specific": {
+          "type": ["string", "null"],
+          "enum": ["claude-code", "codex", "gemini", null]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

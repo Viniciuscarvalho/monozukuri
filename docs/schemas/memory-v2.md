@@ -1,0 +1,104 @@
+# Memory v2 Schema
+
+Memory v2 records one auditable learning per entry. The schema is designed to
+answer why a learning exists, where it came from, how often it has been applied,
+and whether it is specific to one coding agent.
+
+Machine-readable validation lives in
+[`schemas/learning-v2.schema.json`](../../schemas/learning-v2.schema.json).
+
+## Entry Shape
+
+```yaml
+id: lrn-YYYY-MM-DD-NNN
+scope: feature|project|global
+insight: string # max 200 chars
+rationale: string # max 1000 chars, optional
+source:
+  feature_id: string
+  phase: prd|techspec|tasks|code|tests|pr
+  run_id: string
+  artifact: string # relative path
+  line_range: [int, int] # optional, 1-based inclusive
+applied_count: int
+last_applied: ISO8601
+promoted_from: feature|user_correction|manual|auto_detected
+agent_specific: claude-code|codex|gemini|null
+tags:
+  - string
+```
+
+## Field Semantics
+
+`id` uses `lrn-YYYY-MM-DD-NNN` so entries sort by creation date and remain stable
+across tiers.
+
+`scope` identifies the level where the learning is valid:
+
+- `feature`: only useful within one feature run.
+- `project`: reusable within the current project.
+- `global`: reusable across projects.
+
+`insight` is the short reusable lesson. It must be specific enough to apply
+without rereading the source artifact.
+
+`rationale` explains why the insight is true. Use it when a reviewer will need
+context beyond the short insight.
+
+`source` points to the provenance record. `artifact` must be relative to the
+project or run root. `line_range` is optional because generated artifacts may be
+rewritten, but include it when the cited lines are stable.
+
+`applied_count` starts at `0` and increments each time the learning affects a
+future run.
+
+`last_applied` records the most recent ISO8601 timestamp when the learning was
+created or applied.
+
+`promoted_from` distinguishes automatically observed feature learnings from user
+corrections and manual maintainer decisions.
+
+`agent_specific` is `null` for portable learnings, or an adapter id when the
+learning should only be injected for that agent.
+
+`tags` supports filtering and future retrieval strategies.
+
+## Example
+
+```json
+{
+  "id": "lrn-2026-05-24-001",
+  "scope": "project",
+  "insight": "Use direct Bats for loop verification before full release gates.",
+  "rationale": "Loop regressions are easiest to isolate with targeted Bats before running the full release suite.",
+  "source": {
+    "feature_id": "LOOP-09",
+    "phase": "tests",
+    "run_id": "loop-2026-05-24-a1b2c3",
+    "artifact": "test/integration/loop_command.bats",
+    "line_range": [290, 340]
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T16:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["loop", "testing"]
+}
+```
+
+## Validation
+
+Validate one or more Memory v2 files with:
+
+```bash
+monozukuri memory lint path/to/learning-v2.json
+monozukuri memory lint path/to/learning-v2.yaml
+```
+
+The validator accepts a single entry object, an array of entries, or JSONL files
+with one entry per line. YAML support is intentionally limited to the documented
+entry shape and exists for human-authored fixtures and audits, not arbitrary YAML
+processing.
+
+Without file arguments, `memory lint` searches common project store locations and
+prints a no-store message when none exist.

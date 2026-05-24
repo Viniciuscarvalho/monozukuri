@@ -1,0 +1,10 @@
+{
+  "id": "lrn-2026-05-24-008",
+  "scope": "project",
+  "insight": "Memory v2 learnings require provenance.",
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}
