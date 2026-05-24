@@ -86,7 +86,10 @@
           "minimum": 0
         },
         "last_applied": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "promoted_from": {

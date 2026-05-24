@@ -21,7 +21,7 @@ source:
   artifact: string # relative path
   line_range: [int, int] # optional, 1-based inclusive
 applied_count: int
-last_applied: ISO8601
+last_applied: ISO8601|null
 promoted_from: feature|user_correction|manual|auto_detected
 agent_specific: claude-code|codex|gemini|null
 tags:
@@ -53,7 +53,8 @@ rewritten, but include it when the cited lines are stable.
 future run.
 
 `last_applied` records the most recent ISO8601 timestamp when the learning was
-created or applied.
+created or applied. Migrated v1 entries may use `null` because the v1 store did
+not track an equivalent application timestamp.
 
 `promoted_from` distinguishes automatically observed feature learnings from user
 corrections and manual maintainer decisions.
@@ -93,6 +94,9 @@ Validate one or more Memory v2 files with:
 ```bash
 monozukuri memory lint path/to/learning-v2.json
 monozukuri memory lint path/to/learning-v2.yaml
+monozukuri memory migrate --dry-run
+monozukuri memory migrate
+monozukuri memory migrate --reverse
 ```
 
 The validator accepts a single entry object, an array of entries, or JSONL files
@@ -102,3 +106,9 @@ processing.
 
 Without file arguments, `memory lint` searches common project store locations and
 prints a no-store message when none exist.
+
+`memory migrate` reads the existing v1 learning stores, writes
+`.monozukuri/memory-v2.json`, and backs up the original v1 stores under
+`.monozukuri/memory.v1.bak/`. `--dry-run` reports the migration plan without
+writing files. `--reverse` writes `.monozukuri/memory-v1.roundtrip.json` for
+roundtrip verification and compatibility checks.

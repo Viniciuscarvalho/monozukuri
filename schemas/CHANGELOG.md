@@ -1,5 +1,13 @@
 # schemas/ CHANGELOG
 
+## v1.1.1 — 2026-05-24 (MEM-02)
+
+### Changed
+
+- `learning-v2.schema.json` — `last_applied` now accepts `null` for migrated
+  Memory v1 entries, because v1 did not track an equivalent application
+  timestamp.
+
 ## v1.1.0 — 2026-05-24 (MEM-01)
 
 ### Added

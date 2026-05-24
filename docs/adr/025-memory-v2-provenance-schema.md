@@ -39,7 +39,7 @@ source:
   artifact: string
   line_range: [int, int]
 applied_count: int
-last_applied: ISO8601
+last_applied: ISO8601|null
 promoted_from: feature|user_correction|manual|auto_detected
 agent_specific: claude-code|codex|gemini|null
 tags:
@@ -90,6 +90,8 @@ invalid input exits `1` and reports the file plus field path.
 
 - v1 `learning` commands and `learned.json` stores continue to work unchanged.
 - Memory v2 stores may be introduced alongside v1 before any automatic migration.
+- Migrated v1 entries may set `last_applied` to `null` because v1 records
+  `last_seen`, but not whether a learning was actually applied to a future run.
 
 ---
 
