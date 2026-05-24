@@ -162,6 +162,9 @@ OPT_LOOP_I_KNOW_WHAT_IM_DOING=false
 OPT_LOOP_RESUME_ID=""
 OPT_LOOP_RETRY_FAILED=false
 OPT_LOOP_LIST_RUNS=false
+OPT_LOOP_STATUS=false
+OPT_LOOP_STATUS_ID=""
+OPT_LOOP_STATUS_FOLLOW=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -178,6 +181,8 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_PHASE="$1"
       elif [ "$SUBCOMMAND" = "backlog" ] && [ -z "$OPT_BACKLOG_ACTION" ]; then
         OPT_BACKLOG_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "loop" ] && [ "$1" = "status" ]; then
+        OPT_LOOP_STATUS=true
       fi
       ;;
     --resume-paused)
@@ -378,6 +383,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --follow)
+      if [ "$SUBCOMMAND" = "loop" ] && [ "$OPT_LOOP_STATUS" = "true" ]; then
+        OPT_LOOP_STATUS_FOLLOW=true
+      else
+        err "Unknown argument: --follow"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
@@ -518,6 +532,7 @@ while [ $# -gt 0 ]; do
         echo "  monozukuri loop <id...> [--cleanup]"
         echo "  monozukuri loop --resume [run-id]"
         echo "  monozukuri loop --list-runs"
+        echo "  monozukuri loop status [run-id] [--follow]"
         echo "  printf 'feat-001\\nfeat-002\\n' | monozukuri loop"
         echo ""
         echo "Run selected backlog features sequentially through the full pipeline."
@@ -532,6 +547,7 @@ while [ $# -gt 0 ]; do
         echo "  --resume [run-id]         Resume a selected loop run"
         echo "  --retry-failed            Re-run failed tasks during resume"
         echo "  --list-runs               List resumable selected loop runs"
+        echo "  --follow                  Stream loop status updates every 2 seconds"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
@@ -546,6 +562,7 @@ while [ $# -gt 0 ]; do
       echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
       echo "  loop <ids...>                Run selected features sequentially"
+      echo "  loop status [run-id]         Show selected-loop progress"
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
@@ -629,6 +646,7 @@ while [ $# -gt 0 ]; do
       echo "  --circuit-breaker <n>        Abort after n consecutive loop failures"
       echo "  --retry-failed               Re-run failed tasks during loop resume"
       echo "  --list-runs                  List resumable selected loop runs"
+      echo "  --follow                     Stream loop status updates every 2 seconds"
       echo "  --strict                     Treat backlog validate warnings as errors"
       echo "  --help                       Show this help"
       exit 0
@@ -658,6 +676,8 @@ while [ $# -gt 0 ]; do
         else
           OPT_BACKLOG_IDS="$1"
         fi
+      elif [ "$SUBCOMMAND" = "loop" ] && [ "$OPT_LOOP_STATUS" = "true" ] && [ -z "$OPT_LOOP_STATUS_ID" ]; then
+        OPT_LOOP_STATUS_ID="$1"
       elif [ "$SUBCOMMAND" = "loop" ]; then
         if [ -n "$OPT_LOOP_IDS" ]; then
           OPT_LOOP_IDS="${OPT_LOOP_IDS},$1"
@@ -701,7 +721,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
        OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \
        OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
-       OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS
+       OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
+       OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

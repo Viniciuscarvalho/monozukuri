@@ -264,6 +264,8 @@ JSEOF
   [[ "$output" == *"--resume [run-id]"* ]]
   [[ "$output" == *"--retry-failed"* ]]
   [[ "$output" == *"--list-runs"* ]]
+  [[ "$output" == *"monozukuri loop status [run-id]"* ]]
+  [[ "$output" == *"--follow"* ]]
 }
 
 @test "loop runs three selected features with mocked pipeline and preserves loop worktrees" {
@@ -281,6 +283,35 @@ JSEOF
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-001 ]
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-002 ]
   [ -d "$PROJ_DIR/.monozukuri/worktrees"/loop-*/feat-003 ]
+}
+
+@test "loop full_auto stdout includes structured progress lines" {
+  cd "$PROJ_DIR"
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ \[[0-9]{2}:[0-9]{2}:[0-9]{2}\]\ \[feat-001\]\ \[-\]\ task.started\ running ]]
+  [[ "$output" =~ \[[0-9]{2}:[0-9]{2}:[0-9]{2}\]\ \[feat-001\]\ \[phase[0-9]\]\ phase.cost_recorded\ recorded ]]
+  [[ "$output" =~ \[[0-9]{2}:[0-9]{2}:[0-9]{2}\]\ \[feat-001\]\ \[-\]\ task.completed\ completed ]]
+}
+
+@test "loop writes progress jsonl in supervised mode" {
+  cd "$PROJ_DIR"
+  node - "$PROJ_DIR/.monozukuri/config.yaml" <<'JSEOF'
+const fs = require('fs');
+const file = process.argv[2];
+fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('autonomy: full_auto', 'autonomy: supervised'));
+JSEOF
+
+  run env PATH="$MOCK_CLAUDE_DIR:$PATH" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  loop_state_dir=$(find "$PROJ_DIR/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | head -1)
+  [ -n "$loop_state_dir" ]
+  grep -q '"event":"task.started"' "$loop_state_dir/progress.jsonl"
+  grep -q '"event":"task.completed"' "$loop_state_dir/progress.jsonl"
 }
 
 @test "loop persists checkpoint schema files for a completed run" {
@@ -630,6 +661,51 @@ JSEOF
   [[ "$output" == *"RUN_ID STATUS PENDING"* ]]
   [[ "$output" == *"loop-2026-05-22-resumable running 2"* ]]
   [[ "$output" != *"loop-2026-05-22-complete"* ]]
+}
+
+@test "loop status renders progress jsonl as structured lines" {
+  cd "$PROJ_DIR"
+  seed_loop_run "loop-2026-05-22-status" "running" "feat-001:running"
+  progress_file="$PROJ_DIR/.monozukuri/state/loop-2026-05-22-status/progress.jsonl"
+  cat >"$progress_file" <<'EOF'
+{"schema_version":1,"run_id":"loop-2026-05-22-status","event":"task.started","ts":"2026-05-22T19:00:00.000Z","task_id":"feat-001","status":"running"}
+{"schema_version":1,"run_id":"loop-2026-05-22-status","event":"phase.cost_recorded","ts":"2026-05-22T19:00:02.000Z","task_id":"feat-001","phase":"phase1","status":"recorded","detail":"tokens recorded"}
+EOF
+
+  run bash "$ORCHESTRATE" loop status loop-2026-05-22-status
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Run: loop-2026-05-22-status"* ]]
+  [[ "$output" == *"[19:00:00] [feat-001] [-] task.started running"* ]]
+  [[ "$output" == *"[19:00:02] [feat-001] [phase1] phase.cost_recorded recorded tokens recorded"* ]]
+}
+
+@test "loop status --follow prints appended progress updates" {
+  cd "$PROJ_DIR"
+  seed_loop_run "loop-2026-05-22-follow" "running" "feat-001:running"
+  progress_file="$PROJ_DIR/.monozukuri/state/loop-2026-05-22-follow/progress.jsonl"
+  printf '%s\n' \
+    '{"schema_version":1,"run_id":"loop-2026-05-22-follow","event":"task.started","ts":"2026-05-22T19:00:00.000Z","task_id":"feat-001","status":"running"}' \
+    >"$progress_file"
+
+  bash "$ORCHESTRATE" loop status loop-2026-05-22-follow --follow \
+    >"$TMPDIR_TEST/follow.out" 2>"$TMPDIR_TEST/follow.err" &
+  follow_pid=$!
+
+  sleep 0.2
+  printf '%s\n' \
+    '{"schema_version":1,"run_id":"loop-2026-05-22-follow","event":"phase.cost_recorded","ts":"2026-05-22T19:00:04.000Z","task_id":"feat-001","phase":"phase2","status":"recorded"}' \
+    >>"$progress_file"
+
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    grep -q "\\[19:00:04\\] \\[feat-001\\] \\[phase2\\] phase.cost_recorded recorded" "$TMPDIR_TEST/follow.out" && break
+    sleep 0.5
+  done
+  kill "$follow_pid" 2>/dev/null || true
+  wait "$follow_pid" 2>/dev/null || true
+
+  grep -q "Run: loop-2026-05-22-follow" "$TMPDIR_TEST/follow.out"
+  grep -q "\\[19:00:04\\] \\[feat-001\\] \\[phase2\\] phase.cost_recorded recorded" "$TMPDIR_TEST/follow.out"
 }
 
 @test "loop --resume skips completed tasks and restarts running tasks in a new worktree" {

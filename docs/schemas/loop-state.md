@@ -56,6 +56,10 @@ Known events include `loop.started`, `loop.resumed`, `task.started`,
 `task.completed`, `task.failed`, `task.skipped`, `task.inconclusive`,
 `task.retry_failed`, `phase.cost_recorded`, and `loop.completed`.
 
+`monozukuri loop status [run_id]` renders these lines in the operator-facing
+format `[HH:MM:SS] [task-id] [phase] message`. `--follow` keeps reading the
+append-only log every 2 seconds, so a second terminal can observe a running loop.
+
 ## `cost.json`
 
 Loop-level cost accumulator, updated as phase costs are recorded.

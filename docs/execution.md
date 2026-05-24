@@ -40,6 +40,8 @@ The dry run is the answer to "what is this thing about to do to my repo?" Use it
 monozukuri loop feat-001 feat-002 feat-003
 monozukuri pick --top 3 | monozukuri loop
 monozukuri pick --top 3 --json | jq -r '.[].id' | monozukuri loop
+monozukuri loop status
+monozukuri loop status loop-2026-05-22-a3b9c2 --follow
 monozukuri loop --list-runs
 monozukuri loop --resume
 monozukuri loop --resume loop-2026-05-22-a3b9c2 --retry-failed
@@ -51,7 +53,7 @@ Each feature is isolated. Missing IDs are reported and the loop continues. Faile
 
 The loop also has a consecutive-failure circuit breaker independent of `--on-failure`. By default, `--circuit-breaker 3` aborts after three failed features in a row, prints `Circuit breaker tripped: 3 consecutive failures` to stdout and stderr, writes the tripped state to `.monozukuri/state/loop-<id>/cost.json`, and exits `5`. Set `--circuit-breaker 0 --i-know-what-im-doing` only when you explicitly want to disable this safety guard.
 
-Every selected loop run writes resumable state under `.monozukuri/state/loop-<id>/`: `manifest.json`, `progress.jsonl`, `cost.json`, and `checkpoint.json`. Use `monozukuri loop --list-runs` to inspect resumable selected-loop runs. `monozukuri loop --resume [run-id]` skips completed tasks, marks interrupted `running` tasks as `inconclusive`, preserves the old worktree, and restarts the task in a new resume worktree. Failed tasks stay skipped unless `--retry-failed` is passed. See [loop-state schema](schemas/loop-state.md) for the file contracts and atomic write rules.
+Every selected loop run writes resumable state under `.monozukuri/state/loop-<id>/`: `manifest.json`, `progress.jsonl`, `cost.json`, and `checkpoint.json`. Use `monozukuri loop status [run-id]` to render progress events as `[HH:MM:SS] [task-id] [phase] message`; omit the run ID to read the latest loop run. `monozukuri loop status --follow` streams new events every 2 seconds, which is useful from a second terminal while a background loop is running. Use `monozukuri loop --list-runs` to inspect resumable selected-loop runs. `monozukuri loop --resume [run-id]` skips completed tasks, marks interrupted `running` tasks as `inconclusive`, preserves the old worktree, and restarts the task in a new resume worktree. Failed tasks stay skipped unless `--retry-failed` is passed. See [loop-state schema](schemas/loop-state.md) for the file contracts and atomic write rules.
 
 Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/state/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. Resume applies caps to the accumulated totals in `cost.json`, not to a reset budget. The token ceiling rejects values above `500000`.
 

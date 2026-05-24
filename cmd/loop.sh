@@ -287,6 +287,42 @@ if (detail) entry.detail = detail;
 fs.appendFileSync(progressFile, JSON.stringify(entry) + '\n');
 JSEOF
   fi
+  _loop_progress_stdout "$event" "$task_id" "$phase" "$status" "$detail"
+}
+
+_loop_progress_stdout() {
+  local event="$1" task_id="${2:-}" phase="${3:-}" status="${4:-}" detail="${5:-}"
+  case "${AUTONOMY:-}" in
+    full_auto|supervised) ;;
+    *) return 0 ;;
+  esac
+  local time task phase_label message line
+  time=$(date +%H:%M:%S)
+  task="${task_id:--}"
+  phase_label="${phase:--}"
+  message="$event"
+  [ -n "$status" ] && message="$message $status"
+  [ -n "$detail" ] && message="$message $detail"
+  if [ "${AUTONOMY:-}" = "supervised" ]; then
+    [ -t 1 ] || return 0
+    command -v tput >/dev/null 2>&1 || return 0
+    local current="${MONOZUKURI_LOOP_CURRENT:-0}" total="${MONOZUKURI_LOOP_TOTAL:-1}" bar
+    [ "$current" -gt 0 ] 2>/dev/null || current=0
+    [ "$total" -gt 0 ] 2>/dev/null || total=1
+    bar=$(draw_progress_bar "$current" "$total" 20)
+    printf '\r[%s/%s] %s [%s] %s' "$current" "$total" "$bar" "$task" "$message"
+    tput el 2>/dev/null || true
+    case "$event" in
+      loop.completed) printf '\n' ;;
+    esac
+    return 0
+  fi
+  line="[$time] [$task] [$phase_label] $message"
+  if { true >&3; } 2>/dev/null; then
+    printf '%s\n' "$line" >&3
+  else
+    printf '%s\n' "$line"
+  fi
 }
 
 _loop_state_init() {
@@ -471,6 +507,94 @@ JSEOF
   fi
   printf 'RUN_ID STATUS PENDING\n'
   printf '%s\n' "$output" | awk -F'|' '{printf "%s %s %s\n", $2, $3, $4}'
+}
+
+_loop_latest_run_id() {
+  local state_root="$1"
+  [ -d "$state_root" ] || return 1
+  find "$state_root" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | while IFS= read -r dir; do
+    [ -f "$dir/progress.jsonl" ] || continue
+    node - "$dir" <<'JSEOF' 2>/dev/null || true
+const [,, dir] = process.argv;
+const fs = require('fs');
+const path = require('path');
+let ts = '';
+for (const file of ['manifest.json', 'checkpoint.json']) {
+  try {
+    const data = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+    ts = data.updated_at || data.started_at || ts;
+    if (ts) break;
+  } catch (_) {}
+}
+if (!ts) {
+  try {
+    ts = fs.statSync(path.join(dir, 'progress.jsonl')).mtime.toISOString();
+  } catch (_) {}
+}
+console.log(`${ts}|${path.basename(dir)}`);
+JSEOF
+  done | sort -r | head -1 | awk -F'|' '{print $2}'
+}
+
+_loop_progress_format_file() {
+  local progress_file="$1" skip_lines="${2:-0}"
+  node - "$progress_file" "$skip_lines" <<'JSEOF'
+const [,, progressFile, skipLinesRaw] = process.argv;
+const fs = require('fs');
+const skipLines = Number(skipLinesRaw || 0);
+let content = '';
+try {
+  content = fs.readFileSync(progressFile, 'utf8');
+} catch (error) {
+  process.exit(2);
+}
+const lines = content.split(/\n/).filter(Boolean);
+for (const line of lines.slice(skipLines)) {
+  let entry;
+  try {
+    entry = JSON.parse(line);
+  } catch (_) {
+    continue;
+  }
+  const ts = String(entry.ts || '');
+  const time = ts.length >= 19 ? ts.slice(11, 19) : '--:--:--';
+  const task = entry.task_id || '-';
+  const phase = entry.phase || '-';
+  const message = [entry.event, entry.status, entry.detail].filter(Boolean).join(' ');
+  console.log(`[${time}] [${task}] [${phase}] ${message}`);
+}
+JSEOF
+}
+
+_loop_status() {
+  local state_root="$1" run_id="$2" follow="$3"
+  if [ -z "$run_id" ]; then
+    run_id=$(_loop_latest_run_id "$state_root" || true)
+  fi
+  if [ -z "$run_id" ]; then
+    err "No loop runs found."
+    return 1
+  fi
+
+  local state_dir="$state_root/$run_id"
+  local progress_file="$state_dir/progress.jsonl"
+  if [ ! -f "$progress_file" ]; then
+    err "Loop progress not found: $progress_file"
+    return 1
+  fi
+
+  printf 'Run: %s\n' "$run_id"
+  if [ "$follow" != "true" ]; then
+    _loop_progress_format_file "$progress_file" 0
+    return 0
+  fi
+
+  local printed=0
+  while true; do
+    _loop_progress_format_file "$progress_file" "$printed"
+    printed=$(grep -c '' "$progress_file" 2>/dev/null || echo 0)
+    sleep 2
+  done
 }
 
 _loop_manifest_ids_csv() {
@@ -713,6 +837,13 @@ sub_loop() {
     return 0
   fi
 
+  if [ "${OPT_LOOP_STATUS:-false}" = "true" ]; then
+    _loop_status "$STATE_DIR" "${OPT_LOOP_STATUS_ID:-}" "${OPT_LOOP_STATUS_FOLLOW:-false}"
+    return $?
+  fi
+
+  exec 3>&1
+
   local resume_mode=false
   [ "${OPT_RESUME:-false}" = "true" ] && resume_mode=true
 
@@ -825,12 +956,17 @@ EOF
 
   local total="${#ids[@]}"
   local index=0 any_failed=0 cap_reached=0 cap_reason="" failure_stopped=0 failure_stop_reason=""
+  MONOZUKURI_LOOP_TOTAL="$total"
+  MONOZUKURI_LOOP_CURRENT=0
+  export MONOZUKURI_LOOP_TOTAL MONOZUKURI_LOOP_CURRENT
   local circuit_tripped=0 circuit_message="" consecutive_failures=0 consecutive_failed_ids=""
   local loop_started_at
   loop_started_at=$(date +%s)
   local feat_id item_json title body priority labels deps next_feat_id
   for feat_id in "${ids[@]}"; do
     index=$((index + 1))
+    MONOZUKURI_LOOP_CURRENT="$index"
+    export MONOZUKURI_LOOP_CURRENT
     feat_id=$(printf '%s' "$feat_id" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     [ -z "$feat_id" ] && continue
 
