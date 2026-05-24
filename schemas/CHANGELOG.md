@@ -1,5 +1,12 @@
 # schemas/ CHANGELOG
 
+## v1.1.0 — 2026-05-24 (MEM-01)
+
+### Added
+
+- `learning-v2.schema.json` — Memory v2 learning entry with provenance, scope,
+  application count, promotion source, agent specificity, and tags.
+
 ## v1.0.0 — 2026-04-26 (Gap 1)
 
 Initial schema set for phase artifacts (ADR-012).

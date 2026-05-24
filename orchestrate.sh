@@ -166,10 +166,12 @@ OPT_LOOP_STATUS=false
 OPT_LOOP_STATUS_ID=""
 OPT_LOOP_STATUS_FOLLOW=false
 OPT_LOOP_REPORT_FORMAT="ascii"
+OPT_MEMORY_ACTION=""
+OPT_MEMORY_FILES=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|loop|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick)
+    init|run|loop|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick|memory)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -438,6 +440,9 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
+    lint)
+      [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION=lint
+      ;;
     install|status|uninstall)
       if [ "$SUBCOMMAND" = "setup" ]; then
         case "$1" in
@@ -563,6 +568,15 @@ while [ $# -gt 0 ]; do
         echo "  --no-ui                   Emit plain-text output"
         echo "  --help                    Show this help"
         exit 0
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        echo "Usage:"
+        echo "  monozukuri memory lint [file...]"
+        echo ""
+        echo "Validate Memory v2 learning entries."
+        echo ""
+        echo "Flags:"
+        echo "  --help                    Show this help"
+        exit 0
       fi
       echo "Usage: orchestrate.sh <command> [flags]"
       echo ""
@@ -577,6 +591,7 @@ while [ $# -gt 0 ]; do
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
+      echo "  memory lint [file...]        Validate Memory v2 learning entries"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -696,6 +711,14 @@ while [ $# -gt 0 ]; do
         else
           OPT_LOOP_IDS="$1"
         fi
+      elif [ "$SUBCOMMAND" = "memory" ] && [ -z "$OPT_MEMORY_ACTION" ]; then
+        OPT_MEMORY_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        if [ -n "$OPT_MEMORY_FILES" ]; then
+          OPT_MEMORY_FILES="${OPT_MEMORY_FILES},$1"
+        else
+          OPT_MEMORY_FILES="$1"
+        fi
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
         if [ -n "${OPT_RETRY_FEATS:-}" ]; then
@@ -735,7 +758,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
        OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
        OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW \
-       OPT_LOOP_REPORT_FORMAT
+       OPT_LOOP_REPORT_FORMAT OPT_MEMORY_ACTION OPT_MEMORY_FILES
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -787,6 +810,7 @@ case "$SUBCOMMAND" in
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
   backlog)         source "$CMD_DIR/backlog.sh"; sub_backlog ;;
   pick)            source "$CMD_DIR/pick.sh"; sub_pick ;;
+  memory)          source "$CMD_DIR/memory.sh"; sub_memory ;;
   loop)            source "$CMD_DIR/loop.sh"; sub_loop ;;
   run)
     source "$CMD_DIR/run.sh"

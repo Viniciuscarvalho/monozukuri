@@ -1,0 +1,16 @@
+{
+  "id": "lrn-2026-05-24-009",
+  "scope": "project",
+  "insight": "Source phases must match the six Monozukuri artifact phases.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "deploy",
+    "run_id": "run-2026-05-24-c9d0e1",
+    "artifact": "cmd/memory.sh"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}

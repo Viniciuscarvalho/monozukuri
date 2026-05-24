@@ -1,0 +1,36 @@
+[
+  {
+    "id": "lrn-2026-05-24-002",
+    "scope": "feature",
+    "insight": "Keep resume worktrees when a running task becomes inconclusive.",
+    "rationale": "Interrupted worktrees can contain useful uncommitted investigation output and should remain inspectable.",
+    "source": {
+      "feature_id": "LOOP-06",
+      "phase": "code",
+      "run_id": "loop-2026-05-24-b2c3d4",
+      "artifact": "cmd/loop.sh",
+      "line_range": [900, 940]
+    },
+    "applied_count": 2,
+    "last_applied": "2026-05-24T17:00:00Z",
+    "promoted_from": "auto_detected",
+    "agent_specific": "codex",
+    "tags": ["loop", "resume"]
+  },
+  {
+    "id": "lrn-2026-05-24-003",
+    "scope": "global",
+    "insight": "Do not inject Claude-only skills into portable agent prompts.",
+    "source": {
+      "feature_id": "AGENT-01",
+      "phase": "techspec",
+      "run_id": "run-2026-05-24-c3d4e5",
+      "artifact": "docs/adapter-contract.md"
+    },
+    "applied_count": 5,
+    "last_applied": "2026-05-24T18:00:00Z",
+    "promoted_from": "manual",
+    "agent_specific": "claude-code",
+    "tags": ["agents", "skills"]
+  }
+]

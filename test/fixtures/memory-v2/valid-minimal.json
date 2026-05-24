@@ -1,0 +1,16 @@
+{
+  "id": "lrn-2026-05-24-001",
+  "scope": "project",
+  "insight": "Use direct Bats for loop verification before full release gates.",
+  "source": {
+    "feature_id": "LOOP-09",
+    "phase": "tests",
+    "run_id": "loop-2026-05-24-a1b2c3",
+    "artifact": "test/integration/loop_command.bats"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T16:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["loop", "testing"]
+}
