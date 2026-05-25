@@ -123,11 +123,21 @@ the 10 most-applied learnings as suggestions for inspection.
 ## Injection Tracking
 
 When a Memory v2 learning is injected into a phase prompt, the markdown context
-includes an HTML marker immediately before the insight:
+uses a deterministic compact summary. The compactor groups relevant learnings by
+`scope`, orders each group by `applied_count` descending, keeps at most five
+entries per group, and renders each included learning as:
 
 ```markdown
-<!-- learning: lrn-2026-05-24-001 --> Use direct Bats for CLI behavior changes.
+<!-- learning: lrn-2026-05-24-001 --> [lrn-2026-05-24-001, applied 7x] Use direct Bats for CLI behavior changes.
 ```
+
+The summary target is 500 `cl100k_base` tokens using `js-tiktoken`. If the
+summary would exceed the cap, extra IDs are preserved in an
+`available_on_request` context line so a future on-demand router can escalate to
+full details without losing provenance. Summaries are cached by
+`(phase, feature_id, hash(relevant_learnings))` under
+`.monozukuri/cache/memory/` for seven days; content hash changes invalidate the
+cache independently of file mtimes.
 
 The marker makes rendered prompts auditable without changing how agents read the
 natural-language instruction. Each rendered phase also appends a trace record to
