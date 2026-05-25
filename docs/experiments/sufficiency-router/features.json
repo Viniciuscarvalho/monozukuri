@@ -1,0 +1,42 @@
+[
+  {
+    "id": "feat-node-001",
+    "title": "Add health check endpoint",
+    "description": "Add a `/health` endpoint that returns `{ status: \"ok\", version: \"1.0.0\" }`.",
+    "status": "backlog",
+    "stack": "node",
+    "source": ".qa/fixtures/scale/node/features.md"
+  },
+  {
+    "id": "feat-node-004",
+    "title": "Add environment config validation",
+    "description": "Validate required env vars at startup. Fail fast with clear error if missing.",
+    "status": "backlog",
+    "stack": "node",
+    "source": ".qa/fixtures/scale/node/features.md"
+  },
+  {
+    "id": "feat-py-004",
+    "title": "Add input validation with pydantic",
+    "description": "Validate all request bodies with pydantic v2 models. Return 422 on validation failure.",
+    "status": "backlog",
+    "stack": "python",
+    "source": ".qa/fixtures/scale/python/features.md"
+  },
+  {
+    "id": "feat-go-004",
+    "title": "Add graceful shutdown",
+    "description": "Handle os.Signal: drain in-flight requests within 30s, then exit 0.",
+    "status": "backlog",
+    "stack": "go",
+    "source": ".qa/fixtures/scale/go/features.md"
+  },
+  {
+    "id": "feat-go-005",
+    "title": "Add Prometheus metrics",
+    "description": "Expose `/metrics` with request count and latency histograms via `prometheus/client_golang`.",
+    "status": "backlog",
+    "stack": "go",
+    "source": ".qa/fixtures/scale/go/features.md"
+  }
+]

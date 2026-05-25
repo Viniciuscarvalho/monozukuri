@@ -1,0 +1,16 @@
+{
+  "agent": "claude-code",
+  "strategy": "inject-full",
+  "feature_id": "feat-node-001",
+  "phase": "prd",
+  "input_tokens": 523,
+  "output_tokens_estimated": 133,
+  "total_tokens_estimated": 656,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

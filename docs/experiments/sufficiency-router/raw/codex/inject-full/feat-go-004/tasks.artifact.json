@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task-001",
+    "title": "Implement Add graceful shutdown",
+    "description": "Build the behavior requested by feat-go-004.",
+    "files_touched": [
+      "src/go/app"
+    ],
+    "acceptance_criteria": [
+      "The generated implementation passes the project tests."
+    ]
+  }
+]
