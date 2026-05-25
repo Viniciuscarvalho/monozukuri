@@ -58,6 +58,17 @@ setup() {
   echo "$output" | grep -qE '^\s+memory migrate\b'
 }
 
+@test "--help lists the 'memory why' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory why\b'
+}
+
+@test "memory --help documents memory why json output" {
+  run "$ORCHESTRATE" memory --help
+  [[ "$output" == *"monozukuri memory why [lrn-id] [--format json]"* ]]
+  [[ "$output" == *"--format json"* ]]
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do

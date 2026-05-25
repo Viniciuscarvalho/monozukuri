@@ -167,7 +167,9 @@ OPT_LOOP_STATUS_ID=""
 OPT_LOOP_STATUS_FOLLOW=false
 OPT_LOOP_REPORT_FORMAT="ascii"
 OPT_MEMORY_ACTION=""
+OPT_MEMORY_ID=""
 OPT_MEMORY_FILES=""
+OPT_MEMORY_FORMAT="text"
 OPT_MEMORY_MIGRATE_REVERSE=false
 
 while [ $# -gt 0 ]; do
@@ -240,6 +242,8 @@ while [ $# -gt 0 ]; do
     --format)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         shift; OPT_BACKLOG_FORMAT="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        shift; OPT_MEMORY_FORMAT="$1"
       else
         err "Unknown argument: --format"
         err "Run: monozukuri --help"
@@ -450,7 +454,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
-    lint|migrate)
+    lint|migrate|why)
       [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
       ;;
     install|status|uninstall)
@@ -582,12 +586,14 @@ while [ $# -gt 0 ]; do
         echo "Usage:"
         echo "  monozukuri memory lint [file...]"
         echo "  monozukuri memory migrate [--dry-run] [--reverse]"
+        echo "  monozukuri memory why [lrn-id] [--format json]"
         echo ""
-        echo "Validate or migrate Memory learning entries."
+        echo "Validate, migrate, or inspect Memory learning entries."
         echo ""
         echo "Flags:"
         echo "  --dry-run                 Preview migration without writing files"
         echo "  --reverse                 Convert Memory v2 back to v1-compatible JSON"
+        echo "  --format json             Emit machine-readable output for memory why"
         echo "  --help                    Show this help"
         exit 0
       fi
@@ -606,6 +612,7 @@ while [ $# -gt 0 ]; do
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  memory lint [file...]        Validate Memory v2 learning entries"
       echo "  memory migrate               Migrate Memory v1 stores to v2"
+      echo "  memory why [lrn-id]          Inspect Memory v2 provenance and history"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -671,6 +678,7 @@ while [ $# -gt 0 ]; do
       echo "  --resume                     Resume the most recent run (idempotent)"
       echo "  --no-ui                      Skip the Ink TUI; emit plain-text output"
       echo "  --format <table|json|csv>    Output format for backlog list"
+      echo "  --format json                Machine-readable output for memory why"
       echo "  --limit <n>                  Max items for backlog list (default: 50, max: 500)"
       echo "  --label <a,b>                Filter backlog list by label"
       echo "  --status <status>            Filter backlog list by status"
@@ -728,6 +736,8 @@ while [ $# -gt 0 ]; do
         fi
       elif [ "$SUBCOMMAND" = "memory" ] && [ -z "$OPT_MEMORY_ACTION" ]; then
         OPT_MEMORY_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "memory" ] && [ "$OPT_MEMORY_ACTION" = "why" ] && [ -z "$OPT_MEMORY_ID" ]; then
+        OPT_MEMORY_ID="$1"
       elif [ "$SUBCOMMAND" = "memory" ]; then
         if [ -n "$OPT_MEMORY_FILES" ]; then
           OPT_MEMORY_FILES="${OPT_MEMORY_FILES},$1"
@@ -773,7 +783,8 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
        OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
        OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW \
-       OPT_LOOP_REPORT_FORMAT OPT_MEMORY_ACTION OPT_MEMORY_FILES
+       OPT_LOOP_REPORT_FORMAT OPT_MEMORY_ACTION OPT_MEMORY_ID \
+       OPT_MEMORY_FILES OPT_MEMORY_FORMAT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
