@@ -11,6 +11,33 @@ _memory_v2_store_path() {
   printf '%s/memory-v2.json\n' "$config_dir"
 }
 
+_memory_v2_cache_dir() {
+  local config_dir
+  config_dir=$(_memory_v2_config_dir)
+  printf '%s/cache/memory\n' "$config_dir"
+}
+
+_memory_v2_summary_script() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  printf '%s/summary.js\n' "$script_dir"
+}
+
+memory_v2_token_count() {
+  local text="${1:-}"
+  node "$(_memory_v2_summary_script)" count "$text"
+}
+
+summarize_for_phase() {
+  local phase="${1:?summarize_for_phase: PHASE required}"
+  local feat_id="${2:?summarize_for_phase: FEAT_ID required}"
+  local learnings="${3:-[]}"
+  local cache_dir
+  cache_dir=$(_memory_v2_cache_dir)
+  printf '%s' "$learnings" | node "$(_memory_v2_summary_script)" summarize \
+    "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}"
+}
+
 _memory_v2_feature_trace_path() {
   local feat_id="${1:-${MONOZUKURI_FEATURE_ID:-}}"
   [ -n "$feat_id" ] || return 1
@@ -24,37 +51,12 @@ memory_v2_context_entries() {
   store_path=$(_memory_v2_store_path)
   [ -f "$store_path" ] || { printf '[]\n'; return 0; }
 
-  node - "$store_path" "$feat_id" "${MONOZUKURI_AGENT:-${ADAPTER:-}}" <<'JSEOF'
-const fs = require('fs');
-const [,, storePath, featureId, agent] = process.argv;
-
-function marker(entry) {
-  return `<!-- learning: ${entry.id} --> ${entry.insight}`;
-}
-
-try {
-  const entries = JSON.parse(fs.readFileSync(storePath, 'utf8'));
-  if (!Array.isArray(entries)) {
-    console.log('[]');
-    process.exit(0);
-  }
-  const filtered = entries.filter((entry) => {
-    if (!entry || typeof entry !== 'object') return false;
-    if (!entry.id || !entry.insight) return false;
-    if (entry.agent_specific && entry.agent_specific !== agent) return false;
-    if (entry.scope === 'feature') {
-      return entry.source && entry.source.feature_id === featureId;
-    }
-    return entry.scope === 'project' || entry.scope === 'global';
-  }).map((entry) => ({
-    id: entry.id,
-    summary: marker(entry)
-  }));
-  console.log(JSON.stringify(filtered));
-} catch (_) {
-  console.log('[]');
-}
-JSEOF
+  local phase="${MONOZUKURI_PHASE:-context}"
+  local cache_dir
+  cache_dir=$(_memory_v2_cache_dir)
+  node "$(_memory_v2_summary_script)" context \
+    "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}" \
+    "${MONOZUKURI_AGENT:-${ADAPTER:-}}" < "$store_path" 2>/dev/null || printf '[]\n'
 }
 
 memory_v2_trace_prompt() {
