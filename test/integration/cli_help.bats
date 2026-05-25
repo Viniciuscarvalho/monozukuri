@@ -63,9 +63,15 @@ setup() {
   echo "$output" | grep -qE '^\s+memory why\b'
 }
 
+@test "--help lists the 'memory trace' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory trace\b'
+}
+
 @test "memory --help documents memory why json output" {
   run "$ORCHESTRATE" memory --help
   [[ "$output" == *"monozukuri memory why [lrn-id] [--format json]"* ]]
+  [[ "$output" == *"monozukuri memory trace <run-id>"* ]]
   [[ "$output" == *"--format json"* ]]
 }
 

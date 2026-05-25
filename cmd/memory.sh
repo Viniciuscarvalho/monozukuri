@@ -632,6 +632,88 @@ try {
 JSEOF
 }
 
+_memory_trace() {
+  node - \
+    "$ROOT_DIR" \
+    "$CONFIG_DIR" \
+    "${OPT_MEMORY_ID:-}" <<'JSEOF'
+const fs = require('fs');
+const path = require('path');
+
+const [,, rootDir, configDir, runId] = process.argv;
+
+if (!runId) {
+  console.error('memory trace requires a run id');
+  process.exit(2);
+}
+
+const tracePath = path.join(configDir, 'runs', runId, 'memory-trace.jsonl');
+if (!fs.existsSync(tracePath)) {
+  console.error(`memory trace not found: ${runId}`);
+  process.exit(1);
+}
+
+function parseEvents(filePath) {
+  return fs.readFileSync(filePath, 'utf8')
+    .split(/\n/)
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function ids(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function printSummary(event) {
+  const included = ids(event.included);
+  const omitted = ids(event.omitted);
+  const phase = event.phase || 'unknown';
+  const feature = event.feature_id || event.featureId || 'unknown';
+  const tokens = Number.isFinite(event.tokens) ? event.tokens : 0;
+  console.log(`  - ${phase} ${feature}: included=${included.length} omitted=${omitted.length} tokens=${tokens}`);
+  if (included.length > 0) console.log(`    included: ${included.join(', ')}`);
+  if (omitted.length > 0) console.log(`    omitted: ${omitted.join(', ')}`);
+}
+
+function printEscalation(event) {
+  const phase = event.phase || 'unknown';
+  const attempt = Number.isFinite(event.attempt) ? event.attempt : 0;
+  const id = event.learning_id || event.id || 'unknown';
+  if (event.event === 'escalation_requested') {
+    console.log(`  - requested ${phase} attempt=${attempt} id=${id}`);
+  } else if (event.event === 'escalation_granted') {
+    const tokens = Number.isFinite(event.tokens) ? event.tokens : 0;
+    console.log(`  - granted ${phase} attempt=${attempt} id=${id} tokens=${tokens}`);
+  } else if (event.event === 'escalation_denied') {
+    console.log(`  - denied ${phase} attempt=${attempt} id=${id} reason=${event.reason || 'unknown'}`);
+  }
+}
+
+const events = parseEvents(tracePath);
+const summaries = events.filter((event) => event.event === 'summarize');
+const escalations = events.filter((event) =>
+  event.event === 'escalation_requested' ||
+  event.event === 'escalation_granted' ||
+  event.event === 'escalation_denied'
+);
+
+console.log(`Memory trace: ${runId}`);
+console.log('Summaries:');
+if (summaries.length === 0) console.log('  none');
+for (const event of summaries) printSummary(event);
+console.log('Escalations:');
+if (escalations.length === 0) console.log('  none');
+for (const event of escalations) printEscalation(event);
+JSEOF
+}
+
 sub_memory() {
   case "${OPT_MEMORY_ACTION:-}" in
     lint)
@@ -643,17 +725,21 @@ sub_memory() {
     why)
       _memory_why
       ;;
+    trace)
+      _memory_trace
+      ;;
     ""|--help|-h)
       echo "Usage:"
       echo "  monozukuri memory lint [file...]"
       echo "  monozukuri memory migrate [--dry-run] [--reverse]"
       echo "  monozukuri memory why [lrn-id] [--format json]"
+      echo "  monozukuri memory trace <run-id>"
       echo ""
       echo "Validate, migrate, or inspect Memory learning entries."
       ;;
     *)
       err "Unknown memory action: $OPT_MEMORY_ACTION"
-      err "Available: lint, migrate, why"
+      err "Available: lint, migrate, why, trace"
       return 1
       ;;
   esac

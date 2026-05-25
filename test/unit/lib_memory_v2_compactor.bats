@@ -8,6 +8,7 @@ setup() {
   mkdir -p "$PROJECT_DIR/.monozukuri"
   export ROOT_DIR="$PROJECT_DIR"
   export CONFIG_DIR="$PROJECT_DIR/.monozukuri"
+  export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
   export MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP=80
   source "$REPO_ROOT/lib/memory/v2.sh"
 }
@@ -84,6 +85,7 @@ JSON
   write_many_learnings
   cp "$TMPDIR_TEST/learnings.json" "$CONFIG_DIR/memory-v2.json"
   export MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP=35
+  export MONOZUKURI_RUN_ID="run-memory-summary"
 
   run memory_v2_context_entries feat-123
 
@@ -92,6 +94,19 @@ JSON
     any(.[]; (.summary // "") | contains("[lrn-feature-hot, applied 9x]")) and
     any(.[]; (.available_on_request // []) | index("lrn-project-cold"))
   ' <<<"$output"
+  [ "$status" -eq 0 ]
+
+  trace="$MONOZUKURI_RUN_DIR/$MONOZUKURI_RUN_ID/memory-trace.jsonl"
+  [ -f "$trace" ]
+  run jq -e '
+    select(.event == "summarize") |
+    .phase == "context" and
+    .feature_id == "feat-123" and
+    (.entered | index("lrn-feature-hot")) and
+    (.included | index("lrn-feature-hot")) and
+    (.omitted | index("lrn-project-cold")) and
+    (.tokens | type == "number")
+  ' "$trace"
   [ "$status" -eq 0 ]
 }
 
