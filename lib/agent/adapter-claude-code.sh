@@ -38,7 +38,17 @@ if ! declare -f stream_parse_emit_file &>/dev/null; then
   stream_parse_emit_file() { :; }
 fi
 
+if ! declare -f agent_parse_memory_requests_generic &>/dev/null; then
+  _cc_agent_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck source=memory-request.sh
+  source "${_cc_agent_dir}/memory-request.sh" 2>/dev/null || true
+fi
+
 agent_name() { echo "claude-code"; }
+
+parse_memory_requests() {
+  agent_parse_memory_requests_generic "$@"
+}
 
 agent_capabilities() {
   printf '%s\n' '{
@@ -504,7 +514,7 @@ agent_run_phase() {
     fi
   fi
 
-  if [ "$exit_code" -eq 0 ]; then
+  if [ "$exit_code" -eq 0 ] && [ "${MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS:-0}" != "1" ]; then
     if ! declare -f memory_v2_mark_phase_success &>/dev/null; then
       local _mem_v2_sh
       _mem_v2_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../memory/v2.sh"

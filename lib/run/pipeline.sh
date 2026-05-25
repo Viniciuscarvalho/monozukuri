@@ -693,7 +693,11 @@ EOPRD
     monozukuri_emit phase.started feature_id "$feat_id" phase "$_ph"
     export MONOZUKURI_PHASE="$_ph"
     _ph_exit=0
-    agent_run_phase || _ph_exit=$?
+    if declare -f memory_v2_run_phase_with_escalation &>/dev/null; then
+      memory_v2_run_phase_with_escalation "$_ph" "$feat_id" "$wt_path" "$log_file" "${_ctx_json:-}" || _ph_exit=$?
+    else
+      agent_run_phase || _ph_exit=$?
+    fi
     if [ "$_ph_exit" -ne 0 ]; then
       monozukuri_emit phase.failed feature_id "$feat_id" phase "$_ph" error "exit-$_ph_exit" retryable 1
       _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
@@ -720,7 +724,11 @@ EOPRD
   # ── Code phase ────────────────────────────────────────────────────────
   monozukuri_emit phase.started feature_id "$feat_id" phase "code"
   export MONOZUKURI_PHASE="code"
-  agent_run_phase || exit_code=$?
+  if declare -f memory_v2_run_phase_with_escalation &>/dev/null; then
+    memory_v2_run_phase_with_escalation "code" "$feat_id" "$wt_path" "$log_file" "${_ctx_json:-}" || exit_code=$?
+  else
+    agent_run_phase || exit_code=$?
+  fi
 
   _orchestrator_watcher_stop "$STATE_DIR/$feat_id/.watcher-active"
 

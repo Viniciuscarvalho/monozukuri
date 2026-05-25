@@ -151,3 +151,25 @@ After a phase succeeds, each injected learning's `applied_count` increments and
 `last_applied` is set to the success timestamp. Corrupt or unreadable Memory v2
 stores are ignored for prompt injection so the pipeline can continue without
 blocking the agent call.
+
+### Escalation Requests
+
+Rendered prompts also include this instruction:
+
+```text
+Se precisar de detalhe sobre um learning, emita <request-memory id="lrn-xxx"/> no início da sua resposta.
+```
+
+After an agent response, the active adapter parses leading
+`<request-memory id="lrn-xxx"/>` markers. When any are present, the phase loop
+logs an escalation event, rebuilds the context with raw Memory v2 fields for the
+requested IDs, and re-prompts the same phase. Claude can reuse native session
+continuity when multi-turn mode is active; thin-shell adapters such as Codex and
+Gemini receive a rebuilt prompt with external state in `CONTEXT_JSON`.
+
+Each phase permits at most three escalation turns. Every escalation appends an
+event to `memory-injections.jsonl`:
+
+```json
+{"event":"escalation","phase":"prd","learnings":["lrn-2026-05-24-001"],"attempt":1,"timestamp":"2026-05-24T20:01:00.000Z"}
+```

@@ -336,6 +336,10 @@ render_phase_prompt() {
   # appending so the original rendered prompt remains intact below the prefix.
   _rendered=$(monozukuri_inject_skill_prompt "$phase" "$_rendered")
 
+  if declare -f memory_v2_request_instruction &>/dev/null; then
+    _rendered+=$'\n\n'"$(memory_v2_request_instruction)"
+  fi
+
   if declare -f memory_v2_trace_prompt &>/dev/null; then
     memory_v2_trace_prompt "$phase" "$_rendered" 2>/dev/null || true
   fi
