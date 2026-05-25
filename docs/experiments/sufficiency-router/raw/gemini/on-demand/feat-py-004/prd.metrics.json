@@ -1,0 +1,16 @@
+{
+  "agent": "gemini",
+  "strategy": "on-demand",
+  "feature_id": "feat-py-004",
+  "phase": "prd",
+  "input_tokens": 293,
+  "output_tokens_estimated": 138,
+  "total_tokens_estimated": 431,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

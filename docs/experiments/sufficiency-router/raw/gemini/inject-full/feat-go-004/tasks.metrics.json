@@ -1,0 +1,16 @@
+{
+  "agent": "gemini",
+  "strategy": "inject-full",
+  "feature_id": "feat-go-004",
+  "phase": "tasks",
+  "input_tokens": 509,
+  "output_tokens_estimated": 74,
+  "total_tokens_estimated": 583,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

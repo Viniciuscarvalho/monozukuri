@@ -1,0 +1,16 @@
+{
+  "agent": "codex",
+  "strategy": "summary",
+  "feature_id": "feat-node-001",
+  "phase": "techspec",
+  "input_tokens": 260,
+  "output_tokens_estimated": 59,
+  "total_tokens_estimated": 319,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

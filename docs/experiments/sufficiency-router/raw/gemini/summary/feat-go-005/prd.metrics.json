@@ -1,0 +1,16 @@
+{
+  "agent": "gemini",
+  "strategy": "summary",
+  "feature_id": "feat-go-005",
+  "phase": "prd",
+  "input_tokens": 249,
+  "output_tokens_estimated": 135,
+  "total_tokens_estimated": 384,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}
