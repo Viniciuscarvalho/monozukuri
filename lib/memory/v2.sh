@@ -56,7 +56,13 @@ memory_v2_context_entries() {
   cache_dir=$(_memory_v2_cache_dir)
   node "$(_memory_v2_summary_script)" context \
     "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}" \
-    "${MONOZUKURI_AGENT:-${ADAPTER:-}}" < "$store_path" 2>/dev/null || printf '[]\n'
+    "${MONOZUKURI_AGENT:-${ADAPTER:-}}" "${MONOZUKURI_MEMORY_ESCALATION_IDS:-}" \
+    < "$store_path" 2>/dev/null || printf '[]\n'
+}
+
+memory_v2_request_instruction() {
+  printf '%s\n' '## Memory escalation'
+  printf '%s\n' 'Se precisar de detalhe sobre um learning, emita <request-memory id="lrn-xxx"/> no início da sua resposta.'
 }
 
 memory_v2_trace_prompt() {
@@ -97,6 +103,110 @@ fs.appendFileSync(tracePath, JSON.stringify({
 }) + '\n');
 JSEOF
   rm -f "$prompt_file" 2>/dev/null || true
+}
+
+memory_v2_log_escalation() {
+  local phase="${1:?memory_v2_log_escalation: PHASE required}"
+  local ids_csv="${2:-}"
+  local attempt="${3:-1}"
+  local feat_id="${MONOZUKURI_FEATURE_ID:-}"
+  [ -n "$feat_id" ] || return 0
+  [ -n "$ids_csv" ] || return 0
+
+  local trace_path
+  trace_path=$(_memory_v2_feature_trace_path "$feat_id") || return 0
+  mkdir -p "$(dirname "$trace_path")"
+  node - "$phase" "$ids_csv" "$attempt" "$trace_path" <<'JSEOF' || true
+const fs = require('fs');
+const [,, phase, idsCsv, attempt, tracePath] = process.argv;
+const ids = idsCsv.split(',').map((id) => id.trim()).filter(Boolean);
+if (ids.length === 0) process.exit(0);
+fs.appendFileSync(tracePath, JSON.stringify({
+  event: 'escalation',
+  phase,
+  learnings: ids,
+  attempt: Number(attempt) || 1,
+  timestamp: new Date().toISOString()
+}) + '\n');
+JSEOF
+}
+
+_memory_v2_join_ids() {
+  local existing="${1:-}"
+  local requested="${2:-}"
+  node - "$existing" "$requested" <<'JSEOF'
+const [,, existing, requested] = process.argv;
+const seen = new Set();
+const out = [];
+for (const chunk of [existing, requested]) {
+  for (const id of String(chunk || '').split(/[,\n]/).map((v) => v.trim()).filter(Boolean)) {
+    if (!seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+}
+console.log(out.join(','));
+JSEOF
+}
+
+memory_v2_run_phase_with_escalation() {
+  local phase="${1:?memory_v2_run_phase_with_escalation: PHASE required}"
+  local feat_id="${2:?memory_v2_run_phase_with_escalation: FEAT_ID required}"
+  local wt_path="${3:?memory_v2_run_phase_with_escalation: WORKTREE required}"
+  local log_file="${4:?memory_v2_run_phase_with_escalation: LOG_FILE required}"
+  local ctx_json="${5:-${CONTEXT_JSON:-}}"
+  local max_escalations="${MONOZUKURI_MEMORY_MAX_ESCALATIONS_PER_PHASE:-3}"
+  local attempt=0
+  local exit_code=0
+  local previous_ids="${MONOZUKURI_MEMORY_ESCALATION_IDS:-}"
+  local accumulated_ids="$previous_ids"
+  local previous_defer="${MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS:-}"
+
+  export MONOZUKURI_FEATURE_ID="$feat_id"
+  export MONOZUKURI_WORKTREE="$wt_path"
+  export MONOZUKURI_PHASE="$phase"
+  [ -n "$ctx_json" ] && export CONTEXT_JSON="$ctx_json"
+  export MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS=1
+
+  while :; do
+    exit_code=0
+    agent_run_phase || exit_code=$?
+    [ "$exit_code" -ne 0 ] && {
+      export MONOZUKURI_MEMORY_ESCALATION_IDS="$previous_ids"
+      export MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS="$previous_defer"
+      return "$exit_code"
+    }
+
+    local requested_ids=""
+    if declare -f parse_memory_requests &>/dev/null && [ -f "$log_file" ]; then
+      requested_ids=$(parse_memory_requests "$(cat "$log_file")" | paste -sd, -)
+    fi
+    [ -z "$requested_ids" ] && {
+      memory_v2_mark_phase_success "$phase" 2>/dev/null || true
+      export MONOZUKURI_MEMORY_ESCALATION_IDS="$previous_ids"
+      export MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS="$previous_defer"
+      return 0
+    }
+
+    if [ "$attempt" -ge "$max_escalations" ]; then
+      printf 'memory escalation limit reached for %s/%s after %s attempt(s)\n' \
+        "$feat_id" "$phase" "$max_escalations" >&2
+      export MONOZUKURI_MEMORY_ESCALATION_IDS="$previous_ids"
+      export MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS="$previous_defer"
+      return 1
+    fi
+
+    attempt=$((attempt + 1))
+    memory_v2_log_escalation "$phase" "$requested_ids" "$attempt"
+    accumulated_ids=$(_memory_v2_join_ids "$accumulated_ids" "$requested_ids")
+    export MONOZUKURI_MEMORY_ESCALATION_IDS="$accumulated_ids"
+
+    if [ -n "$ctx_json" ] && declare -f context_pack_build &>/dev/null; then
+      context_pack_build "$feat_id" "$ctx_json" 2>/dev/null || true
+      export CONTEXT_JSON="$ctx_json"
+    fi
+  done
 }
 
 _memory_v2_acquire_lock() {

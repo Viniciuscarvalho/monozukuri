@@ -73,6 +73,19 @@ agent_report_cost()
 # → stdout: USD cost float (e.g. "0.42")
 ```
 
+### `parse_memory_requests` _(Memory v2)_
+
+```bash
+parse_memory_requests RESPONSE
+# RESPONSE: raw agent response text
+# → stdout: newline-delimited learning IDs requested with leading markers:
+#   <request-memory id="lrn-xxx"/>
+```
+
+The parser only treats markers at the beginning of the response as escalation
+requests. Markers elsewhere are ignored so examples or quoted docs do not trigger
+reprompts.
+
 ### `agent_login_hint` _(optional)_
 
 ```bash
@@ -143,6 +156,7 @@ These are set by `lib/run/pipeline.sh` before calling `agent_run_phase`.
 | `MONOZUKURI_LOG_FILE`    | —        | File path for agent output tee                                                                                |
 | `MONOZUKURI_RUN_DIR`     | —        | `$CONFIG_DIR/runs/<run-id>` for artifact writes                                                               |
 | `MONOZUKURI_ERROR_FILE`  | —        | Path where adapter MUST write error envelope on failure (see §3)                                              |
+| `MONOZUKURI_MEMORY_ESCALATION_IDS` | — | Comma-separated Memory v2 IDs whose raw content should be added to the next rendered context.                 |
 | `SKILL_COMMAND`          | —        | Override for Claude Code skill name (back-compat)                                                             |
 | `SKILL_TIMEOUT_SECONDS`  | —        | Wall-clock budget for the invocation (default: 1800)                                                          |
 
@@ -299,6 +313,7 @@ An adapter is conformant if it passes all checks in the suite.
 | --------------------- | ------------------------------------------------------------------------------------ |
 | `agent_verify`        | All six contract functions are defined after `agent_load`                            |
 | Phase heading tests   | `render_phase_prompt` for each phase contains required headings                      |
+| Memory request parser | Claude, Codex, and Gemini parse leading `<request-memory id="..."/>` markers         |
 | Mock binary sanity    | Fixture binary is executable and exits 0 for basic commands                          |
 | Error envelope test   | On mock failure exit, `MONOZUKURI_ERROR_FILE` contains valid JSON with `class` field |
 | Schema injection test | `.monozukuri-schemas/` is populated before `agent_run_phase` is called               |
