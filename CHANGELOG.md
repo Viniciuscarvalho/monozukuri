@@ -1,5 +1,54 @@
 # Changelog
 
+## [2.0.0-alpha.1] - 2026-05-26
+
+### Highlights
+
+- Added the v2 selection flow: `monozukuri backlog list`, deterministic
+  priority scoring, filtering by label/status/agent, `pick --top`, `pick
+  --json`, TUI selection, selection history, and replay.
+- Added the v2 loop foundation: sequential `monozukuri loop`, stdin
+  composition, worktree isolation, cost/time/token caps, failure modes, circuit
+  breaker, checkpoint schema, resume, progress status, and final summary
+  reports.
+- Added Memory v2: provenance schema, `memory lint`, `memory migrate`, prompt
+  injection tracking, `memory why`, deterministic compaction, summary cache,
+  `<request-memory id="..."/>` escalation, `memory trace`, and
+  agent-specific learning filters.
+- Added v2 verification and release preparation: MRP token-saving matrix, loop
+  conformance suite, live canary harness documentation, migration guide, README
+  rewrite, and v2 alpha readiness checklist.
+
+### Breaking changes
+
+- None expected for existing v1 project configuration. v2 adds state under
+  `.monozukuri/state/` and Memory v2 stores under `.monozukuri/memory-v2.json`.
+
+### New commands
+
+- `monozukuri backlog list`
+- `monozukuri backlog validate <ids...>`
+- `monozukuri pick`
+- `monozukuri pick --top N`
+- `monozukuri pick --json`
+- `monozukuri pick --history`
+- `monozukuri pick --replay [N]`
+- `monozukuri loop <ids...>`
+- `monozukuri loop --resume [run-id]`
+- `monozukuri loop --list-runs`
+- `monozukuri loop status [run-id]`
+- `monozukuri memory lint`
+- `monozukuri memory migrate`
+- `monozukuri memory why [lrn-id]`
+- `monozukuri memory trace <run-id>`
+- `monozukuri memory compact`
+
+### Migration
+
+- See [docs/v2-migration.md](docs/v2-migration.md) for the v1 to v2 upgrade
+  path, Memory v2 migration steps, schema reading guide, and troubleshooting
+  checklist.
+
 ## [1.61.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.60.0...v1.61.0) (2026-05-22)
 
 

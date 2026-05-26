@@ -4,7 +4,7 @@
 - **Date**: 2026-05-25
 - **Deciders**: Vinicius Carvalho
 - **Supersedes**: —
-- **Related**: ADR-025 (Memory v2 Provenance Schema), ADR-019 (Conformance Recordings for Tier-2 Adapters), ADR-018 (Real Cost from Stream-JSON Usage Field)
+- **Related**: ADR-025 (Memory v2 Provenance Schema), ADR-019 (Conformance Recordings for Tier-2 Adapters), ADR-018 (Real Cost from Stream-JSON Usage Field), ADR-027 (production sufficiency router marker)
 
 ---
 
@@ -79,7 +79,9 @@ of 3 agents, which is greater than the required 2 of 3 agents.
 ### Negative / Trade-offs
 
 - On-demand escalation adds a second possible agent call for a phase.
-- Agents must learn the `MEMORY_ESCALATE:` request convention.
+- The spike harness used `MEMORY_ESCALATE:` as its experiment marker. ADR-027
+  supersedes that with the production `<request-memory id="lrn-xxx"/>` adapter
+  convention.
 - Summary-only remains cheaper when every phase succeeds on the first try.
 
 ### Neutral
