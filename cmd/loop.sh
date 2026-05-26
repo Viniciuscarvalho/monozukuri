@@ -212,6 +212,35 @@ _loop_validate_report_format() {
   esac
 }
 
+_loop_validate_agent() {
+  local agent="$1"
+  case "$agent" in
+    claude-code|codex|gemini) return 0 ;;
+    *)
+      err "--agent must be one of: claude-code, codex, gemini"
+      return 1
+      ;;
+  esac
+}
+
+_loop_validate_tasks() {
+  local task_count="$1"
+  if ! awk -v n="$task_count" 'BEGIN { exit !(n ~ /^[0-9]+$/ && n > 0 && n <= 50) }'; then
+    err "--tasks must be a positive integer up to 50"
+    return 1
+  fi
+}
+
+_loop_ids_from_tasks() {
+  local backlog_file="$1" task_count="$2"
+  node "$LIB_DIR/backlog/list.js" \
+    --file "$backlog_file" \
+    --pick \
+    --pick-format ids \
+    --top "$task_count" \
+    | paste -sd, -
+}
+
 _loop_default_failure_mode() {
   local autonomy="$1"
   case "$autonomy" in
@@ -1120,6 +1149,12 @@ sub_loop() {
   local config_file
   config_file=$(_loop_resolve_config_file)
   load_config "$config_file"
+  if [ -n "${OPT_LOOP_AGENT:-}" ]; then
+    _loop_validate_agent "$OPT_LOOP_AGENT" || return 1
+    MONOZUKURI_AGENT="$OPT_LOOP_AGENT"
+    ROUTING_FALLBACK="$OPT_LOOP_AGENT"
+    export MONOZUKURI_AGENT ROUTING_FALLBACK
+  fi
 
   if declare -f routing_load >/dev/null 2>&1; then
     routing_load "$ROOT_DIR"
@@ -1205,6 +1240,9 @@ EOF
   _loop_validate_circuit_breaker "$circuit_breaker" || return 1
   local report_format="${OPT_LOOP_REPORT_FORMAT:-ascii}"
   _loop_validate_report_format "$report_format" || return 1
+  if [ -n "${OPT_LOOP_TASKS:-}" ]; then
+    _loop_validate_tasks "$OPT_LOOP_TASKS" || return 1
+  fi
 
   MONOZUKURI_MAX_FEATURE_TOKENS="$max_tokens"
   MODEL_AGENT="${MONOZUKURI_AGENT:-claude-code}"
@@ -1220,14 +1258,25 @@ EOF
   else
     ids_csv=$(_loop_collect_ids)
   fi
-  if [ -z "$ids_csv" ]; then
+  if [ -n "$ids_csv" ] && [ -n "${OPT_LOOP_TASKS:-}" ]; then
+    err "--tasks cannot be combined with explicit feature IDs or stdin IDs"
+    return 1
+  fi
+  if [ -z "$ids_csv" ] && [ -z "${OPT_LOOP_TASKS:-}" ]; then
     err "No feature IDs provided."
-    err "Usage: monozukuri loop <id...> or pipe IDs on stdin"
+    err "Usage: monozukuri loop <id...>, monozukuri loop --tasks N, or pipe IDs on stdin"
     return 1
   fi
 
   run_adapter >/dev/null
   local backlog_file="$ROOT_DIR/$BACKLOG_OUTPUT"
+  if [ -z "$ids_csv" ] && [ -n "${OPT_LOOP_TASKS:-}" ]; then
+    ids_csv=$(_loop_ids_from_tasks "$backlog_file" "$OPT_LOOP_TASKS")
+  fi
+  if [ -z "$ids_csv" ]; then
+    err "No ready backlog tasks matched --tasks ${OPT_LOOP_TASKS:-}"
+    return 1
+  fi
 
   local ids=()
   local IFS_ORIG="$IFS"

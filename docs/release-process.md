@@ -2,7 +2,7 @@
 
 ## Overview
 
-Every release is gated by `.qa/release-gate.sh`, which runs 6 layers of validation before a version ships. Layer failures block the release.
+Every release is gated by `.qa/release-gate.sh`, which runs 7 layers of validation before a version ships. Layer failures block the release.
 
 ## Layers
 
@@ -12,7 +12,7 @@ Every release is gated by `.qa/release-gate.sh`, which runs 6 layers of validati
 | 2     | loop-integrity   | Full pipeline mock run; Phase A1–A4 safety properties     |
 | 3     | schema-integrity | Phase artifact schema validation                          |
 | 4     | backwards-compat | State file forward/back compat                            |
-| 5     | live-canary      | Real `claude --print` invocation (skipped on patches, CI) |
+| 5     | live-canary      | Live `loop --tasks 2 --agent <agent>` against `monozukuri/test-sandbox` with a $5 cap |
 | 6     | scale-soak       | 3-project × 5-feature mock soak; SLO assertions           |
 | 7     | conformance      | Local opt-in mocks-vs-live structural conformance         |
 
@@ -22,7 +22,13 @@ Memory v2 MRP token-saving assertion or loop cross-agent conformance fails.
 
 ## CI enforcement (D1)
 
-The `.github/workflows/release-gate.yml` workflow runs on every PR targeting `main`. For release-please PRs it runs the full gate (Layers 1–6, with Layers 5/6 live variants skipped on CI via env flags). For all other PRs the gate step skips with a pass.
+The `.github/workflows/release-gate.yml` workflow runs on every PR targeting `main`. For release-please PRs it runs the CI-safe gate with live Layer 5, Layer 6 live mode, and Layer 7 skipped by env flags. Maintainers run the full live canary locally before tagging:
+
+```bash
+MONOZUKURI_SKIP_LIVE_CANARY=0 bash .qa/release-gate.sh v1.x.0
+```
+
+For all other PRs the gate step skips with a pass.
 
 **Branch protection setup (manual, one-time):**
 
