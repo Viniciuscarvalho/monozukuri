@@ -22,32 +22,41 @@ line_no() {
   [ "$issue_count" -ge 10 ]
 }
 
-@test "README uses v2 structure with pick-loop, memory, comparison, and upgrade sections" {
+@test "README stays concise and points to v2 documentation" {
   readme="$REPO_ROOT/README.md"
 
   [ -f "$REPO_ROOT/docs/assets/pick-loop.gif" ]
   grep -q "docs/assets/pick-loop.gif" "$readme"
-  grep -q "^## Highlights" "$readme"
+  grep -q "the art and science of making things" "$readme"
+  grep -q "Created and maintained by Vinicius Carvalho" "$readme"
+  grep -q "MIT © \\[Vinicius Carvalho\\]" "$readme"
   grep -q "^## Quick start" "$readme"
+  grep -q "^## What Monozukuri does" "$readme"
   grep -q "^## Pick & Loop" "$readme"
-  grep -q "^## How it works" "$readme"
-  grep -q "^## Memory v2: Why It's Different" "$readme"
+  grep -q "^## Memory v2" "$readme"
+  grep -q "^## Documentation" "$readme"
+  grep -q "^## Architecture decisions" "$readme"
+  grep -q "^## License" "$readme"
+  grep -q "docs/v2-migration.md" "$readme"
+  grep -q "docs/execution.md" "$readme"
+  grep -q "docs/schemas/memory-v2.md" "$readme"
   grep -q "docs/adr/027-sufficiency-router.md" "$readme"
-  grep -q "TaskMaster" "$readme"
-  grep -q "Compozy" "$readme"
-  grep -q "^## Upgrading from v1" "$readme"
-  grep -q "^## Reference" "$readme"
 
-  highlights="$(line_no '^## Highlights' "$readme")"
   quick_start="$(line_no '^## Quick start' "$readme")"
+  what_it_does="$(line_no '^## What Monozukuri does' "$readme")"
   pick_loop="$(line_no '^## Pick & Loop' "$readme")"
-  how_it_works="$(line_no '^## How it works' "$readme")"
-  reference="$(line_no '^## Reference' "$readme")"
+  memory="$(line_no '^## Memory v2' "$readme")"
+  docs="$(line_no '^## Documentation' "$readme")"
+  license="$(line_no '^## License' "$readme")"
 
-  [ "$highlights" -lt "$quick_start" ]
-  [ "$quick_start" -lt "$pick_loop" ]
-  [ "$pick_loop" -lt "$how_it_works" ]
-  [ "$how_it_works" -lt "$reference" ]
+  [ "$quick_start" -lt "$what_it_does" ]
+  [ "$what_it_does" -lt "$pick_loop" ]
+  [ "$pick_loop" -lt "$memory" ]
+  [ "$memory" -lt "$docs" ]
+  [ "$docs" -lt "$license" ]
+
+  line_count="$(wc -l < "$readme" | tr -d ' ')"
+  [ "$line_count" -le 100 ]
 }
 
 @test "sufficiency router ADR records MEM-05 data and production marker" {
