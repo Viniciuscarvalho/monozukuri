@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.62.2](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.62.1...v1.62.2) (2026-05-26)
+
+
+### Documentation
+
+* **execution:** clarify supervised mode ([#282](https://github.com/Viniciuscarvalho/monozukuri/issues/282)) ([8bbb7ea](https://github.com/Viniciuscarvalho/monozukuri/commit/8bbb7eabd308bacbac9a3c7561de1b5fad3f56da))
+
 ## [1.62.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.62.0...v1.62.1) (2026-05-26)
 
 
