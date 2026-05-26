@@ -471,6 +471,233 @@ try {
 JSEOF
 }
 
+_memory_compact() {
+  node - \
+    "$ROOT_DIR" \
+    "$CONFIG_DIR" \
+    "${OPT_DRY_RUN:-false}" <<'JSEOF'
+const fs = require('fs');
+const path = require('path');
+
+const [,, rootDir, configDir, dryRunRaw] = process.argv;
+const dryRun = dryRunRaw === 'true';
+const storePath = path.join(configDir, 'memory-v2.json');
+const backupRoot = path.join(configDir, 'memory.compact.bak');
+const SIMHASH_BITS = 64;
+const SIMILARITY_THRESHOLD = 0.85;
+const STALE_DAYS = 30;
+
+function rel(filePath) {
+  const relative = path.relative(rootDir, filePath);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+    ? relative
+    : filePath;
+}
+
+function readStore(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Memory v2 store not found: ${rel(filePath)}`);
+  }
+  const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Memory v2 store must be an array: ${rel(filePath)}`);
+  }
+  return parsed;
+}
+
+function atomicWriteJson(filePath, data) {
+  fs.mkdirSync(path.dirname(filePath), {recursive: true});
+  const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n');
+  fs.renameSync(tmp, filePath);
+}
+
+function backupStore(filePath) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dir = path.join(backupRoot, stamp);
+  fs.mkdirSync(dir, {recursive: true});
+  fs.copyFileSync(filePath, path.join(dir, path.basename(filePath)));
+  return dir;
+}
+
+function normalizeText(entry) {
+  return String(entry && entry.insight ? entry.insight : '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokensFor(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const tokens = [...words];
+  for (let index = 0; index < words.length - 1; index += 1) {
+    tokens.push(`${words[index]} ${words[index + 1]}`);
+  }
+  return tokens;
+}
+
+function fnv1a64(value) {
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  for (const byte of Buffer.from(value, 'utf8')) {
+    hash ^= BigInt(byte);
+    hash = (hash * prime) & 0xffffffffffffffffn;
+  }
+  return hash;
+}
+
+function simhash(entry) {
+  const vector = Array(SIMHASH_BITS).fill(0);
+  const tokens = tokensFor(normalizeText(entry));
+  for (const token of tokens) {
+    const hash = fnv1a64(token);
+    for (let bit = 0; bit < SIMHASH_BITS; bit += 1) {
+      vector[bit] += ((hash >> BigInt(bit)) & 1n) === 1n ? 1 : -1;
+    }
+  }
+  let out = 0n;
+  for (let bit = 0; bit < SIMHASH_BITS; bit += 1) {
+    if (vector[bit] >= 0) out |= 1n << BigInt(bit);
+  }
+  return out;
+}
+
+function hammingDistance(left, right) {
+  let value = left ^ right;
+  let distance = 0;
+  while (value > 0n) {
+    distance += Number(value & 1n);
+    value >>= 1n;
+  }
+  return distance;
+}
+
+function similarity(left, right) {
+  return 1 - (hammingDistance(left, right) / SIMHASH_BITS);
+}
+
+function lexicalSimilarity(left, right) {
+  const leftTokens = new Set(normalizeText(left).split(/\s+/).filter(Boolean));
+  const rightTokens = new Set(normalizeText(right).split(/\s+/).filter(Boolean));
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+  let intersection = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) intersection += 1;
+  }
+  const union = new Set([...leftTokens, ...rightTokens]).size;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function createdAt(entry) {
+  if (entry && entry.created_at && !Number.isNaN(Date.parse(entry.created_at))) {
+    return new Date(entry.created_at);
+  }
+  const match = String(entry && entry.id || '').match(/^lrn-(\d{4}-\d{2}-\d{2})-\d{3}$/);
+  if (!match) return null;
+  return new Date(`${match[1]}T00:00:00.000Z`);
+}
+
+function isStale(entry, now) {
+  if (Number(entry && entry.applied_count || 0) !== 0) return false;
+  const created = createdAt(entry);
+  if (!created) return false;
+  return (now.getTime() - created.getTime()) > (STALE_DAYS * 24 * 60 * 60 * 1000);
+}
+
+function preferred(left, right, leftIndex, rightIndex) {
+  const leftCount = Number(left.applied_count || 0);
+  const rightCount = Number(right.applied_count || 0);
+  if (rightCount !== leftCount) return rightCount > leftCount ? 'right' : 'left';
+  const idOrder = String(left.id || '').localeCompare(String(right.id || ''));
+  if (idOrder !== 0) return idOrder <= 0 ? 'left' : 'right';
+  return leftIndex <= rightIndex ? 'left' : 'right';
+}
+
+function compact(entries) {
+  const now = new Date();
+  const staleIds = new Set();
+  const stale = [];
+  entries.forEach((entry) => {
+    if (isStale(entry, now)) {
+      staleIds.add(entry.id);
+      stale.push(entry.id);
+    }
+  });
+
+  const survivors = entries
+    .map((entry, index) => ({entry: {...entry}, index, hash: simhash(entry)}))
+    .filter((item) => !staleIds.has(item.entry.id));
+
+  const removedDuplicateIds = [];
+  for (let i = 0; i < survivors.length; i += 1) {
+    const current = survivors[i];
+    if (!current || current.removed) continue;
+    for (let j = i + 1; j < survivors.length; j += 1) {
+      const candidate = survivors[j];
+      if (!candidate || candidate.removed) continue;
+      if (similarity(current.hash, candidate.hash) < SIMILARITY_THRESHOLD) continue;
+      if (lexicalSimilarity(current.entry, candidate.entry) < SIMILARITY_THRESHOLD) continue;
+
+      const keepRight = preferred(current.entry, candidate.entry, current.index, candidate.index) === 'right';
+      const keep = keepRight ? candidate : current;
+      const drop = keepRight ? current : candidate;
+      keep.entry.applied_count = Number(keep.entry.applied_count || 0) + Number(drop.entry.applied_count || 0);
+      const keepLast = keep.entry.last_applied ? Date.parse(keep.entry.last_applied) : 0;
+      const dropLast = drop.entry.last_applied ? Date.parse(drop.entry.last_applied) : 0;
+      if (dropLast > keepLast) keep.entry.last_applied = drop.entry.last_applied;
+      drop.removed = true;
+      removedDuplicateIds.push(drop.entry.id);
+      if (keepRight) break;
+    }
+  }
+
+  const compacted = survivors
+    .filter((item) => !item.removed)
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.entry);
+
+  return {
+    compacted,
+    duplicateIds: removedDuplicateIds.sort(),
+    staleIds: stale.sort()
+  };
+}
+
+try {
+  const entries = readStore(storePath);
+  const result = compact(entries);
+  const changed = result.duplicateIds.length > 0 || result.staleIds.length > 0;
+  const action = dryRun ? 'Would compact' : 'Compacted';
+  const mergeVerb = dryRun ? 'merge' : 'merged';
+  const dropVerb = dryRun ? 'drop' : 'dropped';
+
+  if (!changed) {
+    console.log('Memory compact: no changes');
+    process.exit(0);
+  }
+
+  console.log(`${action} ${entries.length} Memory v2 learning entries`);
+  console.log(`${mergeVerb} ${result.duplicateIds.length} duplicate learning(s)`);
+  console.log(`${dropVerb} ${result.staleIds.length} stale learning(s)`);
+  console.log(`result: ${result.compacted.length} entries`);
+  if (result.duplicateIds.length > 0) console.log(`duplicates: ${result.duplicateIds.join(', ')}`);
+  if (result.staleIds.length > 0) console.log(`stale: ${result.staleIds.join(', ')}`);
+
+  if (dryRun) process.exit(0);
+  const backupDir = backupStore(storePath);
+  atomicWriteJson(storePath, result.compacted);
+  console.log(`backup: ${rel(backupDir)}`);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+JSEOF
+}
+
 _memory_why() {
   node - \
     "$ROOT_DIR" \
@@ -722,6 +949,9 @@ sub_memory() {
     migrate)
       _memory_migrate
       ;;
+    compact)
+      _memory_compact
+      ;;
     why)
       _memory_why
       ;;
@@ -732,6 +962,7 @@ sub_memory() {
       echo "Usage:"
       echo "  monozukuri memory lint [file...]"
       echo "  monozukuri memory migrate [--dry-run] [--reverse]"
+      echo "  monozukuri memory compact [--dry-run]"
       echo "  monozukuri memory why [lrn-id] [--format json]"
       echo "  monozukuri memory trace <run-id>"
       echo ""
@@ -739,7 +970,7 @@ sub_memory() {
       ;;
     *)
       err "Unknown memory action: $OPT_MEMORY_ACTION"
-      err "Available: lint, migrate, why, trace"
+      err "Available: lint, migrate, compact, why, trace"
       return 1
       ;;
   esac

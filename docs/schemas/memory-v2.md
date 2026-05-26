@@ -97,6 +97,8 @@ monozukuri memory lint path/to/learning-v2.yaml
 monozukuri memory migrate --dry-run
 monozukuri memory migrate
 monozukuri memory migrate --reverse
+monozukuri memory compact --dry-run
+monozukuri memory compact
 monozukuri memory why lrn-2026-05-24-001
 monozukuri memory why lrn-2026-05-24-001 --format json
 monozukuri memory trace run-2026-05-24-a1b2c3
@@ -115,6 +117,14 @@ prints a no-store message when none exist.
 `.monozukuri/memory.v1.bak/`. `--dry-run` reports the migration plan without
 writing files. `--reverse` writes `.monozukuri/memory-v1.roundtrip.json` for
 roundtrip verification and compatibility checks.
+
+`memory compact` deterministically prunes `.monozukuri/memory-v2.json` without
+calling an agent. It removes never-applied learnings whose `lrn-YYYY-MM-DD-NNN`
+ID date is more than 30 days old. Similar learnings are detected with a simple
+64-bit simhash threshold of `0.85`; the surviving entry is the one with the
+highest `applied_count`, and merged entries have their counts summed. The command
+writes a backup to `.monozukuri/memory.compact.bak/<timestamp>/` before applying
+changes. `--dry-run` prints the planned merge/drop counts without writing files.
 
 `memory why <lrn-id>` inspects one learning's provenance and recent application
 history. It prints the ID, insight, scope, source artifact, counters, and the

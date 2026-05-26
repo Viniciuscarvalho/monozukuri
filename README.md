@@ -54,6 +54,8 @@ Use `monozukuri memory why <lrn-id>` to inspect why a Memory v2 learning exists,
 
 Use `monozukuri memory trace <run-id>` to inspect sufficiency-router decisions for a run, including compacted summary inputs, omitted learnings, granted escalations, and denied escalation requests.
 
+Use `monozukuri memory compact --dry-run` to preview deterministic pruning of duplicate or stale Memory v2 learnings. `monozukuri loop` runs the same compaction automatically when configured memory thresholds are exceeded and the loop budget leaves at least `$1`.
+
 ![monozukuri memory why output](docs/assets/memory-why-screenshot.svg)
 
 ## Documentation

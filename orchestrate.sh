@@ -454,7 +454,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
-    lint|migrate|why|trace)
+    lint|migrate|compact|why|trace)
       [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
       ;;
     install|status|uninstall)
@@ -586,6 +586,7 @@ while [ $# -gt 0 ]; do
         echo "Usage:"
         echo "  monozukuri memory lint [file...]"
         echo "  monozukuri memory migrate [--dry-run] [--reverse]"
+        echo "  monozukuri memory compact [--dry-run]"
         echo "  monozukuri memory why [lrn-id] [--format json]"
         echo "  monozukuri memory trace <run-id>"
         echo ""
@@ -613,6 +614,7 @@ while [ $# -gt 0 ]; do
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  memory lint [file...]        Validate Memory v2 learning entries"
       echo "  memory migrate               Migrate Memory v1 stores to v2"
+      echo "  memory compact               Deduplicate and prune Memory v2 entries"
       echo "  memory why [lrn-id]          Inspect Memory v2 provenance and history"
       echo "  memory trace <run-id>        Inspect Memory sufficiency-router decisions"
       echo "  status                       Show current orchestrator state"

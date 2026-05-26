@@ -221,6 +221,77 @@ _loop_default_failure_mode() {
   esac
 }
 
+_loop_memory_store_stats() {
+  local store_path="$CONFIG_DIR/memory-v2.json"
+  [ -f "$store_path" ] || { printf '0 0\n'; return 0; }
+  node - "$store_path" <<'JSEOF'
+const fs = require('fs');
+const [,, storePath] = process.argv;
+let count = 0;
+try {
+  const parsed = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+  count = Array.isArray(parsed) ? parsed.length : 0;
+} catch (_) {
+  count = 0;
+}
+let size = 0;
+try {
+  size = fs.statSync(storePath).size;
+} catch (_) {
+  size = 0;
+}
+console.log(`${count} ${size}`);
+JSEOF
+}
+
+_loop_memory_auto_compact() {
+  local max_cost="$1"
+  local enabled="${MEMORY_AUTO_COMPACT_ENABLED:-true}"
+  [ "$enabled" = "true" ] || return 0
+  [ -f "$CONFIG_DIR/memory-v2.json" ] || return 0
+
+  local stats entries size max_entries max_size
+  stats=$(_loop_memory_store_stats)
+  entries="${stats%% *}"
+  size="${stats##* }"
+  max_entries="${MEMORY_AUTO_COMPACT_MAX_ENTRIES:-200}"
+  max_size="${MEMORY_AUTO_COMPACT_MAX_SIZE_BYTES:-100000}"
+
+  if ! awk -v n="$entries" -v limit="$max_entries" -v s="$size" -v slimit="$max_size" \
+    'BEGIN { exit !((n + 0) > (limit + 0) || (s + 0) > (slimit + 0)) }'; then
+    return 0
+  fi
+
+  if awk -v n="$max_cost" 'BEGIN { exit !((n + 0) < 1) }'; then
+    printf 'Memory auto-compact: skipped because loop budget is below $1\n'
+    return 0
+  fi
+
+  if ! declare -f _memory_compact >/dev/null 2>&1; then
+    source "$CMD_DIR/memory.sh"
+  fi
+
+  local previous_dry_run="${OPT_DRY_RUN:-false}" compact_output compact_status=0
+  OPT_DRY_RUN=false
+  compact_output=$(_memory_compact 2>&1) || compact_status=$?
+  OPT_DRY_RUN="$previous_dry_run"
+
+  if [ "$compact_status" -ne 0 ]; then
+    printf 'Memory auto-compact: skipped after compact failure\n' >&2
+    printf '%s\n' "$compact_output" >&2
+    return 0
+  fi
+  case "$compact_output" in
+    Compacted*)
+      printf 'Memory auto-compact: compacted before loop\n'
+      ;;
+    *)
+      printf 'Memory auto-compact: no changes\n'
+      ;;
+  esac
+  printf '%s\n' "$compact_output"
+}
+
 _loop_prompt_failure_action() {
   local feat_id="$1" action
   LOOP_PAUSE_ACTION="abort"
@@ -1126,6 +1197,7 @@ EOF
   local max_time="${OPT_LOOP_MAX_TIME:-480}"
   local max_tokens="${OPT_LOOP_MAX_TOKENS_PER_TASK:-100000}"
   _loop_validate_caps "$max_cost" "$max_time" "$max_tokens" || return 1
+  _loop_memory_auto_compact "$max_cost"
   local on_failure="${OPT_LOOP_ON_FAILURE:-}"
   [ -n "$on_failure" ] || on_failure=$(_loop_default_failure_mode "$AUTONOMY")
   _loop_validate_failure_mode "$on_failure" || return 1
