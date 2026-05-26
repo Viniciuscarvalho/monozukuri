@@ -150,6 +150,8 @@ OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
 OPT_PICK_TOP="5"
 OPT_LOOP_IDS=""
+OPT_LOOP_TASKS=""
+OPT_LOOP_AGENT=""
 OPT_LOOP_CLEANUP=false
 OPT_LOOP_MAX_COST="10"
 OPT_LOOP_MAX_COST_EXPLICIT=false
@@ -298,8 +300,19 @@ while [ $# -gt 0 ]; do
         shift; OPT_SETUP_AGENT="$1"
       elif [ "$SUBCOMMAND" = "memory" ]; then
         shift; OPT_MEMORY_AGENT="$1"
+      elif [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_AGENT="$1"
       else
         err "Unknown argument: --agent"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --tasks)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_TASKS="$1"
+      else
+        err "Unknown argument: --tasks"
         err "Run: monozukuri --help"
         exit 1
       fi
@@ -563,6 +576,7 @@ while [ $# -gt 0 ]; do
       elif [ "$SUBCOMMAND" = "loop" ]; then
         echo "Usage:"
         echo "  monozukuri loop <id...> [--cleanup]"
+        echo "  monozukuri loop --tasks N --agent claude-code|codex|gemini"
         echo "  monozukuri loop --resume [run-id]"
         echo "  monozukuri loop --list-runs"
         echo "  monozukuri loop status [run-id] [--follow]"
@@ -571,6 +585,9 @@ while [ $# -gt 0 ]; do
         echo "Run selected backlog features sequentially through the full pipeline."
         echo ""
         echo "Flags:"
+        echo "  --tasks N                 Select the top N ready backlog tasks"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Run selected tasks with this agent"
         echo "  --cleanup                 Remove loop worktrees after each feature"
         echo "  --max-cost USD            Stop before next feature after cap (default: 10)"
         echo "  --max-time MINUTES        Stop before next feature after cap (default: 480)"
@@ -696,6 +713,7 @@ while [ $# -gt 0 ]; do
       echo "  --status <status>            Filter backlog list by status"
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
       echo "  --agent <agent>              Filter backlog or memory list; target setup by agent"
+      echo "  --tasks <n>                  Select top N ready tasks for loop"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
       echo "  --cleanup                    Remove loop worktrees after each feature"
@@ -788,7 +806,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
        OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
-       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP \
+       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_TASKS OPT_LOOP_AGENT OPT_LOOP_CLEANUP \
        OPT_LOOP_MAX_COST OPT_LOOP_MAX_COST_EXPLICIT \
        OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
        OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \

@@ -9,7 +9,7 @@ The pattern is **record once, replay forever, conform on demand**.
 |---|---|---|---|
 | Mock-based unit/integration (Layer 2) | every PR | $0 | orchestration, error paths, tool selection |
 | Property assertions on recordings | every PR | $0 | recording fixtures still satisfy validator contract |
-| Layer 5 live canary | release-gate (local) | ~$0.01 | claude CLI authenticates and produces text |
+| Layer 5 live canary | release-gate (local) | ≤ $5 | loop opens two green sandbox PRs per real agent |
 | Layer 6 scale soak (mock variant) | every release | $0 | 3 projects × 5 features run-to-completion |
 | Layer 7 conformance | release-gate (local) | ~$0.30 | mock fixtures haven't drifted from live agent shape |
 | V2 MRP matrix | nightly CI | $0 | Memory v2 token-saving assertion and dashboard |
@@ -67,6 +67,23 @@ These match what the validator checks. If a recording stops satisfying a
 property here, the next agent run in production would also fail validation —
 re-record.
 
+## Layer 5 live canary — when to run
+
+Layer 5 is the pre-release proof that `monozukuri loop` still works against a
+real repository with real agents:
+
+```bash
+scripts/verification/live-canary.sh --live --tasks 2 --max-cost 5
+```
+
+It clones `monozukuri/test-sandbox`, runs two top ready tasks per agent, opens
+two PRs per agent, and verifies sandbox CI is green. The mock harness is covered
+by integration tests:
+
+```bash
+scripts/verification/live-canary.sh --mock --tasks 2 --max-cost 5
+```
+
 ## Layer 7 conformance — when to run
 
 Layer 7 is **opt-in only**. To run it locally before a release tag:
@@ -105,8 +122,8 @@ ignored; orchestration behavior drift fails the gate.
 
 - **Performance regression.** Mocks can't catch "phase X got 30% slower."
   Defer until live canary baselines exist.
-- **Prompt quality.** Use Layer 5 canary (`CANARY_OK` echo) for sanity, not
-  quality.
+- **Prompt quality.** Layer 5 proves the live loop can open green sandbox PRs;
+  it does not grade feature usefulness beyond sandbox CI.
 - **Token economy claims.** Measure during real Layer 6-live runs.
 - **Validator itself.** Validator is deterministic; doesn't need mocking.
 
