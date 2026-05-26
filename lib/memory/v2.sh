@@ -34,8 +34,10 @@ summarize_for_phase() {
   local learnings="${3:-[]}"
   local cache_dir
   cache_dir=$(_memory_v2_cache_dir)
+  local trace_path=""
+  trace_path=$(_memory_v2_decision_trace_path 2>/dev/null || true)
   printf '%s' "$learnings" | node "$(_memory_v2_summary_script)" summarize \
-    "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}"
+    "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}" "$trace_path"
 }
 
 _memory_v2_feature_trace_path() {
@@ -43,6 +45,86 @@ _memory_v2_feature_trace_path() {
   [ -n "$feat_id" ] || return 1
   local run_dir="${MONOZUKURI_RUN_DIR:-$(_memory_v2_config_dir)/runs}"
   printf '%s/%s/memory-injections.jsonl\n' "$run_dir" "$feat_id"
+}
+
+_memory_v2_decision_trace_path() {
+  local run_id="${MONOZUKURI_RUN_ID:-}"
+  [ -n "$run_id" ] || run_id="${MONOZUKURI_FEATURE_ID:-}"
+  [ -n "$run_id" ] || return 1
+  local run_dir="${MONOZUKURI_RUN_DIR:-$(_memory_v2_config_dir)/runs}"
+  printf '%s/%s/memory-trace.jsonl\n' "$run_dir" "$run_id"
+}
+
+_memory_v2_log_decision_events() {
+  local event="${1:?_memory_v2_log_decision_events: EVENT required}"
+  local phase="${2:?_memory_v2_log_decision_events: PHASE required}"
+  local ids_csv="${3:-}"
+  local attempt="${4:-0}"
+  local detail="${5:-}"
+  local trace_path
+  trace_path=$(_memory_v2_decision_trace_path) || return 0
+  [ -n "$ids_csv" ] || return 0
+  mkdir -p "$(dirname "$trace_path")"
+  node - "$trace_path" "$event" "$phase" "$ids_csv" "$attempt" "$detail" "${MONOZUKURI_FEATURE_ID:-}" <<'JSEOF' || true
+const fs = require('fs');
+const [,, tracePath, event, phase, idsCsv, attemptRaw, detail, featureId] = process.argv;
+const ids = idsCsv.split(',').map((id) => id.trim()).filter(Boolean);
+const attempt = Number(attemptRaw) || 0;
+for (const id of ids) {
+  const payload = {
+    event,
+    phase,
+    feature_id: featureId || undefined,
+    learning_id: id,
+    attempt,
+    timestamp: new Date().toISOString()
+  };
+  if (event === 'escalation_denied') payload.reason = detail || 'unknown';
+  if (event === 'escalation_granted') payload.tokens = Number(detail) || 0;
+  fs.appendFileSync(tracePath, JSON.stringify(payload) + '\n');
+}
+JSEOF
+}
+
+_memory_v2_log_granted_from_context() {
+  local phase="${1:?_memory_v2_log_granted_from_context: PHASE required}"
+  local ids_csv="${2:-}"
+  local attempt="${3:-0}"
+  local ctx_json="${4:-}"
+  local trace_path
+  trace_path=$(_memory_v2_decision_trace_path) || return 0
+  [ -n "$ids_csv" ] || return 0
+  [ -n "$ctx_json" ] || return 0
+  [ -f "$ctx_json" ] || return 0
+  mkdir -p "$(dirname "$trace_path")"
+  node - "$trace_path" "$phase" "$ids_csv" "$attempt" "$ctx_json" "${MONOZUKURI_FEATURE_ID:-}" <<'JSEOF' || true
+const fs = require('fs');
+const [,, tracePath, phase, idsCsv, attemptRaw, ctxPath, featureId] = process.argv;
+const ids = idsCsv.split(',').map((id) => id.trim()).filter(Boolean);
+const attempt = Number(attemptRaw) || 0;
+let context = {};
+try {
+  context = JSON.parse(fs.readFileSync(ctxPath, 'utf8'));
+} catch {
+  context = {};
+}
+const entries = Array.isArray(context.project_learnings) ? context.project_learnings : [];
+for (const id of ids) {
+  const entry = entries.find((item) => item && item.id === id && item.raw) ||
+    entries.find((item) => item && item.id === id);
+  const summary = entry && entry.summary ? String(entry.summary) : '';
+  const tokens = Math.max(0, Math.ceil(Buffer.byteLength(summary, 'utf8') / 4));
+  fs.appendFileSync(tracePath, JSON.stringify({
+    event: 'escalation_granted',
+    phase,
+    feature_id: featureId || undefined,
+    learning_id: id,
+    attempt,
+    tokens,
+    timestamp: new Date().toISOString()
+  }) + '\n');
+}
+JSEOF
 }
 
 memory_v2_context_entries() {
@@ -57,6 +139,7 @@ memory_v2_context_entries() {
   node "$(_memory_v2_summary_script)" context \
     "$phase" "$feat_id" "$cache_dir" "${MONOZUKURI_MEMORY_SUMMARY_TOKEN_CAP:-500}" \
     "${MONOZUKURI_AGENT:-${ADAPTER:-}}" "${MONOZUKURI_MEMORY_ESCALATION_IDS:-}" \
+    "$(_memory_v2_decision_trace_path 2>/dev/null || true)" \
     < "$store_path" 2>/dev/null || printf '[]\n'
 }
 
@@ -189,7 +272,11 @@ memory_v2_run_phase_with_escalation() {
       return 0
     }
 
+    local next_attempt=$((attempt + 1))
+    _memory_v2_log_decision_events "escalation_requested" "$phase" "$requested_ids" "$next_attempt"
+
     if [ "$attempt" -ge "$max_escalations" ]; then
+      _memory_v2_log_decision_events "escalation_denied" "$phase" "$requested_ids" "$next_attempt" "cap_reached"
       printf 'memory escalation limit reached for %s/%s after %s attempt(s)\n' \
         "$feat_id" "$phase" "$max_escalations" >&2
       export MONOZUKURI_MEMORY_ESCALATION_IDS="$previous_ids"
@@ -197,7 +284,7 @@ memory_v2_run_phase_with_escalation() {
       return 1
     fi
 
-    attempt=$((attempt + 1))
+    attempt="$next_attempt"
     memory_v2_log_escalation "$phase" "$requested_ids" "$attempt"
     accumulated_ids=$(_memory_v2_join_ids "$accumulated_ids" "$requested_ids")
     export MONOZUKURI_MEMORY_ESCALATION_IDS="$accumulated_ids"
@@ -206,6 +293,7 @@ memory_v2_run_phase_with_escalation() {
       context_pack_build "$feat_id" "$ctx_json" 2>/dev/null || true
       export CONTEXT_JSON="$ctx_json"
     fi
+    _memory_v2_log_granted_from_context "$phase" "$requested_ids" "$attempt" "$ctx_json"
   done
 }
 

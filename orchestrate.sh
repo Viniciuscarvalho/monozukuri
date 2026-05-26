@@ -454,7 +454,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
       ;;
-    lint|migrate|why)
+    lint|migrate|why|trace)
       [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
       ;;
     install|status|uninstall)
@@ -587,6 +587,7 @@ while [ $# -gt 0 ]; do
         echo "  monozukuri memory lint [file...]"
         echo "  monozukuri memory migrate [--dry-run] [--reverse]"
         echo "  monozukuri memory why [lrn-id] [--format json]"
+        echo "  monozukuri memory trace <run-id>"
         echo ""
         echo "Validate, migrate, or inspect Memory learning entries."
         echo ""
@@ -613,6 +614,7 @@ while [ $# -gt 0 ]; do
       echo "  memory lint [file...]        Validate Memory v2 learning entries"
       echo "  memory migrate               Migrate Memory v1 stores to v2"
       echo "  memory why [lrn-id]          Inspect Memory v2 provenance and history"
+      echo "  memory trace <run-id>        Inspect Memory sufficiency-router decisions"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -736,7 +738,7 @@ while [ $# -gt 0 ]; do
         fi
       elif [ "$SUBCOMMAND" = "memory" ] && [ -z "$OPT_MEMORY_ACTION" ]; then
         OPT_MEMORY_ACTION="$1"
-      elif [ "$SUBCOMMAND" = "memory" ] && [ "$OPT_MEMORY_ACTION" = "why" ] && [ -z "$OPT_MEMORY_ID" ]; then
+      elif [ "$SUBCOMMAND" = "memory" ] && { [ "$OPT_MEMORY_ACTION" = "why" ] || [ "$OPT_MEMORY_ACTION" = "trace" ]; } && [ -z "$OPT_MEMORY_ID" ]; then
         OPT_MEMORY_ID="$1"
       elif [ "$SUBCOMMAND" = "memory" ]; then
         if [ -n "$OPT_MEMORY_FILES" ]; then

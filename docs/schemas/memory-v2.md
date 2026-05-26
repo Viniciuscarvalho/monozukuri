@@ -99,6 +99,7 @@ monozukuri memory migrate
 monozukuri memory migrate --reverse
 monozukuri memory why lrn-2026-05-24-001
 monozukuri memory why lrn-2026-05-24-001 --format json
+monozukuri memory trace run-2026-05-24-a1b2c3
 ```
 
 The validator accepts a single entry object, an array of entries, or JSONL files
@@ -119,6 +120,11 @@ roundtrip verification and compatibility checks.
 history. It prints the ID, insight, scope, source artifact, counters, and the
 last 10 prompt injections that referenced the learning. Without an ID, it lists
 the 10 most-applied learnings as suggestions for inspection.
+
+`memory trace <run-id>` inspects `.monozukuri/runs/<run-id>/memory-trace.jsonl`
+and prints a human-readable summary of sufficiency-router decisions: summary
+inputs and omissions, escalation requests, granted raw-context injections, and
+denials such as cap exhaustion.
 
 ## Injection Tracking
 
@@ -172,4 +178,27 @@ event to `memory-injections.jsonl`:
 
 ```json
 {"event":"escalation","phase":"prd","learnings":["lrn-2026-05-24-001"],"attempt":1,"timestamp":"2026-05-24T20:01:00.000Z"}
+```
+
+## Decision Trace
+
+The sufficiency-router path also appends diagnostic events to
+`.monozukuri/runs/<run-id>/memory-trace.jsonl`. This file is separate from
+`memory-injections.jsonl`: injections track what entered a prompt, while the
+decision trace explains why summary and escalation choices were made.
+
+Summary decisions include the learnings considered, the IDs that made it into
+the compact context, omitted IDs left available on request, and final token
+count:
+
+```json
+{"event":"summarize","phase":"prd","feature_id":"feat-001","entered":["lrn-2026-05-24-001"],"included":["lrn-2026-05-24-001"],"omitted":[],"tokens":37,"cache_hit":false,"timestamp":"2026-05-24T20:00:00.000Z"}
+```
+
+Escalation decisions are one event per requested learning ID:
+
+```json
+{"event":"escalation_requested","phase":"prd","feature_id":"feat-001","learning_id":"lrn-2026-05-24-001","attempt":1,"timestamp":"2026-05-24T20:01:00.000Z"}
+{"event":"escalation_granted","phase":"prd","feature_id":"feat-001","learning_id":"lrn-2026-05-24-001","attempt":1,"tokens":42,"timestamp":"2026-05-24T20:01:01.000Z"}
+{"event":"escalation_denied","phase":"prd","feature_id":"feat-001","learning_id":"lrn-2026-05-24-999","attempt":4,"reason":"cap_reached","timestamp":"2026-05-24T20:03:00.000Z"}
 ```

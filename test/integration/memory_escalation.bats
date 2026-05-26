@@ -9,6 +9,7 @@ setup() {
   export ROOT_DIR="$PROJECT_DIR"
   export CONFIG_DIR="$PROJECT_DIR/.monozukuri"
   export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
+  export MONOZUKURI_RUN_ID="run-memory-escalation"
   export MONOZUKURI_WORKTREE="$PROJECT_DIR"
   export MONOZUKURI_FEATURE_ID="feat-memory-escalation"
   export MONOZUKURI_PHASE="prd"
@@ -105,6 +106,14 @@ JSON
     .attempt == 1
   ' "$trace"
   [ "$status" -eq 0 ]
+
+  local decision_trace="$MONOZUKURI_RUN_DIR/$MONOZUKURI_RUN_ID/memory-trace.jsonl"
+  [ -f "$decision_trace" ]
+  run jq -s -e '
+    any(.[]; .event == "escalation_requested" and .learning_id == "lrn-2026-05-25-001" and .phase == "prd" and .attempt == 1) and
+    any(.[]; .event == "escalation_granted" and .learning_id == "lrn-2026-05-25-001" and .phase == "prd" and .attempt == 1 and (.tokens | type == "number"))
+  ' "$decision_trace"
+  [ "$status" -eq 0 ]
 }
 
 @test "memory escalation stops after three requests in one phase" {
@@ -120,4 +129,9 @@ JSON
 
   [ "$status" -ne 0 ]
   [ "$(jq -s '[.[] | select(.event == "escalation")] | length' "$MONOZUKURI_RUN_DIR/$MONOZUKURI_FEATURE_ID/memory-injections.jsonl")" -eq 3 ]
+  run jq -s -e '
+    any(.[]; .event == "escalation_requested" and .learning_id == "lrn-2026-05-25-001" and .phase == "prd" and .attempt == 4) and
+    any(.[]; .event == "escalation_denied" and .learning_id == "lrn-2026-05-25-001" and .phase == "prd" and .attempt == 4 and .reason == "cap_reached")
+  ' "$MONOZUKURI_RUN_DIR/$MONOZUKURI_RUN_ID/memory-trace.jsonl"
+  [ "$status" -eq 0 ]
 }

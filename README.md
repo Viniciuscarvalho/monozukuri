@@ -52,6 +52,8 @@ It runs in three autonomy levels — from `supervised` (Ink TUI, you approve eac
 
 Use `monozukuri memory why <lrn-id>` to inspect why a Memory v2 learning exists, where it came from, and the last prompt injections that applied it. Omit the ID to list the 10 most-applied learnings as suggestions, or pass `--format json` for scripts.
 
+Use `monozukuri memory trace <run-id>` to inspect sufficiency-router decisions for a run, including compacted summary inputs, omitted learnings, granted escalations, and denied escalation requests.
+
 ![monozukuri memory why output](docs/assets/memory-why-screenshot.svg)
 
 ## Documentation
