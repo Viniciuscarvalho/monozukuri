@@ -58,6 +58,11 @@ setup() {
   echo "$output" | grep -qE '^\s+memory migrate\b'
 }
 
+@test "--help lists the 'memory compact' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory compact\b'
+}
+
 @test "--help lists the 'memory why' command" {
   run "$ORCHESTRATE" --help
   echo "$output" | grep -qE '^\s+memory why\b'
@@ -70,6 +75,7 @@ setup() {
 
 @test "memory --help documents memory why json output" {
   run "$ORCHESTRATE" memory --help
+  [[ "$output" == *"monozukuri memory compact [--dry-run]"* ]]
   [[ "$output" == *"monozukuri memory why [lrn-id] [--format json]"* ]]
   [[ "$output" == *"monozukuri memory trace <run-id>"* ]]
   [[ "$output" == *"--format json"* ]]

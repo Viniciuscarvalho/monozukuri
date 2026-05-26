@@ -88,6 +88,10 @@ memory:
   carry_forward_from: global-context.md
   error_pattern_window: 5
   env_refresh: true
+  auto_compact:
+    enabled: true # Compact Memory v2 before loop when thresholds are exceeded
+    max_entries: 200
+    max_size_bytes: 100000 # 100KB
 
 safety:
   breaking_change_pause: true
