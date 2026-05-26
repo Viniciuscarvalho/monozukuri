@@ -177,6 +177,37 @@ JSON
   ' "$output"
 }
 
+@test "backlog pick can emit IDs one per line" {
+  _write_scoring_backlog
+  run env MONOZUKURI_SCORE_NOW=2026-05-18T00:00:00Z node "$LIST_JS" --file "$BACKLOG" --pick --pick-format ids --top 2
+  [ "$status" -eq 0 ]
+  [ "$output" = $'high-ready\nmedium-old-small' ]
+}
+
+@test "backlog pick handles closed pipes without an EPIPE crash" {
+  node - "$BACKLOG" <<'JSEOF'
+const fs = require('fs');
+const file = process.argv[2];
+const items = Array.from({ length: 50 }, (_, index) => ({
+  id: `feat-${index}-${'x'.repeat(5000)}`,
+  title: `Feature ${index}`,
+  priority: 'high',
+  effort: 'S',
+  status: 'ready',
+  created_at: `2026-05-${String(index + 1).padStart(2, '0')}T00:00:00Z`,
+}));
+fs.writeFileSync(file, JSON.stringify(items, null, 2));
+JSEOF
+
+  run bash -o pipefail -c '
+    MONOZUKURI_SCORE_NOW=2026-05-30T00:00:00Z node "$1" --file "$2" --pick --pick-format ids --top 50 |
+      head -n 1 >/dev/null
+  ' _ "$LIST_JS" "$BACKLOG"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"EPIPE"* ]]
+}
+
 @test "backlog pick returns empty JSON array for no matches" {
   _write_scoring_backlog
   run node "$LIST_JS" --file "$BACKLOG" --pick --label missing

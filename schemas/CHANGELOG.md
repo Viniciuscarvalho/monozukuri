@@ -1,5 +1,28 @@
 # schemas/ CHANGELOG
 
+## v1.1.2 — 2026-05-24 (MEM-03)
+
+### Added
+
+- Memory v2 prompt injection tracking writes per-feature
+  `memory-injections.jsonl` traces and increments `applied_count` after
+  successful phases.
+
+## v1.1.1 — 2026-05-24 (MEM-02)
+
+### Changed
+
+- `learning-v2.schema.json` — `last_applied` now accepts `null` for migrated
+  Memory v1 entries, because v1 did not track an equivalent application
+  timestamp.
+
+## v1.1.0 — 2026-05-24 (MEM-01)
+
+### Added
+
+- `learning-v2.schema.json` — Memory v2 learning entry with provenance, scope,
+  application count, promotion source, agent specificity, and tags.
+
 ## v1.0.0 — 2026-04-26 (Gap 1)
 
 Initial schema set for phase artifacts (ADR-012).

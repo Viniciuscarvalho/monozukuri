@@ -1,0 +1,16 @@
+{
+  "id": "lrn-2026-05-24-010",
+  "scope": "project",
+  "insight": "Artifacts must be relative so memory can move across machines.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "tests",
+    "run_id": "run-2026-05-24-d0e1f2",
+    "artifact": "/Users/viniciuscarvalho/Documents/monozukuri/cmd/memory.sh"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}

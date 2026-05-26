@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task-001",
+    "title": "Implement Add Prometheus metrics",
+    "description": "Build the behavior requested by feat-go-005.",
+    "files_touched": [
+      "src/go/app"
+    ],
+    "acceptance_criteria": [
+      "The generated implementation passes the project tests."
+    ]
+  }
+]

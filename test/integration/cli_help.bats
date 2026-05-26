@@ -48,6 +48,46 @@ setup() {
   echo "$output" | grep -qE '^\s+pick\b'
 }
 
+@test "--help lists the 'memory lint' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory lint\b'
+}
+
+@test "--help lists the 'memory list' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory list\b'
+}
+
+@test "--help lists the 'memory migrate' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory migrate\b'
+}
+
+@test "--help lists the 'memory compact' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory compact\b'
+}
+
+@test "--help lists the 'memory why' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory why\b'
+}
+
+@test "--help lists the 'memory trace' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory trace\b'
+}
+
+@test "memory --help documents memory why json output" {
+  run "$ORCHESTRATE" memory --help
+  [[ "$output" == *"monozukuri memory list [--agent claude-code|codex|gemini]"* ]]
+  [[ "$output" == *"monozukuri memory compact [--dry-run]"* ]]
+  [[ "$output" == *"monozukuri memory why [lrn-id] [--format json]"* ]]
+  [[ "$output" == *"monozukuri memory trace <run-id>"* ]]
+  [[ "$output" == *"--agent claude-code|codex|gemini"* ]]
+  [[ "$output" == *"--format json"* ]]
+}
+
 @test "--help: all four previously-hidden commands appear" {
   run "$ORCHESTRATE" --help
   for cmd in stop summary ui telemetry; do

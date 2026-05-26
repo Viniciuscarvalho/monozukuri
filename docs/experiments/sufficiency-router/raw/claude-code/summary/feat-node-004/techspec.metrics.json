@@ -1,0 +1,16 @@
+{
+  "agent": "claude-code",
+  "strategy": "summary",
+  "feature_id": "feat-node-004",
+  "phase": "techspec",
+  "input_tokens": 264,
+  "output_tokens_estimated": 59,
+  "total_tokens_estimated": 323,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

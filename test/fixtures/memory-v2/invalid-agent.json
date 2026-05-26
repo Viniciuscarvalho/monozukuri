@@ -1,0 +1,16 @@
+{
+  "id": "lrn-2026-05-24-005",
+  "scope": "project",
+  "insight": "Only known coding agents can receive agent-specific learnings.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "tests",
+    "run_id": "run-2026-05-24-e5f6a7",
+    "artifact": "test/integration/memory_lint.bats"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": "aider",
+  "tags": ["memory"]
+}

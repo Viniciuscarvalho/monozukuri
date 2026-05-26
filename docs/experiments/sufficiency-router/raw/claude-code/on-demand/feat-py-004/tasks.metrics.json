@@ -1,0 +1,16 @@
+{
+  "agent": "claude-code",
+  "strategy": "on-demand",
+  "feature_id": "feat-py-004",
+  "phase": "tasks",
+  "input_tokens": 288,
+  "output_tokens_estimated": 79,
+  "total_tokens_estimated": 367,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}

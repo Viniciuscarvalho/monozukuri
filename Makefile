@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts
 LIB_DIR := scripts/lib
 
-.PHONY: help install lint test test-properties verify fmt doctor clean rerecord-fixtures conformance
+.PHONY: help install lint test test-properties verify fmt doctor clean rerecord-fixtures conformance mrp-v2 loop-conformance live-canary
 
 help: ## Show available targets
 	@awk '/^[a-zA-Z_-]+:.*?## .*/{printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -40,6 +40,22 @@ conformance: ## Run Layer 7 conformance against live agent (LOCAL ONLY — costs
 		source .qa/lib/semver.sh; \
 		source .qa/layers/07-conformance.sh; \
 		run_layer7 "v0.0.0-conformance"'
+
+mrp-v2: ## Run the CI-safe Memory v2 MRP matrix and write markdown dashboard
+	@node scripts/verification/mrp-matrix.js --mock \
+		--results .qa/reports/mrp-v2-results.json \
+		--dashboard .qa/reports/mrp-v2-dashboard.md
+
+loop-conformance: ## Run mock loop conformance across Claude Code, Codex, and Gemini
+	@bash scripts/verification/loop-conformance.sh --tasks 3 \
+		--out-dir .qa/reports/loop-conformance
+
+live-canary: ## Run mock or live Layer 5 canary. Set LIVE=1 for real agents.
+	@if [ "$${LIVE:-0}" = "1" ]; then \
+		bash scripts/verification/live-canary.sh --live --tasks 2 --max-cost 5; \
+	else \
+		bash scripts/verification/live-canary.sh --mock --tasks 2 --max-cost 5; \
+	fi
 
 verify: lint test ## Run lint then test
 

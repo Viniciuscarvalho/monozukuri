@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task-001",
+    "title": "Implement Add environment config validation",
+    "description": "Build the behavior requested by feat-node-004.",
+    "files_touched": [
+      "src/node/app"
+    ],
+    "acceptance_criteria": [
+      "The generated implementation passes the project tests."
+    ]
+  }
+]

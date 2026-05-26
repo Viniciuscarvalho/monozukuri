@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" role="img" aria-labelledby="title desc">
+  <title id="title">monozukuri memory why output</title>
+  <desc id="desc">Terminal screenshot showing provenance and application history for one Memory v2 learning.</desc>
+  <rect width="900" height="420" fill="#1f2328"/>
+  <rect x="28" y="24" width="844" height="372" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <circle cx="58" cy="50" r="6" fill="#ff5f56"/>
+  <circle cx="80" cy="50" r="6" fill="#ffbd2e"/>
+  <circle cx="102" cy="50" r="6" fill="#27c93f"/>
+  <text x="44" y="92" fill="#8b949e" font-family="SFMono-Regular, Consolas, monospace" font-size="16">$ monozukuri memory why lrn-2026-05-24-777</text>
+  <text x="44" y="132" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">ID: lrn-2026-05-24-777</text>
+  <text x="44" y="164" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Insight: Trace injected learnings by id.</text>
+  <text x="44" y="196" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Scope: project</text>
+  <text x="44" y="228" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Source: docs/schemas/memory-v2.md</text>
+  <text x="44" y="260" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Applied count: 12</text>
+  <text x="44" y="292" fill="#f0f6fc" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Last applied: 2026-05-24T21:00:00.000Z</text>
+  <text x="44" y="332" fill="#79c0ff" font-family="SFMono-Regular, Consolas, monospace" font-size="16">Applications:</text>
+  <text x="68" y="364" fill="#c9d1d9" font-family="SFMono-Regular, Consolas, monospace" font-size="15">- run_id=run-002 feature_id=feat-memory-002 phase=tests</text>
+</svg>

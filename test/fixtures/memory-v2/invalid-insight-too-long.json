@@ -1,0 +1,16 @@
+{
+  "id": "lrn-2026-05-24-006",
+  "scope": "project",
+  "insight": "This insight intentionally exceeds the two hundred character limit because the reusable memory surface should stay short enough to inject into prompts without wasting context or hiding the actionable point inside a paragraph.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "tests",
+    "run_id": "run-2026-05-24-a7b8c9",
+    "artifact": "docs/schemas/memory-v2.md"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}

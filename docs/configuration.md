@@ -18,6 +18,7 @@ model: # which Claude model and routing policy
 gates: # size, cycle, and budget ceilings
 phase: # per-phase circuit breaker
 learnings: # 3-tier learning store
+memory: # Memory v2 compaction and runtime options
 ```
 
 Every block has defaults. A minimal valid config only needs `skill`, `source`, and `autonomy` — everything else can be omitted and Monozukuri will use the defaults documented below.
@@ -181,6 +182,28 @@ learnings:
 The three-tier learning store. Defaults are correct for almost every project — disable a tier only if you are debugging the learning step itself or have a compliance reason to keep run history out of the repo. The `feature` and `project` tiers are committed by default (so the team benefits from prior runs); the `global` tier lives in your home directory and is per-user.
 
 See [ADR-008](adr/008-orchestrator-economy.md#three-tier-learning-store) for the design.
+
+---
+
+## `memory`
+
+```yaml
+memory:
+  auto_compact:
+    enabled: true
+    max_entries: 200
+    max_size_bytes: 100000
+```
+
+Memory v2 compaction is deterministic and does not call an agent. Before
+`monozukuri loop` starts feature execution, Monozukuri checks
+`.monozukuri/memory-v2.json`; if it has more entries than `max_entries` or is
+larger than `max_size_bytes`, it runs `monozukuri memory compact` automatically.
+The trigger is skipped when `enabled: false` or when the loop `--max-cost` budget
+is below `$1`, so compaction never consumes budget reserved for a low-cost run.
+
+Run `monozukuri memory compact --dry-run` to inspect the duplicate merges and
+stale drops before applying them manually.
 
 ---
 

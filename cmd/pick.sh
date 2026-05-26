@@ -6,12 +6,12 @@ set -euo pipefail
 _pick_help() {
   cat <<'EOF'
 Usage:
-  monozukuri pick --json [--top N] [filters]
+  monozukuri pick [--json] [--top N] [filters]
 
 Pick top-ranked backlog items for scripts and CI.
 
 Flags:
-  --json                    Emit JSON array output
+  --json                    Emit JSON array output (default: IDs, one per line)
   --top N                   Maximum items to print (default: 5, max: 50)
   --label foo,bar           Include items with any listed label
   --status ready|blocked|in-progress|done
@@ -28,6 +28,8 @@ sub_pick() {
   local label="${OPT_BACKLOG_LABEL:-}"
   local status="${OPT_BACKLOG_STATUS:-ready}"
   local agent="${OPT_BACKLOG_AGENT:-}"
+  local pick_format="ids"
+  [ "${OPT_JSON:-false}" = "true" ] && pick_format="json"
 
   if ! [[ "$top" =~ ^[0-9]+$ ]] || [ "$top" -lt 1 ] || [ "$top" -gt 50 ]; then
     err "Invalid --top: expected integer from 1 to 50"
@@ -53,7 +55,7 @@ sub_pick() {
   source "$CMD_DIR/backlog.sh"
   _backlog_adapter_output_file
 
-  local args=(--file "$BACKLOG_ADAPTER_OUTPUT_FILE" --pick --top "$top" --status "$status")
+  local args=(--file "$BACKLOG_ADAPTER_OUTPUT_FILE" --pick --pick-format "$pick_format" --top "$top" --status "$status")
   [ -n "$label" ] && args+=(--label "$label")
   [ -n "$agent" ] && args+=(--agent "$agent")
 

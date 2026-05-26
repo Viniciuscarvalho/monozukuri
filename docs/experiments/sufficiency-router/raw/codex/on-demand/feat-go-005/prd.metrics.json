@@ -1,0 +1,16 @@
+{
+  "agent": "codex",
+  "strategy": "on-demand",
+  "feature_id": "feat-go-005",
+  "phase": "prd",
+  "input_tokens": 289,
+  "output_tokens_estimated": 135,
+  "total_tokens_estimated": 424,
+  "latency_ms": 1,
+  "schema_valid": true,
+  "schema_error": "",
+  "escalated": false,
+  "escalation_reason": "",
+  "attempts": 1,
+  "exit_code": 0
+}
