@@ -14,6 +14,11 @@ Every release is gated by `.qa/release-gate.sh`, which runs 6 layers of validati
 | 4     | backwards-compat | State file forward/back compat                            |
 | 5     | live-canary      | Real `claude --print` invocation (skipped on patches, CI) |
 | 6     | scale-soak       | 3-project × 5-feature mock soak; SLO assertions           |
+| 7     | conformance      | Local opt-in mocks-vs-live structural conformance         |
+
+The v2 verification workflow is separate from release-gate: it runs nightly and
+on demand, writes markdown dashboards under `.qa/reports/`, and blocks when the
+Memory v2 MRP token-saving assertion or loop cross-agent conformance fails.
 
 ## CI enforcement (D1)
 

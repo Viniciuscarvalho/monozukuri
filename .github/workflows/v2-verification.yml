@@ -1,0 +1,46 @@
+name: V2 Verification
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v2-verification:
+    name: MRP + loop conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@monozukuri.local"
+          git config --global user.name "CI"
+
+      - name: Run Memory v2 MRP matrix
+        run: |
+          node scripts/verification/mrp-matrix.js --mock \
+            --results .qa/reports/mrp-v2-results.json \
+            --dashboard .qa/reports/mrp-v2-dashboard.md
+
+      - name: Run loop conformance suite
+        run: |
+          bash scripts/verification/loop-conformance.sh --tasks 3 \
+            --out-dir .qa/reports/loop-conformance
+
+      - name: Upload verification dashboards
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2-verification-reports
+          path: |
+            .qa/reports/mrp-v2-results.json
+            .qa/reports/mrp-v2-dashboard.md
+            .qa/reports/loop-conformance/
