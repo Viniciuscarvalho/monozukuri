@@ -170,6 +170,7 @@ OPT_MEMORY_ACTION=""
 OPT_MEMORY_ID=""
 OPT_MEMORY_FILES=""
 OPT_MEMORY_FORMAT="text"
+OPT_MEMORY_AGENT=""
 OPT_MEMORY_MIGRATE_REVERSE=false
 
 while [ $# -gt 0 ]; do
@@ -295,6 +296,8 @@ while [ $# -gt 0 ]; do
         shift; OPT_BACKLOG_AGENT="$1"
       elif [ "$SUBCOMMAND" = "setup" ]; then
         shift; OPT_SETUP_AGENT="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        shift; OPT_MEMORY_AGENT="$1"
       else
         err "Unknown argument: --agent"
         err "Run: monozukuri --help"
@@ -453,6 +456,7 @@ while [ $# -gt 0 ]; do
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
+      [ "$SUBCOMMAND" = "memory" ] && [ "$1" = "list" ] && OPT_MEMORY_ACTION=list
       ;;
     lint|migrate|compact|why|trace)
       [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
@@ -585,6 +589,7 @@ while [ $# -gt 0 ]; do
       elif [ "$SUBCOMMAND" = "memory" ]; then
         echo "Usage:"
         echo "  monozukuri memory lint [file...]"
+        echo "  monozukuri memory list [--agent claude-code|codex|gemini]"
         echo "  monozukuri memory migrate [--dry-run] [--reverse]"
         echo "  monozukuri memory compact [--dry-run]"
         echo "  monozukuri memory why [lrn-id] [--format json]"
@@ -593,6 +598,8 @@ while [ $# -gt 0 ]; do
         echo "Validate, migrate, or inspect Memory learning entries."
         echo ""
         echo "Flags:"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Show learnings relevant to one agent"
         echo "  --dry-run                 Preview migration without writing files"
         echo "  --reverse                 Convert Memory v2 back to v1-compatible JSON"
         echo "  --format json             Emit machine-readable output for memory why"
@@ -613,6 +620,7 @@ while [ $# -gt 0 ]; do
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
       echo "  pick --top N                 Emit top-ranked backlog item IDs"
       echo "  memory lint [file...]        Validate Memory v2 learning entries"
+      echo "  memory list                  List Memory v2 learnings"
       echo "  memory migrate               Migrate Memory v1 stores to v2"
       echo "  memory compact               Deduplicate and prune Memory v2 entries"
       echo "  memory why [lrn-id]          Inspect Memory v2 provenance and history"
@@ -687,7 +695,7 @@ while [ $# -gt 0 ]; do
       echo "  --label <a,b>                Filter backlog list by label"
       echo "  --status <status>            Filter backlog list by status"
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
-      echo "  --agent <agent>              Filter backlog list or target setup by agent"
+      echo "  --agent <agent>              Filter backlog or memory list; target setup by agent"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
       echo "  --cleanup                    Remove loop worktrees after each feature"
@@ -788,7 +796,7 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
        OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW \
        OPT_LOOP_REPORT_FORMAT OPT_MEMORY_ACTION OPT_MEMORY_ID \
-       OPT_MEMORY_FILES OPT_MEMORY_FORMAT
+       OPT_MEMORY_FILES OPT_MEMORY_FORMAT OPT_MEMORY_AGENT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 

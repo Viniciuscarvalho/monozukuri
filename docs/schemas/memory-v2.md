@@ -60,7 +60,9 @@ not track an equivalent application timestamp.
 corrections and manual maintainer decisions.
 
 `agent_specific` is `null` for portable learnings, or an adapter id when the
-learning should only be injected for that agent.
+learning should only be injected for that agent. Prompt injection and
+`memory list --agent <id>` both treat `null` as universal and exclude entries
+whose adapter id differs from the active agent.
 
 `tags` supports filtering and future retrieval strategies.
 
@@ -97,6 +99,7 @@ monozukuri memory lint path/to/learning-v2.yaml
 monozukuri memory migrate --dry-run
 monozukuri memory migrate
 monozukuri memory migrate --reverse
+monozukuri memory list --agent codex
 monozukuri memory compact --dry-run
 monozukuri memory compact
 monozukuri memory why lrn-2026-05-24-001
@@ -111,6 +114,12 @@ processing.
 
 Without file arguments, `memory lint` searches common project store locations and
 prints a no-store message when none exist.
+
+`memory list --agent <id>` lists only learnings relevant to that agent: universal
+entries with `agent_specific: null` plus entries explicitly scoped to the
+selected adapter. If a universal learning has repeated Claude failure evidence
+and Codex success evidence in its tags, the command suggests setting
+`agent_specific: codex` for maintainer review.
 
 `memory migrate` reads the existing v1 learning stores, writes
 `.monozukuri/memory-v2.json`, and backs up the original v1 stores under
