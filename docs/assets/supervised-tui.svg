@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Monozukuri supervised mode approval flow</title>
+  <desc id="desc">Diagram of the supervised Ink TUI with feature status, streaming phase output, artifact preview, and approve retry abort gate actions.</desc>
+  <rect width="1200" height="700" fill="#111827"/>
+  <rect x="48" y="46" width="1104" height="608" rx="18" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+
+  <rect x="78" y="76" width="1044" height="58" rx="10" fill="#172033"/>
+  <text x="104" y="113" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="22" font-weight="700">monozukuri run --autonomy supervised</text>
+  <text x="835" y="113" fill="#93c5fd" font-family="Menlo, Consolas, monospace" font-size="18">feat-042 / TechSpec</text>
+
+  <rect x="78" y="160" width="690" height="346" rx="12" fill="#111827" stroke="#475569"/>
+  <text x="104" y="198" fill="#93c5fd" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700">Phase output</text>
+  <text x="104" y="238" fill="#d1d5db" font-family="Menlo, Consolas, monospace" font-size="17">[techspec] rendering prompt with Memory v2 context</text>
+  <text x="104" y="276" fill="#d1d5db" font-family="Menlo, Consolas, monospace" font-size="17">[techspec] agent writing implementation plan</text>
+  <text x="104" y="314" fill="#d1d5db" font-family="Menlo, Consolas, monospace" font-size="17">[schema] validating required sections</text>
+  <text x="104" y="352" fill="#86efac" font-family="Menlo, Consolas, monospace" font-size="17">[gate] artifact ready for review</text>
+  <rect x="104" y="394" width="620" height="76" rx="8" fill="#0b1220" stroke="#1f2937"/>
+  <text x="126" y="426" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">Review the artifact before the next phase starts.</text>
+  <text x="126" y="454" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15">State is persisted before advancing.</text>
+
+  <rect x="794" y="160" width="328" height="346" rx="12" fill="#111827" stroke="#475569"/>
+  <text x="824" y="198" fill="#93c5fd" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700">Approval gate</text>
+  <text x="824" y="238" fill="#d1d5db" font-family="Menlo, Consolas, monospace" font-size="16">PRD: approved</text>
+  <text x="824" y="272" fill="#d1d5db" font-family="Menlo, Consolas, monospace" font-size="16">TechSpec: waiting</text>
+  <text x="824" y="306" fill="#64748b" font-family="Menlo, Consolas, monospace" font-size="16">Tasks: pending</text>
+  <text x="824" y="340" fill="#64748b" font-family="Menlo, Consolas, monospace" font-size="16">Code: pending</text>
+  <text x="824" y="374" fill="#64748b" font-family="Menlo, Consolas, monospace" font-size="16">Tests: pending</text>
+  <text x="824" y="408" fill="#64748b" font-family="Menlo, Consolas, monospace" font-size="16">PR: pending</text>
+
+  <rect x="78" y="532" width="1044" height="92" rx="12" fill="#172033" stroke="#475569"/>
+  <text x="104" y="568" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700">Choose next action</text>
+
+  <rect x="104" y="586" width="150" height="42" rx="8" fill="#166534"/>
+  <text x="135" y="613" fill="#ecfdf5" font-family="Menlo, Consolas, monospace" font-size="17" font-weight="700">Approve</text>
+
+  <rect x="278" y="586" width="150" height="42" rx="8" fill="#92400e"/>
+  <text x="325" y="613" fill="#fff7ed" font-family="Menlo, Consolas, monospace" font-size="17" font-weight="700">Retry</text>
+
+  <rect x="452" y="586" width="150" height="42" rx="8" fill="#991b1b"/>
+  <text x="499" y="613" fill="#fef2f2" font-family="Menlo, Consolas, monospace" font-size="17" font-weight="700">Abort</text>
+
+  <text x="642" y="613" fill="#cbd5e1" font-family="Menlo, Consolas, monospace" font-size="16">Approve advances. Retry reprompts. Abort preserves worktree and logs.</text>
+</svg>
