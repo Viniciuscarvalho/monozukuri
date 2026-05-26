@@ -53,6 +53,11 @@ setup() {
   echo "$output" | grep -qE '^\s+memory lint\b'
 }
 
+@test "--help lists the 'memory list' command" {
+  run "$ORCHESTRATE" --help
+  echo "$output" | grep -qE '^\s+memory list\b'
+}
+
 @test "--help lists the 'memory migrate' command" {
   run "$ORCHESTRATE" --help
   echo "$output" | grep -qE '^\s+memory migrate\b'
@@ -75,9 +80,11 @@ setup() {
 
 @test "memory --help documents memory why json output" {
   run "$ORCHESTRATE" memory --help
+  [[ "$output" == *"monozukuri memory list [--agent claude-code|codex|gemini]"* ]]
   [[ "$output" == *"monozukuri memory compact [--dry-run]"* ]]
   [[ "$output" == *"monozukuri memory why [lrn-id] [--format json]"* ]]
   [[ "$output" == *"monozukuri memory trace <run-id>"* ]]
+  [[ "$output" == *"--agent claude-code|codex|gemini"* ]]
   [[ "$output" == *"--format json"* ]]
 }
 

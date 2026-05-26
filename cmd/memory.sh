@@ -698,6 +698,132 @@ try {
 JSEOF
 }
 
+_memory_list() {
+  node - \
+    "$ROOT_DIR" \
+    "$CONFIG_DIR" \
+    "${OPT_MEMORY_AGENT:-}" \
+    "${OPT_MEMORY_FORMAT:-text}" <<'JSEOF'
+const fs = require('fs');
+const path = require('path');
+
+const [,, rootDir, configDir, agentRaw, formatRaw] = process.argv;
+const agent = agentRaw || '';
+const format = formatRaw || 'text';
+const storePath = path.join(configDir, 'memory-v2.json');
+const validAgents = new Set(['', 'claude-code', 'codex', 'gemini']);
+
+function rel(filePath) {
+  const relative = path.relative(rootDir, filePath);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+    ? relative
+    : filePath;
+}
+
+function readMemoryStore() {
+  if (!fs.existsSync(storePath)) return [];
+  const parsed = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+function relevantToAgent(entry) {
+  if (!agent) return true;
+  return !entry.agent_specific || entry.agent_specific === agent;
+}
+
+function tagCount(tags, kind, selectedAgent) {
+  let count = 0;
+  for (const tag of Array.isArray(tags) ? tags : []) {
+    const parts = String(tag).split(':');
+    if (parts[0] !== kind || parts[1] !== selectedAgent) continue;
+    const parsed = Number(parts[2] || '1');
+    count += Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }
+  return count;
+}
+
+function promotionSuggestions(entries) {
+  if (agent !== 'codex') return [];
+  return entries
+    .filter((entry) => !entry.agent_specific)
+    .filter((entry) =>
+      tagCount(entry.tags, 'agent-failure', 'claude-code') >= 3 &&
+      tagCount(entry.tags, 'agent-success', 'codex') >= 1
+    )
+    .map((entry) =>
+      `Suggestion: ${entry.id} repeatedly failed in claude-code and worked in codex; consider setting agent_specific: codex`
+    );
+}
+
+function agentLabel(value) {
+  return value || 'any';
+}
+
+function trunc(value, max) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return text.length <= max ? text : `${text.slice(0, max - 3)}...`;
+}
+
+function emitText(entries) {
+  if (entries.length === 0) {
+    if (agent) {
+      console.log(`No Memory v2 learnings relevant to ${agent}.`);
+    } else {
+      console.log(`No Memory v2 store found at ${rel(storePath)}.`);
+      console.log('Run monozukuri memory migrate or add .monozukuri/memory-v2.json.');
+    }
+    return;
+  }
+  console.log('ID APPLIED SCOPE AGENT INSIGHT');
+  for (const entry of entries) {
+    console.log([
+      entry.id,
+      Number(entry.applied_count || 0),
+      entry.scope || 'unknown',
+      agentLabel(entry.agent_specific),
+      trunc(entry.insight, 80)
+    ].join(' '));
+  }
+  const suggestions = promotionSuggestions(entries);
+  if (suggestions.length > 0) {
+    console.log('');
+    for (const suggestion of suggestions) console.log(suggestion);
+  }
+}
+
+function emitJson(entries) {
+  process.stdout.write(JSON.stringify({
+    agent: agent || null,
+    entries,
+    suggestions: promotionSuggestions(entries)
+  }, null, 2) + '\n');
+}
+
+try {
+  if (!validAgents.has(agent)) {
+    console.error(`Unsupported memory agent: ${agent}`);
+    process.exit(2);
+  }
+  if (format !== 'text' && format !== 'json') {
+    console.error(`Unsupported memory list format: ${format}`);
+    process.exit(2);
+  }
+  const entries = readMemoryStore()
+    .filter((entry) => entry && typeof entry === 'object' && entry.id)
+    .filter(relevantToAgent)
+    .sort((a, b) => {
+      const countDiff = (Number(b.applied_count) || 0) - (Number(a.applied_count) || 0);
+      return countDiff || String(a.id).localeCompare(String(b.id));
+    });
+  if (format === 'json') emitJson(entries);
+  else emitText(entries);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+JSEOF
+}
+
 _memory_why() {
   node - \
     "$ROOT_DIR" \
@@ -946,6 +1072,9 @@ sub_memory() {
     lint)
       _memory_lint
       ;;
+    list)
+      _memory_list
+      ;;
     migrate)
       _memory_migrate
       ;;
@@ -961,16 +1090,17 @@ sub_memory() {
     ""|--help|-h)
       echo "Usage:"
       echo "  monozukuri memory lint [file...]"
+      echo "  monozukuri memory list [--agent claude-code|codex|gemini]"
       echo "  monozukuri memory migrate [--dry-run] [--reverse]"
       echo "  monozukuri memory compact [--dry-run]"
       echo "  monozukuri memory why [lrn-id] [--format json]"
       echo "  monozukuri memory trace <run-id>"
       echo ""
-      echo "Validate, migrate, or inspect Memory learning entries."
+      echo "Validate, list, migrate, or inspect Memory learning entries."
       ;;
     *)
       err "Unknown memory action: $OPT_MEMORY_ACTION"
-      err "Available: lint, migrate, compact, why, trace"
+      err "Available: lint, list, migrate, compact, why, trace"
       return 1
       ;;
   esac

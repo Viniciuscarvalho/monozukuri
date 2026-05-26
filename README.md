@@ -52,6 +52,8 @@ It runs in three autonomy levels — from `supervised` (Ink TUI, you approve eac
 
 Use `monozukuri memory why <lrn-id>` to inspect why a Memory v2 learning exists, where it came from, and the last prompt injections that applied it. Omit the ID to list the 10 most-applied learnings as suggestions, or pass `--format json` for scripts.
 
+Use `monozukuri memory list --agent codex` to inspect the learnings that are relevant to one adapter. Universal learnings (`agent_specific: null`) are included for every agent, while adapter-specific learnings only appear for their matching agent.
+
 Use `monozukuri memory trace <run-id>` to inspect sufficiency-router decisions for a run, including compacted summary inputs, omitted learnings, granted escalations, and denied escalation requests.
 
 Use `monozukuri memory compact --dry-run` to preview deterministic pruning of duplicate or stale Memory v2 learnings. `monozukuri loop` runs the same compaction automatically when configured memory thresholds are exceeded and the loop budget leaves at least `$1`.
