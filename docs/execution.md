@@ -16,7 +16,7 @@ The hero GIF in the README captures this scenario, end to end:
 4. The user merges the PR; Monozukuri picks up the second feature.
 5. Final state: two open PRs, two worktrees cleaned up, learnings written.
 
-The full unedited cast lives at [`assets/supervised.cast`](assets/supervised.cast). See [Recording the hero asset](#recording-the-hero-asset) below to regenerate it.
+The reproducible tape lives at [`assets/hero.tape`](assets/hero.tape). See [Recording the hero asset](#recording-the-hero-asset) below to regenerate it.
 
 ---
 
@@ -55,16 +55,21 @@ Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `
 
 ## Supervised mode (Ink TUI)
 
-`monozukuri run --autonomy supervised` opens an interactive TUI. After each phase (PRD, TechSpec, Tasks, Code, Tests, PR) the run pauses for your approval. Use this mode when you are pairing with the agent or evaluating a new skill.
+`monozukuri run --autonomy supervised` opens an interactive Ink TUI and runs one feature phase at a time. After each phase (PRD, TechSpec, Tasks, Code, Tests, PR), the pipeline stops at an approval gate before the next phase can start. Use this mode when you are pairing with the agent, evaluating a new skill, or trying Monozukuri against an unfamiliar repository for the first time.
 
-<!-- CAPTURE: still screenshot of the Ink TUI mid-run, ideally at the TechSpec approval gate.
-     Path: docs/assets/supervised-tui.png -->
+![Supervised mode approval flow](assets/supervised-tui.svg)
 
-![Supervised TUI](assets/supervised-tui.png)
+**Reading the TUI.** The top bar shows the active feature, current phase, elapsed time, and budget. The center pane streams the agent output and the artifact being produced. The side or footer area shows the pending gate and the action expected from you.
 
-**Reading the TUI.** The top bar shows the active feature and the current phase. The center pane shows the phase output streaming from the skill. The bottom bar shows the approval prompt and the elapsed phase budget. Token cost accumulates in the right margin.
+**Gate decisions.**
 
-**When to use it.** First runs against a new project, skill development, and any time you want to see the agent's reasoning live. Not appropriate for unattended runs — it blocks on every gate.
+- **Approve** accepts the artifact and starts the next phase.
+- **Retry** sends your feedback back into the same phase and asks the agent to regenerate the artifact.
+- **Abort** stops the feature, preserves the worktree and logs, and leaves the run resumable for inspection.
+
+After every gate, state is written under `.monozukuri/` before the next step begins. If the terminal disconnects or you stop the process, inspect the run state and resume from the last safe point instead of starting from memory.
+
+**When to use it.** First runs against a new project, skill development, adapter work, and any time you want to see the agent's reasoning live. Do not use supervised mode for unattended backlogs: it blocks at every gate. For normal human-in-the-loop delivery, use `monozukuri run --autonomy checkpoint`. For scripted selected batches, prefer `monozukuri pick --top N | monozukuri loop`.
 
 ---
 
