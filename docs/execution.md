@@ -1,6 +1,6 @@
 # Execution at a glance
 
-This document shows what Monozukuri looks like while it runs, in each of the three autonomy levels, and what a successful run produces. It is the reference users open before their first `monozukuri run` — and the source for the hero asset embedded in the README.
+This document shows what Monozukuri looks like while it runs, in each of the three autonomy levels, and what a successful run produces. It is the reference users open before their first `monozukuri run`.
 
 If you are looking for _what to do when something breaks_, see [troubleshooting.md](troubleshooting.md). For the differences between autonomy modes, see [autonomy.md](autonomy.md).
 
@@ -8,7 +8,7 @@ If you are looking for _what to do when something breaks_, see [troubleshooting.
 
 ## A 30-second tour
 
-The hero GIF in the README captures this scenario, end to end:
+The canonical demo scenario is:
 
 1. A repository with two pending features in `features.md`.
 2. `monozukuri run --dry-run` previews the plan and exits.
@@ -16,7 +16,7 @@ The hero GIF in the README captures this scenario, end to end:
 4. The user merges the PR; Monozukuri picks up the second feature.
 5. Final state: two open PRs, two worktrees cleaned up, learnings written.
 
-The reproducible tape lives at [`assets/hero.tape`](assets/hero.tape). See [Recording the hero asset](#recording-the-hero-asset) below to regenerate it.
+The reproducible tape lives at [`assets/hero.tape`](assets/hero.tape). See [Recording demo assets](#recording-demo-assets) below when the project needs refreshed release media.
 
 ---
 
@@ -129,9 +129,9 @@ If any of these are missing or unexpected, the run did not complete cleanly. Go 
 
 ---
 
-## Recording the hero asset
+## Recording demo assets
 
-The README hero GIF is regenerated from a [VHS](https://github.com/charmbracelet/vhs) tape. VHS is declarative, reproducible, and exports to GIF, MP4, and WebM from a single script — preferable to ad-hoc screen recordings for an asset that needs to track CLI changes.
+Demo media can be regenerated from a [VHS](https://github.com/charmbracelet/vhs) tape when a release needs refreshed visual assets. Keep generated media out of ordinary feature PRs unless the release checklist explicitly requires it; the tape and the command sequence are the source of truth.
 
 **Why VHS over alternatives.** asciinema records faithfully but produces a `.cast` file that needs a player or a converter (agg) to embed in GitHub. terminalizer is heavier and harder to script. VHS produces a GIF directly, runs in CI, and the tape itself is reviewable in a PR.
 

@@ -37,6 +37,11 @@ values in `results.csv` and `results.json`. Before running live replay,
 inspect the planned matrix with `--fake` and narrow it with `--agents`,
 `--strategies`, `--phases`, or `--max-features` when doing smoke checks.
 
+Raw prompts, stdout, stderr, and phase artifacts are generated locally under
+`raw/` by the harness and are intentionally not committed. Recreate them from
+the harness when debugging a run; keep the release branch limited to the
+methodology, fixed cases, and aggregate metrics.
+
 ## Interpretation
 
 `schema_valid` is the quality proxy for MEM-05. Strategy C is considered a
