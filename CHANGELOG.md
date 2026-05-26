@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.62.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.62.0...v1.62.1) (2026-05-26)
+
+
+### Documentation
+
+* **agent:** add project workflow skills ([#275](https://github.com/Viniciuscarvalho/monozukuri/issues/275)) ([b209c65](https://github.com/Viniciuscarvalho/monozukuri/commit/b209c65a6930b4ced681de6fe0343f6d76cf6952))
+
 ## [1.62.0](https://github.com/Viniciuscarvalho/monozukuri/compare/v1.61.0...v1.62.0) (2026-05-22)
 
 
