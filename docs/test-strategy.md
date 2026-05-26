@@ -12,6 +12,8 @@ The pattern is **record once, replay forever, conform on demand**.
 | Layer 5 live canary | release-gate (local) | ~$0.01 | claude CLI authenticates and produces text |
 | Layer 6 scale soak (mock variant) | every release | $0 | 3 projects × 5 features run-to-completion |
 | Layer 7 conformance | release-gate (local) | ~$0.30 | mock fixtures haven't drifted from live agent shape |
+| V2 MRP matrix | nightly CI | $0 | Memory v2 token-saving assertion and dashboard |
+| V2 loop conformance | nightly CI | $0 | Claude/Codex/Gemini loop orchestration parity |
 | Layer 6 scale soak (live variant) | manual pre-release | ≤ $50 | end-to-end against real models, full SLO check |
 
 **CI never spends money.** Layers 5, 6-live, and 7 are skipped in CI via env
@@ -77,6 +79,27 @@ Cost per run: ~$0.30 (PRD + TechSpec phases × tiny prompt × claude-sonnet).
 
 Recommended cadence: weekly during active development, every minor release
 otherwise. Patch releases skip Layer 7 entirely.
+
+## V2 verification — nightly CI
+
+The scheduled `V2 Verification` workflow runs two mock-only gates:
+
+```bash
+make mrp-v2
+make loop-conformance
+```
+
+`mrp-v2` writes `.qa/reports/mrp-v2-results.json` and
+`.qa/reports/mrp-v2-dashboard.md`. It runs five deterministic iterations for
+Claude Code, Codex, and Gemini, records total tokens, Code-phase tokens, total
+time, first-pass success rate by phase, and Memory v2 summary-cache hit rate.
+The gate fails when iteration 5 Code-phase tokens are not below 75% of
+iteration 1 for every agent.
+
+`loop-conformance` runs `monozukuri loop` over three mock backlog tasks for the
+same three agents, then compares normalized orchestration events, checkpoint
+shape, and summary report structure. Adapter-specific structured log text is
+ignored; orchestration behavior drift fails the gate.
 
 ## What this does NOT cover
 
