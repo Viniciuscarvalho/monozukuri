@@ -118,6 +118,10 @@ When `MONOZUKURI_AUTONOMY=full_auto`, skills must NEVER ask for human input. Mak
 
 For the current list of external skills confirmed to violate this contract, see [`docs/adapter-contract.md#known-incompatible-skills`](docs/adapter-contract.md#8-known-incompatible-skills). `monozukuri doctor` warns when any of these are active in `.monozukuri/config.yaml`.
 
+### Memory v2 escalation marker
+
+When Memory v2 context is summarized and the summary is insufficient, request the smallest raw learning set needed by placing `<request-memory id="lrn-xxx"/>` at the very start of the response. Do not add prose before the marker. This preserves the minimal-requirements principle and lets the pipeline inject only the requested learning details.
+
 ### Reuse existing systems — don't reinvent
 
 Before writing new code, check if it already exists:

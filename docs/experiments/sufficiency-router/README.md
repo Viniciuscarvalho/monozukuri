@@ -13,8 +13,10 @@ It runs the PRD, TechSpec, and Tasks phases and validates artifacts with
 
 - `inject-full`: inject all eligible learning details.
 - `summary`: inject compact learning summaries only.
-- `on-demand`: start with summaries and escalate once when the agent requests
-  `MEMORY_ESCALATE:` IDs or when schema validation fails.
+- `on-demand`: start with summaries and escalate once when the experiment
+  harness sees `MEMORY_ESCALATE:` IDs or when schema validation fails. The
+  production router uses the adapter-level `<request-memory id="lrn-xxx"/>`
+  marker documented in ADR-027.
 
 ## Commands
 
