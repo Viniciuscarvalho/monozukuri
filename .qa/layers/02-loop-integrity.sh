@@ -550,7 +550,7 @@ _layer2_no_color_respected() {
 
   local out
   out=$(NO_COLOR=1 "$doctor_cmd" doctor 2>/dev/null || true)
-  if printf '%s' "$out" | grep -qP '\033\['; then
+  if printf '%s' "$out" | LC_ALL=C grep -q "$(printf '\033')\\["; then
     _qa_fail "NO_COLOR=1 monozukuri doctor still emits ANSI escape sequences" \
              "Check lib/cli/tokens.sh and cmd/doctor.sh NO_COLOR handling" \
       || failures=$((failures + 1))

@@ -48,6 +48,20 @@ run_layer1() {
     local pkg="$tmp_install/package"
     assert_file_exists "tarball contains bin/monozukuri" "$pkg/bin/monozukuri" \
       || failures=$((failures + 1))
+    assert_file_exists "tarball contains orchestrate.sh" "$pkg/orchestrate.sh" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains cmd/loop.sh" "$pkg/cmd/loop.sh" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains lib/agent/contract.sh" "$pkg/lib/agent/contract.sh" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains lib/prompt/render.sh" "$pkg/lib/prompt/render.sh" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains config/pricing.yaml" "$pkg/config/pricing.yaml" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains schemas/learning-v2.schema.json" "$pkg/schemas/learning-v2.schema.json" \
+      || failures=$((failures + 1))
+    assert_file_exists "tarball contains skills/mz-create-prd/SKILL.md" "$pkg/skills/mz-create-prd/SKILL.md" \
+      || failures=$((failures + 1))
     assert_file_exists "tarball contains scripts/orchestrate.sh" "$pkg/scripts/orchestrate.sh" \
       || failures=$((failures + 1))
     assert_file_exists "tarball contains templates/config.yaml" "$pkg/templates/config.yaml" \
@@ -62,6 +76,65 @@ run_layer1() {
     tarball_ver=$(node -p "require('$pkg/package.json').version" 2>/dev/null || echo "")
     assert_eq "tarball package.json version matches" "$version_bare" "$tarball_ver" \
       || failures=$((failures + 1))
+
+    local pkg_help pkg_loop_help
+    pkg_help=$(timeout 10 node "$pkg/bin/monozukuri" --help 2>&1 || true)
+    if echo "$pkg_help" | grep -qi "usage"; then
+      _qa_pass "extracted npm package --help works"
+    else
+      _qa_fail "extracted npm package --help failed" \
+        || failures=$((failures + 1))
+    fi
+
+    pkg_loop_help=$(timeout 10 node "$pkg/bin/monozukuri" loop --help 2>&1 || true)
+    if echo "$pkg_loop_help" | grep -qi "usage"; then
+      _qa_pass "extracted npm package loop --help works"
+    else
+      _qa_fail "extracted npm package loop --help failed" \
+        || failures=$((failures + 1))
+    fi
+
+    local pkg_proj
+    pkg_proj=$(mktemp -d)
+    git -C "$pkg_proj" init -q 2>/dev/null \
+      || git -C "$pkg_proj" init -q 2>/dev/null || true
+
+    local init_rc=0
+    (
+      cd "$pkg_proj"
+      timeout 20 node "$pkg/bin/monozukuri" init --non-interactive >/dev/null
+    ) || init_rc=$?
+    if [ "$init_rc" -eq 0 ]; then
+      _qa_pass "extracted npm package init works in a clean project"
+    else
+      _qa_fail "extracted npm package init failed (exit $init_rc)" \
+        || failures=$((failures + 1))
+    fi
+    assert_file_exists "init creates .monozukuri/config.yaml" "$pkg_proj/.monozukuri/config.yaml" \
+      || failures=$((failures + 1))
+    assert_file_exists "init creates features.md" "$pkg_proj/features.md" \
+      || failures=$((failures + 1))
+    if [ ! -d "$pkg_proj/.agents/skills" ]; then
+      _qa_pass "init does not install project skills"
+    else
+      _qa_fail "init unexpectedly installed project skills" \
+        || failures=$((failures + 1))
+    fi
+
+    local loop_rc=0 loop_out
+    loop_out=$(
+      cd "$pkg_proj"
+      PATH="$REPO_ROOT/.qa/fixtures/mocks/claude:$PATH" \
+        MONOZUKURI_HOME="$pkg" \
+        timeout 90 node "$pkg/bin/monozukuri" loop feat-001 --agent claude-code --non-interactive --no-ui --cleanup 2>&1
+    ) || loop_rc=$?
+    if [ "$loop_rc" -eq 0 ] && echo "$loop_out" | grep -q "\\[1/1\\] feat-001"; then
+      _qa_pass "extracted npm package loop runs with mock agent"
+    else
+      _qa_fail "extracted npm package loop smoke failed (exit $loop_rc)" \
+        || failures=$((failures + 1))
+    fi
+    rm -rf "$pkg_proj"
   else
     failures=$((failures + 1))
   fi

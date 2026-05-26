@@ -27,8 +27,14 @@
   },
   "files": [
     "bin/",
+    "cmd/",
+    "config/",
+    "lib/",
     "npm/bin/",
+    "orchestrate.sh",
+    "schemas/",
     "scripts/",
+    "skills/",
     "templates/",
     "ui/dist/"
   ],
