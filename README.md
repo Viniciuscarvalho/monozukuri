@@ -9,6 +9,10 @@
 
 **Monozukuri** (ものづくり) is a Japanese concept meaning "the art and science of making things" — continuous improvement, craftsmanship, and the relentless pursuit of quality in creation. The same principles that should govern autonomous software delivery.
 
+![Monozukuri in action](docs/assets/hero.gif)
+
+![Web dashboard — both features complete](docs/assets/dashboard.png)
+
 ## Quick start
 
 ```bash
