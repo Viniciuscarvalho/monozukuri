@@ -54,6 +54,8 @@ run_layer1() {
       || failures=$((failures + 1))
     assert_file_nonempty "tarball contains ui/dist/index.js" "$pkg/ui/dist/index.js" \
       || failures=$((failures + 1))
+    assert_file_nonempty "tarball contains ui/dist/App.js" "$pkg/ui/dist/App.js" \
+      || failures=$((failures + 1))
 
     # Verify the tarball's package.json version matches
     local tarball_ver
@@ -81,27 +83,30 @@ run_layer1() {
   assert_file_nonempty "ui/dist/index.js exists and non-empty" "$ui_dist" \
     || failures=$((failures + 1))
 
-  local bundle_size
-  bundle_size=$(wc -c < "$ui_dist" 2>/dev/null || echo "0")
-  if [ "$bundle_size" -gt 10000 ]; then
-    _qa_pass "ui/dist/index.js size plausible (${bundle_size} bytes)"
+  local ui_app="$REPO_ROOT/ui/dist/App.js"
+  assert_file_nonempty "ui/dist/App.js exists and non-empty" "$ui_app" \
+    || failures=$((failures + 1))
+
+  local dist_size
+  dist_size=$(find "$REPO_ROOT/ui/dist" -type f -name '*.js' -print0 2>/dev/null \
+    | xargs -0 wc -c 2>/dev/null \
+    | awk 'END { print $1 + 0 }')
+  if [ "$dist_size" -gt 10000 ]; then
+    _qa_pass "ui/dist JS output size plausible (${dist_size} bytes)"
   else
-    _qa_fail "ui/dist/index.js suspiciously small (${bundle_size} bytes) — bundle may be broken" \
+    _qa_fail "ui/dist JS output suspiciously small (${dist_size} bytes) — build may be broken" \
       || failures=$((failures + 1))
   fi
 
-  # Reproduces the v1.19.3 regression: broken ESM/CJS bundle throws on load.
-  local bundle_rc=0
-  node --input-type=module <<EOF 2>/dev/null || bundle_rc=$?
-import { createRequire } from 'module';
-const req = createRequire('$ui_dist');
-EOF
-  # We only care that the import machinery can resolve the file, not that it executes fully.
-  # Use a more targeted check: look for the createRequire banner that fixes CJS interop.
-  if grep -q "createRequire" "$ui_dist" 2>/dev/null; then
-    _qa_pass "ui/dist/index.js contains createRequire CJS-interop banner"
+  # SEL-06 builds Ink with tsc directly to avoid the dynamic-require ESM/CJS
+  # bundle regression. In that mode index.js is a small entrypoint and App.js
+  # carries the TUI implementation.
+  if grep -q "from './App.js'" "$ui_dist" 2>/dev/null \
+    && grep -q "render(" "$ui_dist" 2>/dev/null \
+    && grep -q "function App" "$ui_app" 2>/dev/null; then
+    _qa_pass "ui/dist uses tsc ESM entrypoint with App implementation"
   else
-    _qa_fail "ui/dist/index.js missing createRequire banner — v1.19.3-style bundle regression" \
+    _qa_fail "ui/dist missing tsc ESM entrypoint/App implementation" \
       || failures=$((failures + 1))
   fi
 
