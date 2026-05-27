@@ -7,6 +7,35 @@
     "lib/config/load.sh",
     "lib/core/platform.sh"
   ],
+  "tiers": {
+    "unit": {
+      "include": ["test/unit"],
+      "exclude": []
+    },
+    "integration-fast": {
+      "include": ["test/integration"],
+      "exclude": [
+        "test/integration/loop_command.bats",
+        "test/integration/resume_kill9.bats"
+      ]
+    },
+    "integration-extended": {
+      "include": [
+        "test/extended",
+        "test/integration/loop_command.bats",
+        "test/integration/resume_kill9.bats"
+      ],
+      "exclude": []
+    },
+    "nightly": {
+      "include": ["test/extended/vrf_verification.bats"],
+      "exclude": []
+    },
+    "release": {
+      "include": ["test/extended/live_canary.bats"],
+      "exclude": []
+    }
+  },
   "map": {
     "lib/agent/adapter-claude-code.sh": [
       "test/unit/adapter_claude_code.bats",
@@ -231,9 +260,42 @@
       "test/integration/vrf_verification.bats"
     ],
     "Makefile": [],
-    "scripts/select-tests.sh": [],
-    "test/test-map.json": [],
+    "scripts/select-tests.sh": [
+      "test/unit/select_tests.bats"
+    ],
+    "scripts/verification/live-canary.sh": [
+      "test/integration/live_canary.bats",
+      "test/extended/live_canary.bats",
+      "test/unit/verification_timeout.bats"
+    ],
+    "scripts/verification/loop-conformance.sh": [
+      "test/integration/vrf_verification.bats",
+      "test/extended/vrf_verification.bats",
+      "test/unit/verification_timeout.bats"
+    ],
+    "scripts/verification/with-timeout.sh": [
+      "test/unit/verification_timeout.bats"
+    ],
+    "test/helpers/timeout.bash": [
+      "test/integration/loop_command.bats",
+      "test/integration/resume_kill9.bats"
+    ],
+    "test/unit/select_tests.bats": [
+      "test/unit/select_tests.bats"
+    ],
+    "test/unit/verification_timeout.bats": [
+      "test/unit/verification_timeout.bats"
+    ],
+    "test/test-map.json": [
+      "test/unit/select_tests.bats"
+    ],
     "test/extended": [],
+    "test/integration/loop_command.bats": [
+      "test/integration/loop_command.bats"
+    ],
+    "test/integration/resume_kill9.bats": [
+      "test/integration/resume_kill9.bats"
+    ],
     "test/integration/live_canary.bats": [
       "test/integration/live_canary.bats"
     ],

@@ -5,10 +5,11 @@ set -euo pipefail
 TASK_COUNT=3
 OUT_DIR=".qa/reports/loop-conformance"
 AGENTS_CSV="claude-code,codex,gemini"
+TASK_TIMEOUT_SECONDS="${MONOZUKURI_VERIFY_TASK_TIMEOUT_SECONDS:-180}"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/verification/loop-conformance.sh [--tasks N] [--agents a,b,c] [--out-dir DIR]
+Usage: scripts/verification/loop-conformance.sh [--tasks N] [--agents a,b,c] [--out-dir DIR] [--task-timeout-seconds N]
 
 Runs monozukuri loop against mock fixtures for each agent and compares
 orchestration behavior, checkpoint structure, and summary report shape.
@@ -25,6 +26,9 @@ while [ $# -gt 0 ]; do
       ;;
     --out-dir)
       shift; OUT_DIR="$1"
+      ;;
+    --task-timeout-seconds)
+      shift; TASK_TIMEOUT_SECONDS="$1"
       ;;
     --help|-h)
       usage
@@ -43,10 +47,15 @@ if ! [[ "$TASK_COUNT" =~ ^[0-9]+$ ]] || [ "$TASK_COUNT" -lt 1 ]; then
   echo "--tasks must be a positive integer" >&2
   exit 2
 fi
+if ! [[ "$TASK_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] || [ "$TASK_TIMEOUT_SECONDS" -lt 1 ]; then
+  echo "--task-timeout-seconds must be a positive integer" >&2
+  exit 2
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ORCHESTRATE="$REPO_ROOT/orchestrate.sh"
+WITH_TIMEOUT="$SCRIPT_DIR/with-timeout.sh"
 mkdir -p "$OUT_DIR"
 OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 
@@ -125,13 +134,13 @@ run_agent() {
   local stdout_file="$run_dir/stdout.txt" stderr_file="$run_dir/stderr.txt"
   local exit_code=0 ids
   ids="$(feature_ids)"
-  (
-    cd "$project_dir"
-    PATH="$mock_path:$PATH" \
-      PROGRESS_INTERVAL=0 \
-      MONOZUKURI_HOME="$REPO_ROOT" \
-      bash "$ORCHESTRATE" loop $ids --non-interactive --no-ui
-  ) > "$stdout_file" 2> "$stderr_file" || exit_code=$?
+  PATH="$mock_path:$PATH" \
+    PROGRESS_INTERVAL=0 \
+    MONOZUKURI_HOME="$REPO_ROOT" \
+    "$WITH_TIMEOUT" --label "loop-conformance:$agent" --seconds "$TASK_TIMEOUT_SECONDS" -- \
+    bash -c 'cd "$1" && bash "$2" loop $3 --non-interactive --no-ui' \
+    _ "$project_dir" "$ORCHESTRATE" "$ids" \
+    > "$stdout_file" 2> "$stderr_file" || exit_code=$?
 
   local state_dir
   state_dir=$(find "$project_dir/.monozukuri/state" -maxdepth 1 -type d -name 'loop-*' | sort | tail -1)

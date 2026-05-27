@@ -5,8 +5,11 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 ORCHESTRATE="$REPO_ROOT/orchestrate.sh"
 MOCK_CLAUDE_DIR="$REPO_ROOT/.qa/fixtures/mocks/claude"
 MOCK_CODEX_DIR="$REPO_ROOT/.qa/fixtures/mocks/codex"
+source "$REPO_ROOT/test/helpers/timeout.bash"
 
 setup() {
+  monozukuri_test_timeout_start "${MONOZUKURI_BATS_LONG_TEST_TIMEOUT_SECONDS:-120}"
+
   TMPDIR_TEST="$(mktemp -d)"
   PROJ_DIR="$TMPDIR_TEST/project"
   mkdir -p "$PROJ_DIR/.monozukuri"
@@ -65,6 +68,7 @@ EOCFG
 }
 
 teardown() {
+  monozukuri_test_timeout_stop
   rm -rf "$TMPDIR_TEST"
 }
 
