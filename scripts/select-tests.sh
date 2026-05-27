@@ -69,8 +69,10 @@ if [ "${blast:-}" = "BLAST" ]; then
   exit 0
 fi
 
-# Resolve test files for all changed source files
-selected=$(python3 - "$MAP_FILE" "$changed" "$UNIT_ONLY" "$INTEGRATION_ONLY" <<'PYEOF'
+# Resolve test files for all changed source files. A changed file that is
+# present in the map with an empty list is intentionally covered with no
+# targeted Bats tests; a file absent from the map still triggers the safety net.
+selection=$(python3 - "$MAP_FILE" "$changed" "$UNIT_ONLY" "$INTEGRATION_ONLY" <<'PYEOF'
 import json, sys
 from pathlib import Path
 
@@ -79,6 +81,7 @@ data = json.loads(open(map_file).read())
 mapping = data.get("map", {})
 
 selected = set()
+unmapped = []
 for src in changed_str.strip().splitlines():
     src = src.strip()
     # exact match
@@ -86,10 +89,20 @@ for src in changed_str.strip().splitlines():
         selected.update(mapping[src])
         continue
     # prefix match for directory-level entries (e.g. skills/mz-create-prd/...)
+    matched = False
     for key in mapping:
         if src.startswith(key + "/") or src.startswith(key):
             selected.update(mapping[key])
+            matched = True
             break
+    if not matched:
+        unmapped.append(src)
+
+if unmapped:
+    print("__MONOZUKURI_UNMAPPED__")
+    for src in unmapped:
+        print(src)
+    sys.exit(0)
 
 # Filter by type flags
 if unit_only == "true":
@@ -104,7 +117,19 @@ print("\n".join(existing))
 PYEOF
 )
 
+if printf '%s\n' "$selection" | grep -q '^__MONOZUKURI_UNMAPPED__$'; then
+  echo "select-tests: unmapped changed files; running full suite as safety net" >&2
+  printf '%s\n' "$selection" | sed '1d' >&2
+  echo "ALL"
+  exit 0
+fi
+
+selected="$selection"
+
 if [ -z "$selected" ]; then
+  if [ "$UNIT_ONLY" = true ] || [ "$INTEGRATION_ONLY" = true ]; then
+    exit 0
+  fi
   echo "select-tests: no tests map to the changed files; running full suite as safety net" >&2
   echo "ALL"
   exit 0
