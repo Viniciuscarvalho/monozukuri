@@ -74,6 +74,8 @@ teardown() {
   run bash -c "source '$REPO_ROOT/cmd/doctor.sh' && sub_doctor 2>&1"
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OpenAI Codex CLI ready"* ]]
+  [[ "$output" == *"codex CLI installed"* ]]
+  [[ "$output" == *"codex auth OK"* ]]
+  [[ "$output" == *"loop live validable: codex ready"* ]]
   [[ "$output" == *"OpenAI Codex CLI uses rendered prompts; mz-* native skills not required"* ]]
 }

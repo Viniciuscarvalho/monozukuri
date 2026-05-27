@@ -207,6 +207,93 @@ setup() {
   [[ "$output" == *"## Problem"* ]]
 }
 
+@test "render_phase_prompt injects project .agents skill selected from manifest" {
+  local tmp
+  tmp=$(mktemp -d)
+  mkdir -p "$tmp/.agents/skills/project-prd"
+  cat > "$tmp/.agents/skills/project-prd/SKILL.md" <<'EOF'
+---
+name: project-prd
+agent: codex
+phase: prd
+---
+# Project PRD Skill
+
+Use the project-specific PRD contract.
+EOF
+  mkdir -p "$tmp/.monozukuri"
+  cat > "$tmp/.monozukuri/skills-manifest.json" <<EOF
+{
+  "project_root": "$tmp",
+  "skills": [
+    {
+      "name": "project-prd",
+      "path": ".agents/skills/project-prd/SKILL.md",
+      "scope": "project",
+      "agent": "codex",
+      "phases": ["prd"]
+    }
+  ]
+}
+EOF
+
+  export ROOT_DIR="$tmp"
+  export MONOZUKURI_SKILLS_MANIFEST="$tmp/.monozukuri/skills-manifest.json"
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="1"
+  run render_phase_prompt prd
+  rm -rf "$tmp"
+  unset ROOT_DIR MONOZUKURI_SKILLS_MANIFEST ADAPTER MONOZUKURI_SKILL_INJECTION
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--- BEGIN project-prd SKILL.md ---"* ]]
+  [[ "$output" == *"Use the project-specific PRD contract."* ]]
+  [[ "$output" != *"--- BEGIN mz-create-prd SKILL.md ---"* ]]
+}
+
+@test "render_phase_prompt treats compatible .claude skill as portable for codex" {
+  local tmp
+  tmp=$(mktemp -d)
+  mkdir -p "$tmp/.claude/skills/shared-prd"
+  cat > "$tmp/.claude/skills/shared-prd/SKILL.md" <<'EOF'
+---
+name: shared-prd
+agent: any
+phase: prd
+---
+# Shared PRD Skill
+
+Portable instructions from .claude.
+EOF
+  mkdir -p "$tmp/.monozukuri"
+  cat > "$tmp/.monozukuri/skills-manifest.json" <<EOF
+{
+  "project_root": "$tmp",
+  "skills": [
+    {
+      "name": "shared-prd",
+      "path": ".claude/skills/shared-prd/SKILL.md",
+      "scope": "project",
+      "agent": "any",
+      "phases": ["prd"]
+    }
+  ]
+}
+EOF
+
+  export ROOT_DIR="$tmp"
+  export MONOZUKURI_SKILLS_MANIFEST="$tmp/.monozukuri/skills-manifest.json"
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="1"
+  run render_phase_prompt prd
+  rm -rf "$tmp"
+  unset ROOT_DIR MONOZUKURI_SKILLS_MANIFEST ADAPTER MONOZUKURI_SKILL_INJECTION
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--- BEGIN shared-prd SKILL.md ---"* ]]
+  [[ "$output" == *"Portable instructions from .claude."* ]]
+}
+
 @test "render_phase_prompt separates injected SKILL.md from phase prompt" {
   export ADAPTER="codex"
   export MONOZUKURI_SKILL_INJECTION="1"

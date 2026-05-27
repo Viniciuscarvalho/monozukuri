@@ -1,0 +1,16 @@
+{
+  "id": "learn-123",
+  "scope": "project",
+  "insight": "Learning IDs use the Memory v2 lrn date sequence.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "tests",
+    "run_id": "run-2026-05-24-f6a7b8",
+    "artifact": "schemas/learning-v2.schema.json"
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}

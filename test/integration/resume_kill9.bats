@@ -16,8 +16,11 @@ ORCHESTRATE="$REPO_ROOT/orchestrate.sh"
 # Use the QA-gate mock that writes canned prd.md, techspec.md, tasks.json so
 # schema validation passes and the pipeline can complete.
 MOCK_CLAUDE_DIR="$REPO_ROOT/.qa/fixtures/mocks/claude"
+source "$REPO_ROOT/test/helpers/timeout.bash"
 
 setup() {
+  monozukuri_test_timeout_start "${MONOZUKURI_BATS_LONG_TEST_TIMEOUT_SECONDS:-120}"
+
   TMPDIR_TEST="$(mktemp -d)"
   PROJ_DIR="$TMPDIR_TEST/project"
   mkdir -p "$PROJ_DIR"
@@ -160,6 +163,7 @@ EOTASKS
 }
 
 teardown() {
+  monozukuri_test_timeout_stop
   rm -rf "$TMPDIR_TEST"
 }
 

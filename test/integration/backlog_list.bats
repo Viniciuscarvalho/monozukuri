@@ -122,6 +122,13 @@ _ids_from_json() {
   ' <<< "$output"
 }
 
+@test "monozukuri pick emits IDs by default for shell pipes" {
+  _write_features
+  run bash "$ORCHESTRATE" pick --top 2
+  [ "$status" -eq 0 ]
+  [ "$output" = $'feat-high-old\nfeat-high-new' ]
+}
+
 @test "monozukuri pick accepts SEL-02 filters" {
   _write_features
   run bash "$ORCHESTRATE" pick --json --top 5 --label cli,docs --agent codex
@@ -146,7 +153,7 @@ _ids_from_json() {
 
 @test "README pick pipe example is valid" {
   _write_features
-  run bash -c "bash '$ORCHESTRATE' pick --top 3 --json | jq '.[].id'"
+  run bash -c "bash '$ORCHESTRATE' pick --top 3 --json | jq -r '.[].id'"
   [ "$status" -eq 0 ]
   [[ "$output" == *"feat-high-old"* ]]
   [[ "$output" == *"feat-high-new"* ]]

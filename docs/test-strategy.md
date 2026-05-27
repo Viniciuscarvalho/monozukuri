@@ -9,9 +9,11 @@ The pattern is **record once, replay forever, conform on demand**.
 |---|---|---|---|
 | Mock-based unit/integration (Layer 2) | every PR | $0 | orchestration, error paths, tool selection |
 | Property assertions on recordings | every PR | $0 | recording fixtures still satisfy validator contract |
-| Layer 5 live canary | release-gate (local) | ~$0.01 | claude CLI authenticates and produces text |
+| Layer 5 live canary | release-gate (local) | ≤ $5 | loop opens two green sandbox PRs per real agent |
 | Layer 6 scale soak (mock variant) | every release | $0 | 3 projects × 5 features run-to-completion |
 | Layer 7 conformance | release-gate (local) | ~$0.30 | mock fixtures haven't drifted from live agent shape |
+| V2 MRP matrix | nightly CI | $0 | Memory v2 token-saving assertion and dashboard |
+| V2 loop conformance | nightly CI | $0 | Claude/Codex/Gemini loop orchestration parity |
 | Layer 6 scale soak (live variant) | manual pre-release | ≤ $50 | end-to-end against real models, full SLO check |
 
 **CI never spends money.** Layers 5, 6-live, and 7 are skipped in CI via env
@@ -65,6 +67,23 @@ These match what the validator checks. If a recording stops satisfying a
 property here, the next agent run in production would also fail validation —
 re-record.
 
+## Layer 5 live canary — when to run
+
+Layer 5 is the pre-release proof that `monozukuri loop` still works against a
+real repository with real agents:
+
+```bash
+scripts/verification/live-canary.sh --live --tasks 2 --max-cost 5
+```
+
+It clones `monozukuri/test-sandbox`, runs two top ready tasks per agent, opens
+two PRs per agent, and verifies sandbox CI is green. The mock harness is covered
+by integration tests:
+
+```bash
+scripts/verification/live-canary.sh --mock --tasks 2 --max-cost 5
+```
+
 ## Layer 7 conformance — when to run
 
 Layer 7 is **opt-in only**. To run it locally before a release tag:
@@ -78,12 +97,33 @@ Cost per run: ~$0.30 (PRD + TechSpec phases × tiny prompt × claude-sonnet).
 Recommended cadence: weekly during active development, every minor release
 otherwise. Patch releases skip Layer 7 entirely.
 
+## V2 verification — nightly CI
+
+The scheduled `V2 Verification` workflow runs two mock-only gates:
+
+```bash
+make mrp-v2
+make loop-conformance
+```
+
+`mrp-v2` writes `.qa/reports/mrp-v2-results.json` and
+`.qa/reports/mrp-v2-dashboard.md`. It runs five deterministic iterations for
+Claude Code, Codex, and Gemini, records total tokens, Code-phase tokens, total
+time, first-pass success rate by phase, and Memory v2 summary-cache hit rate.
+The gate fails when iteration 5 Code-phase tokens are not below 75% of
+iteration 1 for every agent.
+
+`loop-conformance` runs `monozukuri loop` over three mock backlog tasks for the
+same three agents, then compares normalized orchestration events, checkpoint
+shape, and summary report structure. Adapter-specific structured log text is
+ignored; orchestration behavior drift fails the gate.
+
 ## What this does NOT cover
 
 - **Performance regression.** Mocks can't catch "phase X got 30% slower."
   Defer until live canary baselines exist.
-- **Prompt quality.** Use Layer 5 canary (`CANARY_OK` echo) for sanity, not
-  quality.
+- **Prompt quality.** Layer 5 proves the live loop can open green sandbox PRs;
+  it does not grade feature usefulness beyond sandbox CI.
 - **Token economy claims.** Measure during real Layer 6-live runs.
 - **Validator itself.** Validator is deterministic; doesn't need mocking.
 

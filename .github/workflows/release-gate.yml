@@ -55,34 +55,12 @@ jobs:
         if: steps.check.outputs.is_release == 'true'
         run: npm install -g bats
 
-      - name: Install Claude Code CLI
-        if: steps.check.outputs.is_release == 'true'
-        run: |
-          npm install -g @anthropic-ai/claude-code
-          claude --version
-
-      - name: Verify Claude authentication
-        if: steps.check.outputs.is_release == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.MONOZUKURI_CI }}
-        run: |
-          # Validates that API key works before running the gate
-          # If this fails, the gate would fail anyway — fail fast and clearly
-          echo "Testing Claude API connectivity..."
-          if claude --print "respond with: ok" 2>&1 | grep -qi "ok"; then
-            echo "✓ Claude CLI authenticated successfully"
-          else
-            echo "::error::Claude authentication failed. Check MONOZUKURI_CI secret has valid Anthropic API key."
-            exit 1
-          fi
-
       - name: Run release gate
         if: steps.check.outputs.is_release == 'true'
         env:
-          # Layer 5 (live-canary) is enabled — runs one minimal claude --print
-          # call to verify API availability. Cost: ~$0.01 per release PR.
-          # Budget: secret MONOZUKURI_CI ($5 prepay).
-          ANTHROPIC_API_KEY: ${{ secrets.MONOZUKURI_CI }}
+          # Layer 5 live canary opens real sandbox PRs through real agents.
+          # It is a maintainer-run pre-release check, not a CI spend path.
+          MONOZUKURI_SKIP_LIVE_CANARY: "1"
 
           # Layer 6 live mode stays off — requires larger budget (~$5-15/run).
           MONOZUKURI_SKIP_SCALE_SOAK_LIVE: "1"

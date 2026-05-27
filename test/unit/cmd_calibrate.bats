@@ -6,11 +6,12 @@ setup() {
   export LIB_DIR="$REPO_ROOT/lib"
   export CMD_DIR="$REPO_ROOT/cmd"
   export SCRIPT_DIR="$REPO_ROOT"
-  export PROJECT_ROOT="$REPO_ROOT"
 
   TMPDIR_TEST="$(mktemp -d)"
+  export PROJECT_ROOT="$TMPDIR_TEST/project"
   export STATE_DIR="$TMPDIR_TEST/state"
-  mkdir -p "$STATE_DIR"
+  mkdir -p "$STATE_DIR" "$PROJECT_ROOT/config"
+  cp "$REPO_ROOT/config/pricing.yaml" "$PROJECT_ROOT/config/pricing.yaml"
 
   # Source pricing and calibrate modules
   source "$LIB_DIR/core/pricing.sh"
@@ -74,6 +75,21 @@ make_cost_json() {
   run calibrate_run 20
   [ "$status" -eq 0 ]
   [[ "$output" == *"Calibration Report"* ]]
+}
+
+@test "calibrate_run updates project pricing without mutating repo pricing fixture" {
+  for i in 1 2 3 4 5; do
+    make_cost_json "feat-00$i" "code" 12000 10000
+  done
+
+  local repo_before repo_after
+  repo_before="$(shasum "$REPO_ROOT/config/pricing.yaml" | awk '{print $1}')"
+
+  run calibrate_run 20
+
+  repo_after="$(shasum "$REPO_ROOT/config/pricing.yaml" | awk '{print $1}')"
+  [ "$status" -eq 0 ]
+  [ "$repo_before" = "$repo_after" ]
 }
 
 @test "calibrate_run displays phase table headers" {

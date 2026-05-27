@@ -5,13 +5,11 @@
 [![npm version](https://img.shields.io/npm/v/@viniciuscarvalho/monozukuri.svg)](https://www.npmjs.com/package/@viniciuscarvalho/monozukuri)
 [![Homebrew Tap](https://img.shields.io/badge/homebrew-tap-orange.svg)](https://github.com/Viniciuscarvalho/homebrew-tap)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Agents: Claude Code · Codex · Gemini · Kiro](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20Kiro-purple.svg)](https://github.com/Viniciuscarvalho/monozukuri)
+[![Agents: Claude Code · Codex · Gemini](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini-purple.svg)](https://github.com/Viniciuscarvalho/monozukuri)
 
-> **Agent support:** Claude Code is the reference adapter — fully validated end-to-end. Codex, Gemini, and Kiro are experimental (rendered-prompt mode, no conformance recordings yet).
+**Monozukuri** (ものづくり) is a Japanese concept meaning "the art and science of making things" — continuous improvement, craftsmanship, and the relentless pursuit of quality in creation. The same principles that should govern autonomous software delivery.
 
----
-
-![Monozukuri in action](docs/assets/hero.gif)
+![Monozukuri in action](docs/assets/pick-loop.gif)
 
 ![Web dashboard — both features complete](docs/assets/dashboard.png)
 
@@ -23,52 +21,72 @@ brew install monozukuri
 
 cd your-project
 monozukuri init
-monozukuri backlog list  # inspect ranked features
-monozukuri backlog list --label cli,docs --agent codex
-monozukuri backlog list --score-explain feat-001
-monozukuri pick --top 3 --json | jq '.[].id'
-monozukuri backlog validate feat-001 feat-002
-monozukuri run --dry-run    # preview the plan
-monozukuri run              # execute
-monozukuri loop feat-001 feat-002 feat-003 --max-cost 10 --max-time 480 --on-failure continue --circuit-breaker 3
+monozukuri doctor
+monozukuri backlog list
+monozukuri pick --top 3 | monozukuri loop
 ```
 
-> Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, `gemini`, or `kiro`). See [docs/installation.md](docs/installation.md) for alternatives (NPX, from source) and platform notes.
+Requires `node >=18`, `jq`, `gh`, and a coding agent CLI (`claude`, `codex`, or `gemini`). See [docs/installation.md](docs/installation.md) for NPX, source installs, and platform notes.
 
 ## What Monozukuri does
 
-For each feature in your backlog, Monozukuri creates an isolated git worktree, runs a coding agent to take the feature from PRD through tests, opens a pull request, and moves on. It supports **Claude Code, Codex, Gemini, and Kiro** — it defaults to [Feature-marker](https://github.com/Viniciuscarvalho/Feature-marker) on Claude Code but works with any agent you configure in `config.yaml`.
+For each selected feature, Monozukuri creates an isolated git worktree, runs a coding agent through PRD, TechSpec, Tasks, Code, Tests, and PR phases, then opens a pull request and moves to the next feature.
 
-It runs in three autonomy levels — from `supervised` (Ink TUI, you approve each phase) to `full_auto` (structured logs, runs the whole backlog unattended). It persists state under `.monozukuri/` so you can `--resume` after any interruption, and it writes learnings to a three-tier store (feature / project / global) that primes future runs.
+It runs from supervised mode to `full_auto`, persists state under `.monozukuri/`, supports resume after interruptions, and uses Memory v2 to keep learnings traceable instead of hidden in prompt history.
+
+## Pick & Loop
+
+`pick` selects ranked backlog IDs. `loop` executes them.
+
+```bash
+monozukuri backlog list --label cli,docs --agent codex
+monozukuri pick --top 3
+monozukuri pick --top 3 --json | jq -r '.[].id' | monozukuri loop
+monozukuri loop status --follow
+monozukuri loop --resume
+```
+
+Full details live in [docs/execution.md](docs/execution.md), [docs/schemas/loop-state.md](docs/schemas/loop-state.md), and [docs/v2-migration.md](docs/v2-migration.md).
+
+## Memory v2
+
+Memory v2 records where each learning came from, how often it was applied, and which agent should see it. The sufficiency router injects compact summaries first and lets agents request raw detail with `<request-memory id="lrn-xxx"/>` only when needed.
+
+Start with:
+
+```bash
+monozukuri memory migrate --dry-run
+monozukuri memory migrate
+monozukuri memory why <lrn-id>
+monozukuri memory trace <run-id>
+```
+
+Read [docs/schemas/memory-v2.md](docs/schemas/memory-v2.md), [docs/adr/027-sufficiency-router.md](docs/adr/027-sufficiency-router.md), and [docs/experiments/sufficiency-router/README.md](docs/experiments/sufficiency-router/README.md) for the schema, decision, and MEM-05 data.
 
 ## Documentation
 
-| Topic                                           | Where                                              |
-| ----------------------------------------------- | -------------------------------------------------- |
-| What execution looks like                       | [docs/execution.md](docs/execution.md)             |
-| When something goes wrong                       | [docs/troubleshooting.md](docs/troubleshooting.md) |
-| Autonomy levels in depth                        | [docs/autonomy.md](docs/autonomy.md)               |
-| Configuration reference                         | [docs/configuration.md](docs/configuration.md)     |
-| Backlog adapters (Linear / GitHub / Markdown)   | [docs/adapters.md](docs/adapters.md)               |
-| Installation (NPX, from source, platform notes) | [docs/installation.md](docs/installation.md)       |
-| Architecture decisions                          | [docs/adr/](docs/adr/)                             |
+| Topic | Where |
+| --- | --- |
+| v1 to v2 migration | [docs/v2-migration.md](docs/v2-migration.md) |
+| Execution and loop behavior | [docs/execution.md](docs/execution.md) |
+| Configuration reference | [docs/configuration.md](docs/configuration.md) |
+| Backlog adapters | [docs/adapters.md](docs/adapters.md) |
+| Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Release process | [docs/release-process.md](docs/release-process.md) |
+| v2 alpha readiness | [docs/release/v2-alpha.md](docs/release/v2-alpha.md) |
+| Architecture decisions | [docs/adr/](docs/adr/) |
 
 ## Architecture decisions
 
-| ADR                                                     | Decision                                                              |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| [ADR-008](docs/adr/008-orchestrator-economy.md)         | Token economy: cost gates, routing, 3-tier learning, size/cycle gates |
-| [ADR-009](docs/adr/009-local-models.md)                 | Local model integration (Ollama embedding / classifier / summarizer)  |
-| [ADR-010](docs/adr/010-stuck-state-elimination.md)      | Stuck-state elimination: subshell fix, timeouts, PID tracking         |
-| [ADR-011](docs/adr/011-security-hardening.md)           | Security: prompt sanitization, permission guardrails, stack detection |
-| [ADR-012](docs/adr/012-adapter-contract-and-schemas.md) | Adapter contract, schemas, and known incompatible skills              |
-
-## The name
-
-**Monozukuri** (ものづくり) is a Japanese concept meaning "the art and science of making things" — continuous improvement, craftsmanship, and the relentless pursuit of quality in creation. The same principles that should govern autonomous software delivery.
+| ADR | Decision |
+| --- | --- |
+| [ADR-024](docs/adr/024-backlog-priority-scoring.md) | Backlog priority scoring |
+| [ADR-025](docs/adr/025-memory-v2-provenance-schema.md) | Memory v2 provenance schema |
+| [ADR-026](docs/adr/026-sufficiency-router-design.md) | MEM-05 sufficiency-router spike |
+| [ADR-027](docs/adr/027-sufficiency-router.md) | Production sufficiency-router convention |
 
 ## License
 
 MIT © [Vinicius Carvalho](https://github.com/Viniciuscarvalho)
 
-Built with 🤖 for the AI-assisted development community.
+Created and maintained by Vinicius Carvalho.

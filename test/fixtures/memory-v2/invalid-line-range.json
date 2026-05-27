@@ -1,0 +1,17 @@
+{
+  "id": "lrn-2026-05-24-007",
+  "scope": "project",
+  "insight": "Line ranges must be ordered and one-based.",
+  "source": {
+    "feature_id": "MEM-01",
+    "phase": "tests",
+    "run_id": "run-2026-05-24-b8c9d0",
+    "artifact": "docs/schemas/memory-v2.md",
+    "line_range": [20, 10]
+  },
+  "applied_count": 0,
+  "last_applied": "2026-05-24T20:00:00Z",
+  "promoted_from": "feature",
+  "agent_specific": null,
+  "tags": ["memory"]
+}

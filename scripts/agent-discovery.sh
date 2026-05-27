@@ -5,16 +5,19 @@
 # Scan locations (in order, following symlinks):
 #   .claude/agents/*.md
 #   .claude/agents/**/*.md
+#   .agents/agents/*.md
+#   .agents/agents/**/*.md
 #   AGENTS.md                         (project root)
 #   <subdir>/AGENTS.md                (subpackages, depth ≤ 3)
 #
 # Each file in .claude/agents/ must have YAML frontmatter with at least
-# `name` and `description`. AGENTS.md files contribute one agent per `##`
+# `name` and `description`. Files in .agents/agents/ use the same format for
+# portable project agents. AGENTS.md files contribute one agent per `##`
 # section. Root takes precedence over nested files; first-seen wins.
 #
 # Subdirs ignored when walking for nested AGENTS.md:
 #   node_modules .git dist build .worktrees .monozukuri .qa
-#   .claude .cache coverage out target
+#   .claude .agents .cache coverage out target
 
 set -euo pipefail
 
@@ -22,6 +25,7 @@ PROJECT_ROOT="${1:-$PWD}"
 MANIFEST="${2:-$PROJECT_ROOT/.monozukuri/agents-manifest.json}"
 
 AGENT_DIR="$PROJECT_ROOT/.claude/agents"
+PORTABLE_AGENT_DIR="$PROJECT_ROOT/.agents/agents"
 AGENTS_MD="$PROJECT_ROOT/AGENTS.md"
 
 # Use node for reliable YAML frontmatter parsing
@@ -31,6 +35,7 @@ const path = require('path');
 
 const projectRoot = '$PROJECT_ROOT';
 const agentDir = '$AGENT_DIR';
+const portableAgentDir = '$PORTABLE_AGENT_DIR';
 const agentsMdPath = '$AGENTS_MD';
 const manifestPath = '$MANIFEST';
 
@@ -53,7 +58,7 @@ function findMdFiles(dir) {
 // Skip noisy/build dirs and dirs that would cycle through hidden config.
 const NESTED_IGNORE = new Set([
   'node_modules', '.git', 'dist', 'build', '.worktrees', '.monozukuri',
-  '.qa', '.claude', '.cache', 'coverage', 'out', 'target', '.next',
+  '.qa', '.claude', '.agents', '.cache', 'coverage', 'out', 'target', '.next',
   '__pycache__', '.venv', 'venv'
 ]);
 function findNestedAgentsMd(rootDir, maxDepth) {
@@ -192,27 +197,39 @@ function parseAgentsMd(mdPath, relPath) {
 const agents = [];
 const seenNames = new Set();
 
-// Primary source: .claude/agents/*.md files
-const files = findMdFiles(agentDir);
-for (const file of files) {
-  const content = fs.readFileSync(file, 'utf-8');
-  const fmRaw = extractFrontmatter(content);
-  if (!fmRaw) continue;
+function addAgentDirFiles(dir, source) {
+  const files = findMdFiles(dir);
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf-8');
+    const fmRaw = extractFrontmatter(content);
+    if (!fmRaw) continue;
 
-  const fm = parseFrontmatter(fmRaw);
-  if (!fm.name) continue;
+    const fm = parseFrontmatter(fmRaw);
+    if (!fm.name) continue;
+    if (seenNames.has(fm.name)) {
+      console.log('  [discovery] collision: ' + fm.name + ' already declared — skipping ' + path.relative(projectRoot, file));
+      continue;
+    }
 
-  const relPath = path.relative(projectRoot, file);
-  seenNames.add(fm.name);
-  agents.push({
-    name: fm.name,
-    description: fm.description || '',
-    path: relPath,
-    capabilities: Array.isArray(fm.capabilities) ? fm.capabilities : [],
-    phase: fm.phase || 'any',
-    source: 'agents-dir'
-  });
+    const relPath = path.relative(projectRoot, file);
+    seenNames.add(fm.name);
+    agents.push({
+      name: fm.name,
+      description: fm.description || '',
+      path: relPath,
+      capabilities: Array.isArray(fm.capabilities) ? fm.capabilities : [],
+      phase: fm.phase || 'any',
+      source
+    });
+  }
 }
+
+// Primary source: .claude/agents/*.md files
+addAgentDirFiles(agentDir, 'agents-dir');
+
+// Portable project agents for Codex/Gemini-style repos. These lose on name
+// collision to .claude/agents/ because first-seen wins.
+addAgentDirFiles(portableAgentDir, 'agents-dir-portable');
 
 // Secondary source: AGENTS.md (## sections, outside generated markers)
 const mdAgents = parseAgentsMd(agentsMdPath, 'AGENTS.md');
@@ -243,12 +260,13 @@ for (const nestedPath of nestedFiles) {
 }
 
 const hasAgentsDir = fs.existsSync(agentDir);
+const hasPortableAgentsDir = fs.existsSync(portableAgentDir);
 const hasAgentsMd = fs.existsSync(agentsMdPath);
 const hasNestedAgents = nestedFiles.length > 0;
-if (!hasAgentsDir && !hasAgentsMd && !hasNestedAgents) {
-  console.log('  [discovery] No agents directory found at ' + agentDir + ' and no AGENTS.md — empty manifest');
-} else if (!hasAgentsDir) {
-  console.log('  [discovery] No agents directory at ' + agentDir + ' — using AGENTS.md only');
+if (!hasAgentsDir && !hasPortableAgentsDir && !hasAgentsMd && !hasNestedAgents) {
+  console.log('  [discovery] No agents directory found at ' + agentDir + ' or ' + portableAgentDir + ' and no AGENTS.md — empty manifest');
+} else if (!hasAgentsDir && !hasPortableAgentsDir) {
+  console.log('  [discovery] No agents directory at ' + agentDir + ' or ' + portableAgentDir + ' — using AGENTS.md only');
 }
 if (hasNestedAgents) {
   console.log('  [discovery] Found ' + nestedFiles.length + ' nested AGENTS.md file(s)');

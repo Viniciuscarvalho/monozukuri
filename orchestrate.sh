@@ -11,7 +11,7 @@
 #   ./orchestrate.sh run --autonomy full_auto  # Override autonomy
 #   ./orchestrate.sh run --dry-run             # Show plan, don't execute
 #   ./orchestrate.sh backlog list              # List ranked backlog items
-#   ./orchestrate.sh pick --top 3 --json       # Pick ranked items for scripts
+#   ./orchestrate.sh pick --top 3              # Pick ranked item IDs for scripts
 #   ./orchestrate.sh status                    # Show current state
 #   ./orchestrate.sh clean                     # Remove all worktrees
 #
@@ -150,6 +150,8 @@ OPT_BACKLOG_STRICT=false
 OPT_BACKLOG_SCORE_EXPLAIN=""
 OPT_PICK_TOP="5"
 OPT_LOOP_IDS=""
+OPT_LOOP_TASKS=""
+OPT_LOOP_AGENT=""
 OPT_LOOP_CLEANUP=false
 OPT_LOOP_MAX_COST="10"
 OPT_LOOP_MAX_COST_EXPLICIT=false
@@ -159,10 +161,23 @@ OPT_LOOP_MAX_TOKENS_PER_TASK="100000"
 OPT_LOOP_ON_FAILURE=""
 OPT_LOOP_CIRCUIT_BREAKER="3"
 OPT_LOOP_I_KNOW_WHAT_IM_DOING=false
+OPT_LOOP_RESUME_ID=""
+OPT_LOOP_RETRY_FAILED=false
+OPT_LOOP_LIST_RUNS=false
+OPT_LOOP_STATUS=false
+OPT_LOOP_STATUS_ID=""
+OPT_LOOP_STATUS_FOLLOW=false
+OPT_LOOP_REPORT_FORMAT="ascii"
+OPT_MEMORY_ACTION=""
+OPT_MEMORY_ID=""
+OPT_MEMORY_FILES=""
+OPT_MEMORY_FORMAT="text"
+OPT_MEMORY_AGENT=""
+OPT_MEMORY_MIGRATE_REVERSE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    init|run|loop|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick)
+    init|run|loop|status|clean|calibrate|learning|promote-learning|ingest-status|doctor|config|agent|routing|metrics|review|conventions|setup|telemetry|ui|stop|summary|retry|backlog|pick|memory)
       if [ -z "$SUBCOMMAND" ]; then
         SUBCOMMAND="$1"
       elif [ "$SUBCOMMAND" = "agent" ] && [ -z "$OPT_AGENT_SUBCMD" ]; then
@@ -175,6 +190,8 @@ while [ $# -gt 0 ]; do
         OPT_ROUTING_PHASE="$1"
       elif [ "$SUBCOMMAND" = "backlog" ] && [ -z "$OPT_BACKLOG_ACTION" ]; then
         OPT_BACKLOG_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "loop" ] && [ "$1" = "status" ]; then
+        OPT_LOOP_STATUS=true
       fi
       ;;
     --resume-paused)
@@ -228,6 +245,8 @@ while [ $# -gt 0 ]; do
     --format)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         shift; OPT_BACKLOG_FORMAT="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        shift; OPT_MEMORY_FORMAT="$1"
       else
         err "Unknown argument: --format"
         err "Run: monozukuri --help"
@@ -279,8 +298,21 @@ while [ $# -gt 0 ]; do
         shift; OPT_BACKLOG_AGENT="$1"
       elif [ "$SUBCOMMAND" = "setup" ]; then
         shift; OPT_SETUP_AGENT="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        shift; OPT_MEMORY_AGENT="$1"
+      elif [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_AGENT="$1"
       else
         err "Unknown argument: --agent"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --tasks)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_TASKS="$1"
+      else
+        err "Unknown argument: --tasks"
         err "Run: monozukuri --help"
         exit 1
       fi
@@ -357,11 +389,56 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       ;;
+    --retry-failed)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_RETRY_FAILED=true
+      else
+        err "Unknown argument: --retry-failed"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --list-runs)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        OPT_LOOP_LIST_RUNS=true
+      else
+        err "Unknown argument: --list-runs"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --follow)
+      if [ "$SUBCOMMAND" = "loop" ] && [ "$OPT_LOOP_STATUS" = "true" ]; then
+        OPT_LOOP_STATUS_FOLLOW=true
+      else
+        err "Unknown argument: --follow"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --report-format)
+      if [ "$SUBCOMMAND" = "loop" ]; then
+        shift; OPT_LOOP_REPORT_FORMAT="$1"
+      else
+        err "Unknown argument: --report-format"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
     --strict)
       if [ "$SUBCOMMAND" = "backlog" ]; then
         OPT_BACKLOG_STRICT=true
       else
         err "Unknown argument: --strict"
+        err "Run: monozukuri --help"
+        exit 1
+      fi
+      ;;
+    --reverse)
+      if [ "$SUBCOMMAND" = "memory" ]; then
+        OPT_MEMORY_MIGRATE_REVERSE=true
+      else
+        err "Unknown argument: --reverse"
         err "Run: monozukuri --help"
         exit 1
       fi
@@ -377,12 +454,25 @@ while [ $# -gt 0 ]; do
       ;;
     --resume)
       OPT_RESUME=true
+      if [ "$SUBCOMMAND" = "loop" ] && [ $# -gt 1 ]; then
+        case "$2" in
+          --*) ;;
+          *)
+            shift
+            OPT_LOOP_RESUME_ID="$1"
+            ;;
+        esac
+      fi
       ;;
     list|archive|promote)
       [ "$SUBCOMMAND" = "learning" ]     && OPT_LEARNING_ACTION="$1"
       [ "$SUBCOMMAND" = "conventions" ]  && OPT_CONVENTIONS_ACTION="$1"
       [ "$SUBCOMMAND" = "setup" ] && [ "$1" = "list" ] && OPT_SETUP_ACTION=list
       [ "$SUBCOMMAND" = "backlog" ] && [ "$1" = "list" ] && OPT_BACKLOG_ACTION=list
+      [ "$SUBCOMMAND" = "memory" ] && [ "$1" = "list" ] && OPT_MEMORY_ACTION=list
+      ;;
+    lint|migrate|compact|why|trace)
+      [ "$SUBCOMMAND" = "memory" ] && OPT_MEMORY_ACTION="$1"
       ;;
     install|status|uninstall)
       if [ "$SUBCOMMAND" = "setup" ]; then
@@ -468,12 +558,12 @@ while [ $# -gt 0 ]; do
         exit 0
       elif [ "$SUBCOMMAND" = "pick" ]; then
         echo "Usage:"
-        echo "  monozukuri pick --json [--top N] [filters]"
+        echo "  monozukuri pick [--json] [--top N] [filters]"
         echo ""
         echo "Pick top-ranked backlog items for scripts and CI."
         echo ""
         echo "Flags:"
-        echo "  --json                    Emit JSON array output"
+        echo "  --json                    Emit JSON array output (default: IDs, one per line)"
         echo "  --top N                   Maximum items to print (default: 5, max: 50)"
         echo "  --label foo,bar           Include items with any listed label"
         echo "  --status ready|blocked|in-progress|done"
@@ -486,19 +576,50 @@ while [ $# -gt 0 ]; do
       elif [ "$SUBCOMMAND" = "loop" ]; then
         echo "Usage:"
         echo "  monozukuri loop <id...> [--cleanup]"
+        echo "  monozukuri loop --tasks N --agent claude-code|codex|gemini"
+        echo "  monozukuri loop --resume [run-id]"
+        echo "  monozukuri loop --list-runs"
+        echo "  monozukuri loop status [run-id] [--follow]"
         echo "  printf 'feat-001\\nfeat-002\\n' | monozukuri loop"
         echo ""
         echo "Run selected backlog features sequentially through the full pipeline."
         echo ""
         echo "Flags:"
+        echo "  --tasks N                 Select the top N ready backlog tasks"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Run selected tasks with this agent"
         echo "  --cleanup                 Remove loop worktrees after each feature"
         echo "  --max-cost USD            Stop before next feature after cap (default: 10)"
         echo "  --max-time MINUTES        Stop before next feature after cap (default: 480)"
         echo "  --max-tokens-per-task N   Per-feature token ceiling (default: 100000, max: 500000)"
         echo "  --on-failure MODE         continue, stop, or pause on feature failure"
         echo "  --circuit-breaker N       Abort after N consecutive failures (default: 3)"
+        echo "  --resume [run-id]         Resume a selected loop run"
+        echo "  --retry-failed            Re-run failed tasks during resume"
+        echo "  --list-runs               List resumable selected loop runs"
+        echo "  --follow                  Stream loop status updates every 2 seconds"
+        echo "  --report-format ascii|md  Final summary table format (default: ascii)"
         echo "  --non-interactive         Skip all prompts; use defaults"
         echo "  --no-ui                   Emit plain-text output"
+        echo "  --help                    Show this help"
+        exit 0
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        echo "Usage:"
+        echo "  monozukuri memory lint [file...]"
+        echo "  monozukuri memory list [--agent claude-code|codex|gemini]"
+        echo "  monozukuri memory migrate [--dry-run] [--reverse]"
+        echo "  monozukuri memory compact [--dry-run]"
+        echo "  monozukuri memory why [lrn-id] [--format json]"
+        echo "  monozukuri memory trace <run-id>"
+        echo ""
+        echo "Validate, migrate, or inspect Memory learning entries."
+        echo ""
+        echo "Flags:"
+        echo "  --agent claude-code|codex|gemini"
+        echo "                            Show learnings relevant to one agent"
+        echo "  --dry-run                 Preview migration without writing files"
+        echo "  --reverse                 Convert Memory v2 back to v1-compatible JSON"
+        echo "  --format json             Emit machine-readable output for memory why"
         echo "  --help                    Show this help"
         exit 0
       fi
@@ -511,9 +632,16 @@ while [ $# -gt 0 ]; do
       echo "  config show [--json]         Print resolved config"
       echo "  run                          Execute the orchestration loop"
       echo "  loop <ids...>                Run selected features sequentially"
+      echo "  loop status [run-id]         Show selected-loop progress"
       echo "  backlog list                 List ranked backlog items"
       echo "  backlog validate <ids...>    Validate dependency readiness for selected items"
-      echo "  pick --top N --json          Emit top-ranked backlog items as JSON"
+      echo "  pick --top N                 Emit top-ranked backlog item IDs"
+      echo "  memory lint [file...]        Validate Memory v2 learning entries"
+      echo "  memory list                  List Memory v2 learnings"
+      echo "  memory migrate               Migrate Memory v1 stores to v2"
+      echo "  memory compact               Deduplicate and prune Memory v2 entries"
+      echo "  memory why [lrn-id]          Inspect Memory v2 provenance and history"
+      echo "  memory trace <run-id>        Inspect Memory sufficiency-router decisions"
       echo "  status                       Show current orchestrator state"
       echo "  clean                        Remove all worktrees and reset state"
       echo "  calibrate                    Show token-cost calibration guidance"
@@ -579,11 +707,13 @@ while [ $# -gt 0 ]; do
       echo "  --resume                     Resume the most recent run (idempotent)"
       echo "  --no-ui                      Skip the Ink TUI; emit plain-text output"
       echo "  --format <table|json|csv>    Output format for backlog list"
+      echo "  --format json                Machine-readable output for memory why"
       echo "  --limit <n>                  Max items for backlog list (default: 50, max: 500)"
       echo "  --label <a,b>                Filter backlog list by label"
       echo "  --status <status>            Filter backlog list by status"
       echo "  --exclude-blocked            Shortcut for backlog list --status ready"
-      echo "  --agent <agent>              Filter backlog list or target setup by agent"
+      echo "  --agent <agent>              Filter backlog or memory list; target setup by agent"
+      echo "  --tasks <n>                  Select top N ready tasks for loop"
       echo "  --score-explain <id>         Show backlog ranking score breakdown"
       echo "  --top <n>                    Max items for pick (default: 5, max: 50)"
       echo "  --cleanup                    Remove loop worktrees after each feature"
@@ -592,7 +722,12 @@ while [ $# -gt 0 ]; do
       echo "  --max-tokens-per-task <n>    Max tokens per loop feature (default: 100000)"
       echo "  --on-failure <mode>          Loop failure mode: continue, stop, or pause"
       echo "  --circuit-breaker <n>        Abort after n consecutive loop failures"
+      echo "  --retry-failed               Re-run failed tasks during loop resume"
+      echo "  --list-runs                  List resumable selected loop runs"
+      echo "  --follow                     Stream loop status updates every 2 seconds"
+      echo "  --report-format <ascii|md>   Final loop summary table format"
       echo "  --strict                     Treat backlog validate warnings as errors"
+      echo "  --reverse                    Reverse memory migrate v2 back to v1 JSON"
       echo "  --help                       Show this help"
       exit 0
       ;;
@@ -621,11 +756,23 @@ while [ $# -gt 0 ]; do
         else
           OPT_BACKLOG_IDS="$1"
         fi
+      elif [ "$SUBCOMMAND" = "loop" ] && [ "$OPT_LOOP_STATUS" = "true" ] && [ -z "$OPT_LOOP_STATUS_ID" ]; then
+        OPT_LOOP_STATUS_ID="$1"
       elif [ "$SUBCOMMAND" = "loop" ]; then
         if [ -n "$OPT_LOOP_IDS" ]; then
           OPT_LOOP_IDS="${OPT_LOOP_IDS},$1"
         else
           OPT_LOOP_IDS="$1"
+        fi
+      elif [ "$SUBCOMMAND" = "memory" ] && [ -z "$OPT_MEMORY_ACTION" ]; then
+        OPT_MEMORY_ACTION="$1"
+      elif [ "$SUBCOMMAND" = "memory" ] && { [ "$OPT_MEMORY_ACTION" = "why" ] || [ "$OPT_MEMORY_ACTION" = "trace" ]; } && [ -z "$OPT_MEMORY_ID" ]; then
+        OPT_MEMORY_ID="$1"
+      elif [ "$SUBCOMMAND" = "memory" ]; then
+        if [ -n "$OPT_MEMORY_FILES" ]; then
+          OPT_MEMORY_FILES="${OPT_MEMORY_FILES},$1"
+        else
+          OPT_MEMORY_FILES="$1"
         fi
       elif [ "$SUBCOMMAND" = "retry" ] && [ "$1" = "--feat" ]; then
         shift
@@ -659,11 +806,15 @@ export OPT_SKIP_CYCLE_CHECK OPT_JSON OPT_NON_INTERACTIVE OPT_CONFIG_ACTION \
        OPT_BACKLOG_ACTION OPT_BACKLOG_FORMAT OPT_BACKLOG_LIMIT \
        OPT_BACKLOG_LABEL OPT_BACKLOG_STATUS OPT_BACKLOG_AGENT \
        OPT_BACKLOG_IDS OPT_BACKLOG_STRICT OPT_BACKLOG_SCORE_EXPLAIN \
-       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_CLEANUP \
+       OPT_PICK_TOP OPT_LOOP_IDS OPT_LOOP_TASKS OPT_LOOP_AGENT OPT_LOOP_CLEANUP \
        OPT_LOOP_MAX_COST OPT_LOOP_MAX_COST_EXPLICIT \
        OPT_LOOP_MAX_TIME OPT_LOOP_MAX_TIME_EXPLICIT \
        OPT_LOOP_MAX_TOKENS_PER_TASK OPT_LOOP_ON_FAILURE \
-       OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING
+       OPT_LOOP_CIRCUIT_BREAKER OPT_LOOP_I_KNOW_WHAT_IM_DOING \
+       OPT_LOOP_RESUME_ID OPT_LOOP_RETRY_FAILED OPT_LOOP_LIST_RUNS \
+       OPT_LOOP_STATUS OPT_LOOP_STATUS_ID OPT_LOOP_STATUS_FOLLOW \
+       OPT_LOOP_REPORT_FORMAT OPT_MEMORY_ACTION OPT_MEMORY_ID \
+       OPT_MEMORY_FILES OPT_MEMORY_FORMAT OPT_MEMORY_AGENT
 
 [ -z "$SUBCOMMAND" ] && { err "No command given. Run: monozukuri --help"; exit 1; }
 
@@ -715,6 +866,7 @@ case "$SUBCOMMAND" in
   init)            source "$CMD_DIR/init.sh"; sub_init ;;
   backlog)         source "$CMD_DIR/backlog.sh"; sub_backlog ;;
   pick)            source "$CMD_DIR/pick.sh"; sub_pick ;;
+  memory)          source "$CMD_DIR/memory.sh"; sub_memory ;;
   loop)            source "$CMD_DIR/loop.sh"; sub_loop ;;
   run)
     source "$CMD_DIR/run.sh"

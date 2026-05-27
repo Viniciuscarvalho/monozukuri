@@ -26,10 +26,80 @@ monozukuri_skill_path_for_phase() {
   printf '%s/skills/%s/SKILL.md\n' "${MONOZUKURI_SKILLS_ROOT:-$_SKILL_INJECT_ROOT}" "$skill"
 }
 
+_monozukuri_skill_active_agent() {
+  printf '%s\n' "${ADAPTER:-${MONOZUKURI_AGENT:-}}"
+}
+
+_monozukuri_skill_from_manifest_for_phase() {
+  local phase="${1:-}" agent="${2:-}"
+  local manifest="${MONOZUKURI_SKILLS_MANIFEST:-${ROOT_DIR:-$PWD}/.monozukuri/skills-manifest.json}"
+  [[ -n "$phase" ]] || return 0
+  [[ -f "$manifest" ]] || return 0
+  command -v node >/dev/null 2>&1 || return 0
+
+  MONOZUKURI_RESOLVE_PHASE="$phase" \
+    MONOZUKURI_RESOLVE_AGENT="$agent" \
+    MONOZUKURI_RESOLVE_MANIFEST="$manifest" \
+    node <<'NODE' 2>/dev/null
+const fs = require('fs');
+const path = require('path');
+
+const manifestPath = process.env.MONOZUKURI_RESOLVE_MANIFEST;
+const phase = process.env.MONOZUKURI_RESOLVE_PHASE;
+const activeAgent = process.env.MONOZUKURI_RESOLVE_AGENT || '';
+
+function normalizeAgent(agent) {
+  if (!agent) return 'any';
+  if (agent === 'gemini-cli') return 'gemini';
+  return agent;
+}
+
+function agentMatches(skillAgent, agent) {
+  const skill = normalizeAgent(skillAgent);
+  const active = normalizeAgent(agent);
+  return skill === 'any' || !active || skill === active;
+}
+
+let manifest;
+try {
+  manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+} catch {
+  process.exit(0);
+}
+
+const skills = Array.isArray(manifest.skills) ? manifest.skills : [];
+const projectRoot = manifest.project_root || process.env.ROOT_DIR || process.cwd();
+const match = skills.find((skill) =>
+  Array.isArray(skill.phases) &&
+  skill.phases.includes(phase) &&
+  agentMatches(skill.agent, activeAgent) &&
+  typeof skill.path === 'string' &&
+  skill.path.length > 0
+);
+
+if (!match) process.exit(0);
+
+const skillPath = path.isAbsolute(match.path)
+  ? match.path
+  : path.join(projectRoot, match.path);
+
+if (!fs.existsSync(skillPath)) process.exit(0);
+process.stdout.write(`${match.name}\t${skillPath}`);
+NODE
+}
+
 monozukuri_skill_prefix_for_phase() {
   local phase="${1:-}" skill_path skill_name
-  skill_name=$(monozukuri_skill_for_phase "$phase") || return 0
-  skill_path=$(monozukuri_skill_path_for_phase "$phase") || return 0
+  local resolved active_agent
+  active_agent=$(_monozukuri_skill_active_agent)
+  resolved=$(_monozukuri_skill_from_manifest_for_phase "$phase" "$active_agent")
+  if [[ -n "$resolved" ]]; then
+    skill_name="${resolved%%	*}"
+    skill_path="${resolved#*	}"
+  else
+    skill_name=$(monozukuri_skill_for_phase "$phase") || return 0
+    skill_path=$(monozukuri_skill_path_for_phase "$phase") || return 0
+  fi
   [[ -f "$skill_path" ]] || return 0
 
   printf -- '## Monozukuri portable skill instructions\n\n'

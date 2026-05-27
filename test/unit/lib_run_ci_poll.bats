@@ -53,6 +53,15 @@ _init_feat() {
   [ "$result" = "success" ]
 }
 
+@test "ci_check_status: current gh SUCCESS state without conclusion → success" {
+  platform_gh() {
+    echo '[{"name":"test","state":"SUCCESS"}]'
+  }
+  export -f platform_gh
+  result=$(ci_check_status "1")
+  [ "$result" = "success" ]
+}
+
 @test "ci_check_status: any failure → failure" {
   platform_gh() {
     echo '[{"name":"test","state":"COMPLETED","conclusion":"success"},{"name":"lint","state":"COMPLETED","conclusion":"failure"}]'

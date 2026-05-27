@@ -2,7 +2,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "prerelease-type": "rc",
+      "prerelease-type": "alpha",
       "prerelease": true,
       "include-component-in-tag": false,
       "include-merge-commits": false,

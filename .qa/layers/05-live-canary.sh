@@ -1,17 +1,18 @@
 #!/bin/bash
 # .qa/layers/05-live-canary.sh — Layer 5: Live canary
 #
-# Makes one real claude invocation against a tiny prompt.
+# Runs a real monozukuri loop canary against the dedicated sandbox repo.
 # Skipped on patch releases (no new AI behaviour to validate).
 # Skipped when MONOZUKURI_SKIP_LIVE_CANARY=1 (CI default).
 #
-# Costs < $0.01. Runs < 60s. Requires `claude` CLI authenticated.
+# Cost cap: $5 total. Requires gh plus authenticated agent CLIs.
 set -euo pipefail
 
 LAYER_ID=5
 LAYER_NAME="live-canary"
 
 QA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$QA_DIR/.." && pwd)"
 source "$QA_DIR/lib/assert.sh"
 source "$QA_DIR/lib/semver.sh"
 
@@ -31,50 +32,23 @@ run_layer5() {
 
   local failures=0
 
-  # Require claude CLI
-  if ! command -v claude &>/dev/null; then
-    _qa_fail "claude CLI not found — install with: npm install -g @anthropic-ai/claude-code" \
-      || failures=$((failures + 1))
-    return "$failures"
-  fi
-
-  # Require claude to be authenticated
-  if ! claude auth status &>/dev/null 2>&1; then
-    _qa_fail "claude not authenticated — run: claude auth login" \
-      || failures=$((failures + 1))
-    return "$failures"
-  fi
-
-  # Canary prompt: minimal, deterministic, cheap
-  local prompt="Respond with exactly the string: CANARY_OK — nothing else."
-  local canary_out
-  local canary_exit=0
-
+  local canary_out canary_exit=0
+  # Release Layer 5 delegates to: scripts/verification/live-canary.sh --live --max-cost 5
   canary_out=$(
-    SKILL_TIMEOUT_SECONDS="${SKILL_TIMEOUT_SECONDS:-60}"
-    if command -v timeout &>/dev/null; then
-      timeout "$SKILL_TIMEOUT_SECONDS" claude --print "$prompt" 2>&1
-    elif command -v gtimeout &>/dev/null; then
-      gtimeout "$SKILL_TIMEOUT_SECONDS" claude --print "$prompt" 2>&1
-    else
-      perl -e "alarm $SKILL_TIMEOUT_SECONDS; exec @ARGV" -- claude --print "$prompt" 2>&1
-    fi
+    bash "$REPO_ROOT/scripts/verification/live-canary.sh" --live \
+      --tasks 2 \
+      --max-cost 5 \
+      --sandbox-repo "${MONOZUKURI_CANARY_SANDBOX_REPO:-monozukuri/test-sandbox}" \
+      --out-dir "$QA_DIR/reports/live-canary" 2>&1
   ) || canary_exit=$?
 
-  if [ "$canary_exit" -ne 0 ]; then
-    _qa_fail "claude --print exited $canary_exit" || failures=$((failures + 1))
-    printf '  [canary output]\n'
-    printf '%s\n' "$canary_out" | head -10 | sed 's/^/    /'
-    return "$failures"
-  fi
-
-  if printf '%s' "$canary_out" | grep -q "CANARY_OK"; then
-    _qa_pass "claude --print returned expected CANARY_OK marker"
+  if [ "$canary_exit" -eq 0 ]; then
+    _qa_pass "live loop canary opened two green sandbox PRs per agent"
   else
-    _qa_fail "claude --print did not return CANARY_OK in output" \
+    _qa_fail "live loop canary failed — release blocked pending investigation" \
       || failures=$((failures + 1))
-    printf '  [canary output (first 10 lines)]\n'
-    printf '%s\n' "$canary_out" | head -10 | sed 's/^/    /'
+    printf '  [canary output]\n'
+    printf '%s\n' "$canary_out" | head -40 | sed 's/^/    /'
   fi
 
   return "$failures"

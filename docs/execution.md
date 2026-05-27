@@ -1,6 +1,6 @@
 # Execution at a glance
 
-This document shows what Monozukuri looks like while it runs, in each of the three autonomy levels, and what a successful run produces. It is the reference users open before their first `monozukuri run` — and the source for the hero asset embedded in the README.
+This document shows what Monozukuri looks like while it runs, in each of the three autonomy levels, and what a successful run produces. It is the reference users open before their first `monozukuri run`.
 
 If you are looking for _what to do when something breaks_, see [troubleshooting.md](troubleshooting.md). For the differences between autonomy modes, see [autonomy.md](autonomy.md).
 
@@ -8,7 +8,7 @@ If you are looking for _what to do when something breaks_, see [troubleshooting.
 
 ## A 30-second tour
 
-The hero GIF in the README captures this scenario, end to end:
+The canonical demo scenario is:
 
 1. A repository with two pending features in `features.md`.
 2. `monozukuri run --dry-run` previews the plan and exits.
@@ -16,7 +16,7 @@ The hero GIF in the README captures this scenario, end to end:
 4. The user merges the PR; Monozukuri picks up the second feature.
 5. Final state: two open PRs, two worktrees cleaned up, learnings written.
 
-The reproducible tape lives at [`assets/hero.tape`](assets/hero.tape). See [Recording the hero asset](#recording-the-hero-asset) below to regenerate it.
+The reproducible tape lives at [`assets/hero.tape`](assets/hero.tape). See [Recording demo assets](#recording-demo-assets) below when the project needs refreshed release media.
 
 ---
 
@@ -39,6 +39,13 @@ The dry run is the answer to "what is this thing about to do to my repo?" Use it
 ```bash
 monozukuri loop feat-001 feat-002 feat-003
 monozukuri pick --top 3 | monozukuri loop
+monozukuri pick --top 3 --json | jq -r '.[].id' | monozukuri loop
+monozukuri loop feat-001 feat-002 --report-format md
+monozukuri loop status
+monozukuri loop status loop-2026-05-22-a3b9c2 --follow
+monozukuri loop --list-runs
+monozukuri loop --resume
+monozukuri loop --resume loop-2026-05-22-a3b9c2 --retry-failed
 ```
 
 Loop worktrees are preserved by default under `.monozukuri/worktrees/loop-<date>-<random>/<feature-id>/` so failed features can be inspected. Pass `--cleanup` when you want the command to remove each loop worktree after the feature finishes.
@@ -47,9 +54,9 @@ Each feature is isolated. Missing IDs are reported and the loop continues. Faile
 
 The loop also has a consecutive-failure circuit breaker independent of `--on-failure`. By default, `--circuit-breaker 3` aborts after three failed features in a row, prints `Circuit breaker tripped: 3 consecutive failures` to stdout and stderr, writes the tripped state to `.monozukuri/state/loop-<id>/cost.json`, and exits `5`. Set `--circuit-breaker 0 --i-know-what-im-doing` only when you explicitly want to disable this safety guard.
 
-Every selected loop run writes resumable state under `.monozukuri/state/loop-<id>/`: `manifest.json`, `progress.jsonl`, `cost.json`, and `checkpoint.json`. See [loop-state schema](schemas/loop-state.md) for the file contracts and atomic write rules.
+Every selected loop run writes resumable state under `.monozukuri/state/loop-<id>/`: `manifest.json`, `progress.jsonl`, `cost.json`, `checkpoint.json`, and `summary.md`. At the end of a successful, failed, capped, stopped, or interrupted run, the loop prints a summary table with `ID`, `Status`, `Phases done`, `Tokens`, `Cost`, `Duration`, and `PR URL`. Terminal output defaults to ASCII; pass `--report-format md` to print the markdown table that is also persisted to `summary.md`. Use `monozukuri loop status [run-id]` to render progress events as `[HH:MM:SS] [task-id] [phase] message`; omit the run ID to read the latest loop run. `monozukuri loop status --follow` streams new events every 2 seconds, which is useful from a second terminal while a background loop is running. Use `monozukuri loop --list-runs` to inspect resumable selected-loop runs. `monozukuri loop --resume [run-id]` skips completed tasks, marks interrupted `running` tasks as `inconclusive`, preserves the old worktree, and restarts the task in a new resume worktree. Failed tasks stay skipped unless `--retry-failed` is passed. See [loop-state schema](schemas/loop-state.md) for the file contracts and atomic write rules.
 
-Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/state/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. The token ceiling rejects values above `500000`.
+Loop budgets are hard caps between features. The defaults are `--max-cost 10`, `--max-time 480`, and `--max-tokens-per-task 100000`; the loop finishes the current feature, writes `.monozukuri/state/loop-<id>/cost.json`, prints the final cost summary, and exits `4` before starting another feature when a cap is reached. Resume applies caps to the accumulated totals in `cost.json`, not to a reset budget. The token ceiling rejects values above `500000`.
 
 ---
 
@@ -122,9 +129,9 @@ If any of these are missing or unexpected, the run did not complete cleanly. Go 
 
 ---
 
-## Recording the hero asset
+## Recording demo assets
 
-The README hero GIF is regenerated from a [VHS](https://github.com/charmbracelet/vhs) tape. VHS is declarative, reproducible, and exports to GIF, MP4, and WebM from a single script — preferable to ad-hoc screen recordings for an asset that needs to track CLI changes.
+Demo media can be regenerated from a [VHS](https://github.com/charmbracelet/vhs) tape when a release needs refreshed visual assets. Keep generated media out of ordinary feature PRs unless the release checklist explicitly requires it; the tape and the command sequence are the source of truth.
 
 **Why VHS over alternatives.** asciinema records faithfully but produces a `.cast` file that needs a player or a converter (agg) to embed in GitHub. terminalizer is heavier and harder to script. VHS produces a GIF directly, runs in CI, and the tape itself is reviewable in a PR.
 
@@ -141,7 +148,7 @@ Keep typing slow enough to read but skip the agent's thinking time with VHS `Hid
 **Tape skeleton** (save as `docs/assets/hero.tape`):
 
 ```tape
-Output docs/assets/hero.gif
+Output docs/assets/pick-loop.gif
 Set Theme "Catppuccin Mocha"
 Set FontSize 14
 Set Width 1200

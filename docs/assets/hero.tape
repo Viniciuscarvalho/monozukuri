@@ -1,4 +1,4 @@
-Output docs/assets/hero.gif
+Output docs/assets/pick-loop.gif
 
 Set Theme "Catppuccin Mocha"
 Set FontSize 14

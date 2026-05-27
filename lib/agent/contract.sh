@@ -26,6 +26,10 @@
 #                              Adapter feeds this to its CLI.
 #
 # Optional functions (not checked by agent_verify):
+#   parse_memory_requests RESPONSE → stdout newline-delimited Memory v2 learning IDs
+#                                   requested through leading markers of the form
+#                                   <request-memory id="lrn-xxx"/>. Used by the
+#                                   Memory v2 escalation loop after agent output.
 #   agent_native_context_files() → echo JSON array of repo-relative paths this
 #                                   agent reads on its own (e.g. AGENTS.md, CLAUDE.md).
 #                                   Conventions from these files are referenced by path

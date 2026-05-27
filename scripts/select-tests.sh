@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
-# scripts/select-tests.sh — compute the minimal BATS test set for a PR
+# scripts/select-tests.sh - compute the risk-tiered Bats test set for a PR.
 #
 # Usage:
-#   scripts/select-tests.sh [--base <branch>] [--unit-only] [--integration-only]
+#   scripts/select-tests.sh [--base <branch>] [--tier <name>] [--scope]
+#   scripts/select-tests.sh [--base <branch>] [--unit-only|--integration-only]
 #
-# Reads test/test-map.json, diffs against <base> (default: origin/main),
-# and prints a space-separated list of .bats files to stdout.
+# Tiers are declared in test/test-map.json:
+#   unit, integration-fast, integration-extended, nightly, release
 #
 # Exit codes:
-#   0  — list emitted (may be "ALL" when blast-radius file changed)
-#   1  — test-map missing or invalid
-#
-# CI usage:
-#   TESTS=$(scripts/select-tests.sh)
-#   if [ "$TESTS" = "ALL" ]; then bats --jobs 4 test/unit/ test/integration/
-#   else bats $TESTS; fi
+#   0 - list emitted, scope emitted, or no tests in the requested tier
+#   1 - test-map missing/invalid or unknown argument
 
 set -euo pipefail
 
@@ -23,15 +19,35 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MAP_FILE="$REPO_ROOT/test/test-map.json"
 
 BASE_BRANCH="origin/main"
-UNIT_ONLY=false
-INTEGRATION_ONLY=false
+TIER=""
+SCOPE_ONLY=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
-    --base) BASE_BRANCH="$2"; shift 2 ;;
-    --unit-only) UNIT_ONLY=true; shift ;;
-    --integration-only) INTEGRATION_ONLY=true; shift ;;
-    *) echo "unknown arg: $1" >&2; exit 1 ;;
+    --base)
+      BASE_BRANCH="$2"
+      shift 2
+      ;;
+    --tier)
+      TIER="$2"
+      shift 2
+      ;;
+    --unit-only)
+      TIER="unit"
+      shift
+      ;;
+    --integration-only)
+      TIER="integration-fast"
+      shift
+      ;;
+    --scope)
+      SCOPE_ONLY=true
+      shift
+      ;;
+    *)
+      echo "unknown arg: $1" >&2
+      exit 1
+      ;;
   esac
 done
 
@@ -40,74 +56,106 @@ if [ ! -f "$MAP_FILE" ]; then
   exit 1
 fi
 
-# Collect changed files relative to repo root
-changed=$(git -C "$REPO_ROOT" diff --name-only "$BASE_BRANCH"...HEAD 2>/dev/null || \
-          git -C "$REPO_ROOT" diff --name-only HEAD 2>/dev/null || true)
+changed=$(git -C "$REPO_ROOT" diff --name-only "$BASE_BRANCH"...HEAD 2>/dev/null ||
+  git -C "$REPO_ROOT" diff --name-only HEAD 2>/dev/null || true)
 
-if [ -z "$changed" ]; then
-  echo "select-tests: no changed files detected; running full suite" >&2
-  echo "ALL"
-  exit 0
-fi
-
-# Check blast-radius files first
-blast=$(python3 - "$MAP_FILE" "$changed" <<'PYEOF'
-import json, sys
-map_file, changed_str = sys.argv[1], sys.argv[2]
-data = json.loads(open(map_file).read())
-blast = set(data.get("blast_radius", []))
-for f in changed_str.strip().splitlines():
-    if f.strip() in blast:
-        print("BLAST")
-        sys.exit(0)
-PYEOF
-)
-
-if [ "${blast:-}" = "BLAST" ]; then
-  echo "select-tests: blast-radius file changed — running full suite" >&2
-  echo "ALL"
-  exit 0
-fi
-
-# Resolve test files for all changed source files
-selected=$(python3 - "$MAP_FILE" "$changed" "$UNIT_ONLY" "$INTEGRATION_ONLY" <<'PYEOF'
-import json, sys
+python3 - "$MAP_FILE" "$REPO_ROOT" "$changed" "$TIER" "$SCOPE_ONLY" <<'PYEOF'
+import json
+import sys
 from pathlib import Path
 
-map_file, changed_str, unit_only, int_only = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-data = json.loads(open(map_file).read())
+map_file, repo_root_raw, changed_raw, tier, scope_only_raw = sys.argv[1:6]
+repo_root = Path(repo_root_raw)
+scope_only = scope_only_raw == "true"
+
+try:
+    data = json.loads(Path(map_file).read_text())
+except Exception as exc:
+    print(f"select-tests: invalid test-map: {exc}", file=sys.stderr)
+    sys.exit(1)
+
 mapping = data.get("map", {})
+blast_radius = set(data.get("blast_radius", []))
+tiers = data.get("tiers", {})
+changed = [line.strip() for line in changed_raw.splitlines() if line.strip()]
 
-selected = set()
-for src in changed_str.strip().splitlines():
-    src = src.strip()
-    # exact match
+if tier and tier not in tiers:
+    print(f"select-tests: unknown tier: {tier}", file=sys.stderr)
+    sys.exit(1)
+
+def normalized_spec(name):
+    spec = tiers.get(name, {})
+    if isinstance(spec, list):
+        return {"include": spec, "exclude": []}
+    return {
+        "include": spec.get("include", []),
+        "exclude": spec.get("exclude", []),
+    }
+
+def path_matches(path, patterns):
+    return any(path == pattern or path.startswith(pattern.rstrip("/") + "/") for pattern in patterns)
+
+def in_tier(path, name):
+    if not name:
+        return True
+    spec = normalized_spec(name)
+    includes = spec["include"]
+    excludes = spec["exclude"]
+    return path_matches(path, includes) and not path_matches(path, excludes)
+
+def existing_test(path):
+    return path.endswith(".bats") and (repo_root / path).exists()
+
+def all_tests_for_tier(name):
+    if not name:
+        return ["ALL"]
+    spec = normalized_spec(name)
+    selected = set()
+    for pattern in spec["include"]:
+        candidate = repo_root / pattern
+        if candidate.is_dir():
+            selected.update(str(path.relative_to(repo_root)) for path in candidate.rglob("*.bats"))
+        elif candidate.is_file() and pattern.endswith(".bats"):
+            selected.add(pattern)
+    return sorted(path for path in selected if in_tier(path, name) and existing_test(path))
+
+def mapped_tests_for_change(src):
     if src in mapping:
-        selected.update(mapping[src])
+        return list(mapping[src]), True
+    for key, tests in mapping.items():
+        if src.startswith(key.rstrip("/") + "/") or src.startswith(key):
+            return list(tests), True
+    return [], False
+
+fallback = False
+selected = set()
+unmapped = []
+
+if not changed:
+    fallback = True
+
+for src in changed:
+    if src in blast_radius:
+        fallback = True
         continue
-    # prefix match for directory-level entries (e.g. skills/mz-create-prd/...)
-    for key in mapping:
-        if src.startswith(key + "/") or src.startswith(key):
-            selected.update(mapping[key])
-            break
+    tests, matched = mapped_tests_for_change(src)
+    if matched:
+        selected.update(tests)
+    else:
+        unmapped.append(src)
+        fallback = True
 
-# Filter by type flags
-if unit_only == "true":
-    selected = {t for t in selected if "/unit/" in t}
-elif int_only == "true":
-    selected = {t for t in selected if "/integration/" in t}
+if scope_only:
+    print("fallback" if fallback else "targeted")
+    sys.exit(0)
 
-# Only emit tests that actually exist on disk
-repo_root = Path(map_file).parent.parent
-existing = [t for t in sorted(selected) if (repo_root / t).exists()]
+if fallback:
+    if not tier:
+        print("ALL")
+        sys.exit(0)
+    print("\n".join(all_tests_for_tier(tier)))
+    sys.exit(0)
+
+existing = sorted(path for path in selected if in_tier(path, tier) and existing_test(path))
 print("\n".join(existing))
 PYEOF
-)
-
-if [ -z "$selected" ]; then
-  echo "select-tests: no tests map to the changed files; running full suite as safety net" >&2
-  echo "ALL"
-  exit 0
-fi
-
-echo "$selected"

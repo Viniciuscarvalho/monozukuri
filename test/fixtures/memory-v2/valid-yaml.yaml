@@ -1,0 +1,17 @@
+id: lrn-2026-05-24-004
+scope: project
+insight: Prefer shellcheck severity error before opening loop PRs.
+rationale: The loop command is Bash-heavy and shellcheck catches portability regressions cheaply.
+source:
+  feature_id: LOOP-09
+  phase: tests
+  run_id: loop-2026-05-24-d4e5f6
+  artifact: cmd/loop.sh
+  line_range: [1, 20]
+applied_count: 1
+last_applied: 2026-05-24T19:00:00Z
+promoted_from: user_correction
+agent_specific: null
+tags:
+  - shell
+  - lint

@@ -83,7 +83,7 @@ _kiro_run_phase_test() {
   local phase="$1" native_specs="$2" expected="$3"
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_kiro_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_kiro_XXXXXX.sh")"
   printf '#!/bin/bash\necho "kiro_args: $*"\nexit 0\n' > "$mock_dir/kiro"
   chmod +x "$mock_dir/kiro"
   cat > "$tmp_script" <<SCRIPT

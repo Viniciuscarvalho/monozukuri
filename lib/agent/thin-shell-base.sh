@@ -29,6 +29,12 @@ if ! declare -f op_timeout &>/dev/null; then
   op_timeout() { local _secs="$1"; shift; "$@"; }
 fi
 
+if ! declare -f agent_parse_memory_requests_generic &>/dev/null; then
+  _thin_shell_agent_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck source=memory-request.sh
+  source "${_thin_shell_agent_dir}/memory-request.sh" 2>/dev/null || true
+fi
+
 # adapter_tee is sourced from lib/cli/emit.sh by pipeline.sh before this adapter loads.
 if ! declare -f adapter_tee &>/dev/null; then
   adapter_tee() {
@@ -63,6 +69,10 @@ agent_report_cost() {
   else
     echo "0.00"
   fi
+}
+
+parse_memory_requests() {
+  agent_parse_memory_requests_generic "$@"
 }
 
 agent_run_phase() {
@@ -109,5 +119,9 @@ agent_run_phase() {
   local exit_code=0
   _thin_shell_invoke "$rendered_prompt" "$log_file" "$feat_id" "$wt_path" || exit_code=$?
   _thin_shell_auth_check "$log_file" && return 15
+  if [ "$exit_code" -eq 0 ] && [ "${MONOZUKURI_MEMORY_DEFER_PHASE_SUCCESS:-0}" != "1" ] && \
+     declare -f memory_v2_mark_phase_success &>/dev/null; then
+    memory_v2_mark_phase_success "$phase" 2>/dev/null || true
+  fi
   return "$exit_code"
 }
