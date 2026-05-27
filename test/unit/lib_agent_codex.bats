@@ -91,7 +91,7 @@ setup() {
 @test "codex agent_run_phase bypasses approvals and sandbox for full_auto autonomy" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_codex_XXXXXX.sh")"
   printf '#!/bin/bash\necho "codex_args: $*"\nexit 0\n' > "$mock_dir/codex"
   chmod +x "$mock_dir/codex"
   cat > "$tmp_script" <<SCRIPT
@@ -113,7 +113,7 @@ SCRIPT
 @test "codex agent_run_phase uses workspace-write sandbox for checkpoint autonomy" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_codex_XXXXXX.sh")"
   printf '#!/bin/bash\necho "codex_args: $*"\nexit 0\n' > "$mock_dir/codex"
   chmod +x "$mock_dir/codex"
   cat > "$tmp_script" <<SCRIPT
@@ -135,7 +135,7 @@ SCRIPT
 @test "codex agent_run_phase passes MONOZUKURI_MODEL to codex exec" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_codex_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_codex_XXXXXX.sh")"
   printf '#!/bin/bash\necho "codex_args: $*"\nexit 0\n' > "$mock_dir/codex"
   chmod +x "$mock_dir/codex"
   cat > "$tmp_script" <<SCRIPT

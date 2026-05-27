@@ -89,7 +89,7 @@ setup() {
 @test "gemini agent_run_phase uses '--yolo true' for full_auto" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_gemini_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_gemini_XXXXXX.sh")"
   printf '#!/bin/bash\necho "gemini_args: $*"\nexit 0\n' > "$mock_dir/gemini"
   chmod +x "$mock_dir/gemini"
   cat > "$tmp_script" <<SCRIPT
@@ -111,7 +111,7 @@ SCRIPT
 @test "gemini agent_run_phase uses '--yolo false' for checkpoint" {
   local mock_dir tmp_script
   mock_dir="$(mktemp -d)"
-  tmp_script="$(mktemp /tmp/mz_gemini_XXXXXX.sh)"
+  tmp_script="$(mktemp "$BATS_TEST_TMPDIR/mz_gemini_XXXXXX.sh")"
   printf '#!/bin/bash\necho "gemini_args: $*"\nexit 0\n' > "$mock_dir/gemini"
   chmod +x "$mock_dir/gemini"
   cat > "$tmp_script" <<SCRIPT
