@@ -226,7 +226,20 @@
       "test/unit/skill_validation.bats",
       "test/unit/template_lift.bats"
     ],
-    ".github/workflows/ci.yml": [],
+    ".github/workflows/ci.yml": [
+      "test/integration/live_canary.bats",
+      "test/integration/vrf_verification.bats"
+    ],
+    "Makefile": [],
+    "scripts/select-tests.sh": [],
+    "test/test-map.json": [],
+    "test/extended": [],
+    "test/integration/live_canary.bats": [
+      "test/integration/live_canary.bats"
+    ],
+    "test/integration/vrf_verification.bats": [
+      "test/integration/vrf_verification.bats"
+    ],
     ".ci-guard/config.yml": [],
     ".ci-guard/scripts/classify_failure.py": [],
     ".ci-guard/scripts/ci_watch.py": [],

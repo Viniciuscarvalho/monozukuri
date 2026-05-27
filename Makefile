@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts
 LIB_DIR := scripts/lib
 
-.PHONY: help install lint test test-properties verify fmt doctor clean rerecord-fixtures conformance mrp-v2 loop-conformance live-canary
+.PHONY: help install lint test test-properties test-extended verify fmt doctor clean rerecord-fixtures conformance mrp-v2 loop-conformance live-canary
 
 help: ## Show available targets
 	@awk '/^[a-zA-Z_-]+:.*?## .*/{printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -28,6 +28,9 @@ test: ## Run bats test suites
 
 test-properties: ## Run only the recording-property assertions (free, fast)
 	@bats test/properties
+
+test-extended: ## Run long-running local/nightly verification harness tests
+	@bats test/extended
 
 rerecord-fixtures: ## Re-record agent fixtures (LOCAL ONLY — costs ~$$0.50/agent). AGENT=claude-code|codex|gemini|all
 	@AGENT="$${AGENT:-claude-code}"; \

@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/v2-alpha-integration]
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -60,8 +60,9 @@ jobs:
         run: |
           chmod +x scripts/select-tests.sh
 
-          unit=$(scripts/select-tests.sh --unit-only 2>/dev/null || echo "ALL")
-          intg=$(scripts/select-tests.sh --integration-only 2>/dev/null || echo "ALL")
+          base="origin/${{ github.base_ref }}"
+          unit=$(scripts/select-tests.sh --base "$base" --unit-only 2>/dev/null || echo "ALL")
+          intg=$(scripts/select-tests.sh --base "$base" --integration-only 2>/dev/null || echo "ALL")
 
           if [ "$unit" = "ALL" ] || [ "$intg" = "ALL" ]; then
             echo "run_all=true" >> "$GITHUB_OUTPUT"
@@ -164,6 +165,8 @@ jobs:
         if: needs.select-tests.outputs.run_all == 'true' || needs.select-tests.outputs.integration_tests != ''
         run: |
           if [ "${{ needs.select-tests.outputs.run_all }}" = "true" ]; then
+            # PR integration intentionally excludes long-running harnesses in
+            # test/extended/. Nightly/release workflows own those checks.
             bats test/integration/
           else
             bats ${{ needs.select-tests.outputs.integration_tests }}
@@ -235,6 +238,48 @@ jobs:
               --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
           fi
 
+  # ── Property tests (fast recording/schema contracts) ───────────────────────
+  properties:
+    name: Property tests
+    runs-on: ubuntu-latest
+    needs: select-tests
+    if: needs.select-tests.outputs.run_all == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache bats
+        id: bats-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/bats-global
+          key: bats-${{ runner.os }}-v1
+
+      - name: Install bats
+        if: steps.bats-cache.outputs.cache-hit != 'true'
+        run: npm install -g --prefix ~/bats-global bats
+
+      - name: Add bats to PATH
+        run: echo "$HOME/bats-global/bin" >> $GITHUB_PATH
+
+      - name: Run property tests
+        run: bats test/properties/
+
+      - name: Update flaky ledger
+        if: always()
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
+          TEST_ID: ${{ github.job }}
+        run: |
+          if [ "$JOB_STATUS" = "failure" ]; then
+            python3 .ci-guard/scripts/flaky_ledger.py record-failure \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          else
+            python3 .ci-guard/scripts/flaky_ledger.py record-pass \
+              --test "$TEST_ID" --sha "$GH_SHA" --run-id "$GH_RUN_ID" || true
+          fi
+
   # ── ci-guard: classify failures, enforce retry budgets ───────────────────────
   # Runs whenever any upstream job fails. Classifies each failure via ci_watch.py
   # and exits non-zero on branch_failure or budget exhaustion so the PR cannot
@@ -242,7 +287,7 @@ jobs:
   classify-failures:
     name: ci-guard / classify failures
     runs-on: ubuntu-latest
-    needs: [lint-ui, unit, integration, conformance]
+    needs: [lint-ui, unit, integration, conformance, properties]
     if: failure()
     permissions:
       checks: read
@@ -268,7 +313,7 @@ jobs:
   quarantine-guard:
     name: Quarantine guard
     runs-on: ubuntu-latest
-    needs: [lint-ui, unit, integration, conformance]
+    needs: [lint-ui, unit, integration, conformance, properties]
     if: always()
     steps:
       - uses: actions/checkout@v4
