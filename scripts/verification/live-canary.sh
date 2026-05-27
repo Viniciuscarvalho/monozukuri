@@ -9,6 +9,7 @@ MAX_COST="5"
 SANDBOX_REPO="monozukuri/test-sandbox"
 OUT_DIR=".qa/reports/live-canary"
 MOCK_CI="success"
+TASK_TIMEOUT_SECONDS="${MONOZUKURI_VERIFY_TASK_TIMEOUT_SECONDS:-600}"
 
 usage() {
   cat <<'EOF'
@@ -26,6 +27,7 @@ Flags:
   --sandbox-repo OWNER/REPO Dedicated sandbox repo (default: monozukuri/test-sandbox)
   --out-dir DIR             Report directory
   --mock-ci success|failure Mock-only PR check result
+  --task-timeout-seconds N  Wall-clock cap per agent loop run (default: 600)
 EOF
 }
 
@@ -55,6 +57,9 @@ while [ $# -gt 0 ]; do
     --mock-ci)
       shift; MOCK_CI="$1"
       ;;
+    --task-timeout-seconds)
+      shift; TASK_TIMEOUT_SECONDS="$1"
+      ;;
     --help|-h)
       usage
       exit 0
@@ -77,6 +82,10 @@ if ! [[ "$TASK_COUNT" =~ ^[0-9]+$ ]] || [ "$TASK_COUNT" -lt 1 ]; then
   echo "--tasks must be a positive integer" >&2
   exit 2
 fi
+if ! [[ "$TASK_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] || [ "$TASK_TIMEOUT_SECONDS" -lt 1 ]; then
+  echo "--task-timeout-seconds must be a positive integer" >&2
+  exit 2
+fi
 if ! awk -v n="$MAX_COST" 'BEGIN { exit !(n ~ /^[0-9]+([.][0-9]+)?$/ && n > 0 && n <= 5) }'; then
   echo "--max-cost must be a positive USD amount no greater than 5" >&2
   exit 2
@@ -89,6 +98,7 @@ esac
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ORCHESTRATE="$REPO_ROOT/orchestrate.sh"
+WITH_TIMEOUT="$SCRIPT_DIR/with-timeout.sh"
 mkdir -p "$OUT_DIR"
 OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 WORK_DIR="$OUT_DIR/work"
@@ -316,12 +326,14 @@ for agent in "${AGENTS[@]}"; do
       CI_POLL_TIMEOUT=5 \
       CI_POLL_INTERVAL=1 \
       MONOZUKURI_HOME="$REPO_ROOT" \
+      "$WITH_TIMEOUT" --label "live-canary:$agent" --seconds "$TASK_TIMEOUT_SECONDS" -- \
       bash -c 'cd "$1" && bash "$2" loop --tasks "$3" --agent "$4" --max-cost "$5" --non-interactive --no-ui' \
       _ "$project_dir" "$ORCHESTRATE" "$TASK_COUNT" "$agent" "$remaining" \
       > "$stdout_file" 2> "$stderr_file" || exit_code=$?
   else
     PROGRESS_INTERVAL=0 \
       MONOZUKURI_HOME="$REPO_ROOT" \
+      "$WITH_TIMEOUT" --label "live-canary:$agent" --seconds "$TASK_TIMEOUT_SECONDS" -- \
       bash -c 'cd "$1" && bash "$2" loop --tasks "$3" --agent "$4" --max-cost "$5" --non-interactive --no-ui' \
       _ "$project_dir" "$ORCHESTRATE" "$TASK_COUNT" "$agent" "$remaining" \
       > "$stdout_file" 2> "$stderr_file" || exit_code=$?

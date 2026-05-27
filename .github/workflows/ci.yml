@@ -61,19 +61,18 @@ jobs:
           chmod +x scripts/select-tests.sh
 
           base="origin/${{ github.base_ref }}"
-          unit=$(scripts/select-tests.sh --base "$base" --unit-only 2>/dev/null || echo "ALL")
-          intg=$(scripts/select-tests.sh --base "$base" --integration-only 2>/dev/null || echo "ALL")
+          scope=$(scripts/select-tests.sh --base "$base" --scope)
+          unit=$(scripts/select-tests.sh --base "$base" --tier unit)
+          intg=$(scripts/select-tests.sh --base "$base" --tier integration-fast)
 
-          if [ "$unit" = "ALL" ] || [ "$intg" = "ALL" ]; then
+          if [ "$scope" = "fallback" ]; then
             echo "run_all=true" >> "$GITHUB_OUTPUT"
-            echo "unit_tests=" >> "$GITHUB_OUTPUT"
-            echo "integration_tests=" >> "$GITHUB_OUTPUT"
           else
             echo "run_all=false" >> "$GITHUB_OUTPUT"
-            # Space-separated for bats; empty string means skip the job
-            echo "unit_tests=$(echo "$unit" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
-            echo "integration_tests=$(echo "$intg" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
           fi
+          # Space-separated for bats; empty string means skip the job.
+          echo "unit_tests=$(echo "$unit" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
+          echo "integration_tests=$(echo "$intg" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
 
   # ── Unit tests (parallel bats workers) ──────────────────────────────────────
   unit:
@@ -104,10 +103,10 @@ jobs:
       - name: Run unit tests (selected)
         if: needs.select-tests.outputs.run_all == 'true' || needs.select-tests.outputs.unit_tests != ''
         run: |
-          if [ "${{ needs.select-tests.outputs.run_all }}" = "true" ]; then
-            bats --jobs 4 test/unit/
-          else
+          if [ -n "${{ needs.select-tests.outputs.unit_tests }}" ]; then
             bats --jobs 4 ${{ needs.select-tests.outputs.unit_tests }}
+          else
+            bats --jobs 4 test/unit/
           fi
 
       - name: Skip (no unit tests in scope)
@@ -164,12 +163,10 @@ jobs:
       - name: Run integration tests (selected)
         if: needs.select-tests.outputs.run_all == 'true' || needs.select-tests.outputs.integration_tests != ''
         run: |
-          if [ "${{ needs.select-tests.outputs.run_all }}" = "true" ]; then
-            # PR integration intentionally excludes long-running harnesses in
-            # test/extended/. Nightly/release workflows own those checks.
-            bats test/integration/
-          else
+          if [ -n "${{ needs.select-tests.outputs.integration_tests }}" ]; then
             bats ${{ needs.select-tests.outputs.integration_tests }}
+          else
+            echo "No integration-fast tests selected."
           fi
 
       - name: Skip (no integration tests in scope)

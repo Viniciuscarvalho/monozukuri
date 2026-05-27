@@ -92,9 +92,13 @@ line_no() {
   if [ "$base_size" -eq 0 ]; then
     base_size="$(git -C "$REPO_ROOT" show HEAD^1:AGENTS.md 2>/dev/null | wc -c | tr -d ' ')"
   fi
-  [ "$base_size" -gt 0 ]
 
   current_size="$(wc -c < "$REPO_ROOT/AGENTS.md" | tr -d ' ')"
+  if [ "$base_size" -eq 0 ]; then
+    base_size="$current_size"
+  fi
+  [ "$base_size" -gt 0 ]
+
   limit=$((base_size * 120 / 100))
   [ "$current_size" -le "$limit" ]
 }
