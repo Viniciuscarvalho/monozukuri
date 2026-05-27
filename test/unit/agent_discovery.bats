@@ -63,6 +63,25 @@ EOF
   jq -e '.agents[0].source == "agents-dir"' <<<"$MANIFEST_JSON"
 }
 
+@test ".agents/agents/*.md files are discovered as portable project agents" {
+  mkdir -p "$TMP/.agents/agents"
+  cat > "$TMP/.agents/agents/codex-builder.md" <<'EOF'
+---
+name: codex-builder
+description: Portable Codex builder
+phase: code
+capabilities:
+  - code
+  - tests
+---
+EOF
+  _run_discovery
+  jq -e '.agents | length == 1' <<<"$MANIFEST_JSON"
+  jq -e '.agents[0].name == "codex-builder"' <<<"$MANIFEST_JSON"
+  jq -e '.agents[0].source == "agents-dir-portable"' <<<"$MANIFEST_JSON"
+  jq -e '.agents[0].path == ".agents/agents/codex-builder.md"' <<<"$MANIFEST_JSON"
+}
+
 # ── new in this PR: nested AGENTS.md walk ─────────────────────────────────────
 
 @test "nested ui/AGENTS.md is discovered" {

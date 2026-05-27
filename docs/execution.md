@@ -148,7 +148,7 @@ Keep typing slow enough to read but skip the agent's thinking time with VHS `Hid
 **Tape skeleton** (save as `docs/assets/hero.tape`):
 
 ```tape
-Output docs/assets/hero.gif
+Output docs/assets/pick-loop.gif
 Set Theme "Catppuccin Mocha"
 Set FontSize 14
 Set Width 1200

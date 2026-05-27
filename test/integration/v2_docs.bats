@@ -89,6 +89,9 @@ line_no() {
   grep -q "$marker" "$REPO_ROOT/GEMINI.md"
 
   base_size="$(git -C "$REPO_ROOT" show origin/main:AGENTS.md 2>/dev/null | wc -c | tr -d ' ')"
+  if [ "$base_size" -eq 0 ]; then
+    base_size="$(git -C "$REPO_ROOT" show HEAD^1:AGENTS.md 2>/dev/null | wc -c | tr -d ' ')"
+  fi
   [ "$base_size" -gt 0 ]
 
   current_size="$(wc -c < "$REPO_ROOT/AGENTS.md" | tr -d ' ')"

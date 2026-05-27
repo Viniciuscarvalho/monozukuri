@@ -61,6 +61,7 @@ EOF
 
   [[ "$out" == *"skills-manifest.json: 2 skill(s) discovered"* ]]
   [[ "$out" == *"1 project, 1 global"* ]]
+  [[ "$out" == *"skills discovered: 2"* ]]
 }
 
 @test "doctor reports missing manifest with a hint" {
@@ -78,6 +79,47 @@ EOF
   out=$(bash "$ORCHESTRATE" doctor 2>&1 || true)
 
   [[ "$out" == *".claude/skills/: 2 project-local skill(s)"* ]]
+}
+
+@test "doctor reports active codex CLI auth injectable skills and live readiness" {
+  mkdir -p "$PROJECT/bin"
+  cat > "$PROJECT/bin/codex" <<'EOF'
+#!/bin/sh
+case "$1 $2" in
+  "--version ") echo "codex-cli test"; exit 0 ;;
+  "login status") exit 0 ;;
+esac
+exit 0
+EOF
+  chmod +x "$PROJECT/bin/codex"
+  cat > "$PROJECT/.monozukuri/config.yaml" <<'EOCFG'
+agent: codex
+source:
+  adapter: markdown
+autonomy: full_auto
+execution:
+  base_branch: main
+EOCFG
+  cat > "$PROJECT/.monozukuri/skills-manifest.json" <<'EOF'
+{
+  "discovered_at": "2026-05-11T00:00:00Z",
+  "project_root": "/tmp/x",
+  "skills": [
+    { "name": "codex-prd", "scope": "project", "agent": "codex", "phases": ["prd"] },
+    { "name": "shared-code", "scope": "project", "agent": "any", "phases": ["code"] },
+    { "name": "claude-only", "scope": "project", "agent": "claude-code", "phases": ["tests"] }
+  ]
+}
+EOF
+
+  cd "$PROJECT"
+  out=$(PATH="$PROJECT/bin:$PATH" bash "$ORCHESTRATE" doctor 2>&1 || true)
+
+  [[ "$out" == *"codex CLI installed"* ]]
+  [[ "$out" == *"codex auth OK"* ]]
+  [[ "$out" == *"skills discovered: 3"* ]]
+  [[ "$out" == *"skills injectable for codex: 2"* ]]
+  [[ "$out" == *"loop live validable: codex ready"* ]]
 }
 
 # ── status surface ────────────────────────────────────────────────────────────

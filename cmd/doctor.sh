@@ -89,8 +89,16 @@ _doctor_agent_supports_native_skills() {
 _doctor_check_active_agent() {
   local agent="$1"
   local adapter="${LIB_DIR}/agent/adapter-${agent}.sh"
+  local bin
+  bin="$(_doctor_agent_cli_bin "$agent")"
   if [ ! -f "$adapter" ]; then
     _doctor_fail "$agent adapter not found" "Choose one of: claude-code, codex, gemini, kiro, aider"
+    return 1
+  fi
+  if command -v "$bin" >/dev/null 2>&1; then
+    _doctor_pass "${agent} CLI installed"
+  else
+    _doctor_fail "${agent} CLI missing" "Install ${bin}; hint: source ${adapter} && agent_login_hint"
     return 1
   fi
 
@@ -101,11 +109,10 @@ _doctor_check_active_agent() {
   )
   local rc=$?
   if [ "$rc" -eq 0 ]; then
-    _doctor_pass "$(_doctor_agent_display_name "$agent") ready"
+    _doctor_pass "${agent} auth OK"
+    _doctor_pass "loop live validable: ${agent} ready"
   else
-    local bin
-    bin="$(_doctor_agent_cli_bin "$agent")"
-    _doctor_fail "$(_doctor_agent_display_name "$agent") not ready" "Install/authenticate ${bin}; hint: source ${adapter} && agent_login_hint"
+    _doctor_fail "${agent} auth not OK" "Authenticate ${bin}; hint: source ${adapter} && agent_login_hint"
     return 1
   fi
 }
@@ -276,14 +283,41 @@ sub_doctor() {
     printf "  %s-%s .claude/skills/ not present\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
   fi
 
+  # Portable project-local skills (.agents/skills/ — rendered-prompt adapters)
+  if [ -d ".agents/skills" ]; then
+    local _agent_skill_count=0 _asd
+    while IFS= read -r _asd; do
+      [ -n "$_asd" ] && [ -f "$_asd/SKILL.md" ] && _agent_skill_count=$((_agent_skill_count + 1))
+    done < <(find .agents/skills -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
+    if [ "$_agent_skill_count" -gt 0 ]; then
+      _doctor_pass ".agents/skills/: ${_agent_skill_count} portable project-local skill(s)"
+      find .agents/skills -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort \
+        | while IFS= read -r _asd; do
+            [ -f "$_asd/SKILL.md" ] && printf "    %s\n" "$(basename "$_asd")"
+          done
+    else
+      printf "  %s~%s .agents/skills/ exists but no SKILL.md files found\n" "${T_WARNING:-\033[0;33m}" "${T_RESET:-\033[0m}"
+    fi
+  else
+    printf "  %s-%s .agents/skills/ not present\n" "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"
+  fi
+
   # Discovered skills manifest (written by `monozukuri run` via skill-discovery.sh)
   local _skills_manifest=".monozukuri/skills-manifest.json"
   if [ -f "$_skills_manifest" ] && command -v jq >/dev/null 2>&1; then
-    local _total _proj _glob
+    local _total _proj _glob _injectable
     _total=$(jq '.skills | length' "$_skills_manifest" 2>/dev/null || echo 0)
     _proj=$(jq '[.skills[] | select(.scope == "project")] | length' "$_skills_manifest" 2>/dev/null || echo 0)
     _glob=$(jq '[.skills[] | select(.scope == "global")]  | length' "$_skills_manifest" 2>/dev/null || echo 0)
     _doctor_pass "skills-manifest.json: ${_total} skill(s) discovered (${_proj} project, ${_glob} global)"
+    _doctor_pass "skills discovered: ${_total} (${_proj} project, ${_glob} global)"
+    if [ -n "${active_agent:-}" ]; then
+      _injectable=$(jq --arg agent "$active_agent" '
+        def norm(a): if a == "gemini-cli" then "gemini" else a end;
+        [.skills[] | select((.agent == null) or (.agent == "any") or (norm(.agent) == norm($agent)))] | length
+      ' "$_skills_manifest" 2>/dev/null || echo 0)
+      _doctor_pass "skills injectable for ${active_agent}: ${_injectable}"
+    fi
   else
     printf "  %s-%s skills-manifest.json: not yet built (run \`monozukuri run\` to populate)\n" \
       "${T_DIM:-\033[2m}" "${T_RESET:-\033[0m}"

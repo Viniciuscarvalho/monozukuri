@@ -118,14 +118,16 @@ ci_check_status() {
 
   local checks_json
   checks_json=$(platform_gh 30 pr checks "$pr_num" \
-    --json name,state,conclusion 2>/dev/null || echo "[]")
+    --json name,state 2>/dev/null || echo "[]")
 
   printf '%s' "$checks_json" | node -e "
     const data = JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
     if (!Array.isArray(data) || data.length === 0) { console.log('pending'); process.exit(0); }
-    const conclusions = data.map(c => (c.conclusion || c.state || '').toLowerCase());
-    if (conclusions.every(s => s === 'success')) { console.log('success'); process.exit(0); }
-    if (conclusions.some(s => s === 'failure' || s === 'error' || s === 'cancelled')) {
+    const states = data.map(c => (c.conclusion || c.state || '').toLowerCase());
+    if (states.every(s => s === 'success' || s === 'completed' || s === 'pass')) {
+      console.log('success'); process.exit(0);
+    }
+    if (states.some(s => s === 'failure' || s === 'error' || s === 'cancelled' || s === 'fail' || s === 'timed_out')) {
       console.log('failure'); process.exit(0);
     }
     console.log('pending');

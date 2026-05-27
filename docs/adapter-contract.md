@@ -135,10 +135,10 @@ Capability fields added for portable skill injection (ADR-020):
 
 | Field | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `supports.skill_injection` | boolean | ✅ | Adapter receives phase `SKILL.md` content through the rendered prompt rather than through a native skill mechanism. `true` means `render_phase_prompt` may prefix the phase prompt with the matching `skills/mz-*/SKILL.md`; `false` means no prompt prefix is applied. |
+| `supports.skill_injection` | boolean | ✅ | Adapter receives phase `SKILL.md` content through the rendered prompt rather than through a native skill mechanism. `true` means `render_phase_prompt` may prefix the phase prompt with the compatible project/global skill from `.monozukuri/skills-manifest.json`, falling back to the bundled `skills/mz-*/SKILL.md`; `false` means no prompt prefix is applied. |
 | `supports.skill_injection_every_turn` | boolean | — | When `true`, inject the phase skill on every phase prompt. When absent or `false`, inject only according to the adapter's native/session strategy. |
 
-Claude Code reports `skills: true` and `skill_injection: false` because it invokes `mz-*` skills natively. Codex and Gemini report `skill_injection: true` so they receive the same canonical phase instructions through prompt text.
+Claude Code reports `skills: true` and `skill_injection: false` because it invokes compatible skills natively. Codex and Gemini report `skill_injection: true` so they receive compatible project skills, or the bundled canonical phase instructions, through prompt text.
 
 ---
 

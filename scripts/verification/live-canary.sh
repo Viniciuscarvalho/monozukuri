@@ -261,18 +261,20 @@ verify_run_ci_status() {
   fi
 
   local status="success"
-  local pr_url pr_num checks_json check_status
+  local pr_url pr_num pr_repo checks_json check_status
   while IFS= read -r pr_url; do
     [ -n "$pr_url" ] || continue
     pr_num="${pr_url##*/}"
-    checks_json=$(gh pr checks "$pr_num" --json name,state,conclusion 2>/dev/null || printf '[]')
+    pr_repo=$(printf '%s' "$pr_url" | sed -E 's#^https://github.com/([^/]+/[^/]+)/pull/[0-9]+.*#\1#')
+    [ "$pr_repo" = "$pr_url" ] && pr_repo="$SANDBOX_REPO"
+    checks_json=$(gh pr checks "$pr_num" --repo "$pr_repo" --json name,state 2>/dev/null || printf '[]')
     check_status=$(printf '%s' "$checks_json" | node -e "
 const fs = require('fs');
 let data = [];
 try { data = JSON.parse(fs.readFileSync(0, 'utf8')); } catch {}
 if (!Array.isArray(data) || data.length === 0) { console.log('failure'); process.exit(0); }
 const states = data.map((c) => String(c.conclusion || c.state || '').toLowerCase());
-console.log(states.every((s) => s === 'success' || s === 'completed') ? 'success' : 'failure');
+console.log(states.every((s) => s === 'success' || s === 'completed' || s === 'pass') ? 'success' : 'failure');
 " 2>/dev/null || printf 'failure')
     if [ "$check_status" != "success" ]; then
       status="failure"
