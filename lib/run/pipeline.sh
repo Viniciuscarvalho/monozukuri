@@ -587,7 +587,7 @@ EOPRD
   if [ "$AUTONOMY" = "full_auto" ] && [ -z "${MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN+x}" ]; then
     export MONOZUKURI_SCHEMA_ESCALATE_TO_HUMAN=true
   fi
-  export MONOZUKURI_MODEL="${MODEL_DEFAULT:-}"
+  export MONOZUKURI_MODEL="${MODEL_PRIMARY:-${MODEL_DEFAULT:-}}"
   export MONOZUKURI_LOG_FILE="$log_file"
   export MONOZUKURI_RUN_DIR="$CONFIG_DIR/runs"
 

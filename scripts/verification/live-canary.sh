@@ -236,7 +236,7 @@ for (const id of taskIds) {
   if (result.pr_url) prUrls.push(result.pr_url);
 }
 const checks = prUrls.map((url) => ({pr_url: url, status: ciStatus}));
-const totalCost = Number(cost.total_cost_usd ?? cost.total_cost ?? cost.cost_usd ?? 0);
+const totalCost = Number(cost.total_usd ?? cost.total_cost_usd ?? cost.total_cost ?? cost.cost_usd ?? 0);
 const pass = Number(exitCodeRaw) === 0 &&
   taskIds.length === Number(taskCountRaw) &&
   prUrls.length === Number(taskCountRaw) &&

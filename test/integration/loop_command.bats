@@ -4,6 +4,7 @@
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 ORCHESTRATE="$REPO_ROOT/orchestrate.sh"
 MOCK_CLAUDE_DIR="$REPO_ROOT/.qa/fixtures/mocks/claude"
+MOCK_CODEX_DIR="$REPO_ROOT/.qa/fixtures/mocks/codex"
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
@@ -150,6 +151,37 @@ sleep "${SLOW_CLAUDE_DELAY:-0.2}"
 exec "$REAL_CLAUDE_MOCK/claude" "$@"
 EOFMOCK
   chmod +x "$mock_dir/claude"
+  printf '%s\n' "$mock_dir"
+}
+
+make_model_asserting_codex_mock() {
+  local mock_dir="$TMPDIR_TEST/model-asserting-codex"
+  mkdir -p "$mock_dir"
+  cat >"$mock_dir/codex" <<'EOFMOCK'
+#!/bin/bash
+set -euo pipefail
+
+printf '%s\n' "$*" >> "${CODEX_ARGS_FILE:?missing CODEX_ARGS_FILE}"
+
+for arg in "$@"; do
+  if [ "$arg" = "opusplan" ]; then
+    echo "unexpected codex model: opusplan" >&2
+    exit 42
+  fi
+done
+
+case " $* " in
+  *" --model gpt-5.5 "*) ;;
+  *" --version "*|*" login status "*) ;;
+  *)
+    echo "missing expected codex model gpt-5.5: $*" >&2
+    exit 43
+    ;;
+esac
+
+exec "$REAL_CODEX_MOCK/codex" "$@"
+EOFMOCK
+  chmod +x "$mock_dir/codex"
   printf '%s\n' "$mock_dir"
 }
 
@@ -436,6 +468,21 @@ JSEOF
       " "$progress_file"
     done < <(find "$PROJ_DIR/.monozukuri/state" -path '*/loop-*/progress.jsonl' -type f 2>/dev/null)
   done
+}
+
+@test "loop maps default model to the active non-Claude agent" {
+  cd "$PROJ_DIR"
+  codex_mock=$(make_model_asserting_codex_mock)
+  args_file="$TMPDIR_TEST/codex-args.txt"
+  : >"$args_file"
+
+  run env PATH="$codex_mock:$PATH" REAL_CODEX_MOCK="$MOCK_CODEX_DIR" \
+    CODEX_ARGS_FILE="$args_file" PROGRESS_INTERVAL=0 \
+    bash "$ORCHESTRATE" loop feat-001 --agent codex --non-interactive --no-ui
+
+  [ "$status" -eq 0 ]
+  grep -q -- "--model gpt-5.5" "$args_file"
+  ! grep -q -- "opusplan" "$args_file"
 }
 
 @test "loop reads feature IDs from stdin when no positional IDs are provided" {
