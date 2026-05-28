@@ -334,7 +334,7 @@ render_phase_prompt() {
 
   # Portable skill injection for non-Claude adapters. Keep this after schema
   # appending so the original rendered prompt remains intact below the prefix.
-  _rendered=$(monozukuri_inject_skill_prompt "$phase" "$_rendered")
+  _rendered=$(monozukuri_inject_skill_prompt "$phase" "$_rendered" "$override")
 
   if declare -f memory_v2_request_instruction &>/dev/null; then
     _rendered+=$'\n\n'"$(memory_v2_request_instruction)"

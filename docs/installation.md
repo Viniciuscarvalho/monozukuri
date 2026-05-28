@@ -115,10 +115,13 @@ monozukuri doctor
 
 `monozukuri doctor` checks each prerequisite, verifies `gh` authentication and your configured agent CLI, and reports the version of each tool. A green report means you can run `monozukuri init` in a project.
 
+For automation or release checks, run `monozukuri doctor --json`. The JSON output includes a project readiness status (`ready`, `partial`, or `blocked`), the active agent, phase skill routing, discovered project skills/agents, and concrete fixes for any skill that is missing, unrouted, or incompatible with the selected agent.
+
 If `doctor` reports an issue, the most common causes are:
 
 - **Agent CLI not found.** Install the CLI for your configured agent (`claude`, `codex`, `gemini`, or `kiro`) per its documentation, then re-run.
 - **`gh` not authenticated.** Run `gh auth login` with `repo` scope.
+- **Skill not usable by the active agent.** Follow the `doctor --json` fixes: route the skill with `phase:` frontmatter or `agents.<agent>.skills.<phase>`, move it to the correct skill root, or remove Claude-only tool references before using it with Codex/Gemini.
 - **`node` too old.** Upgrade to Node 18 or later. On macOS with Homebrew: `brew install node@20`.
 - **`jq` not found.** `brew install jq` (macOS), `apt install jq` (Debian/Ubuntu), or equivalent for your distro.
 

@@ -303,6 +303,32 @@ EOF
   [[ "$output" == *$'--- END mz-create-prd SKILL.md ---\n\n# PRD'* ]]
 }
 
+@test "render_phase_prompt injects configured skill override when available" {
+  local wt
+  wt="$(mktemp -d)"
+  mkdir -p "$wt/.agents/skills/custom-code"
+  cat > "$wt/.agents/skills/custom-code/SKILL.md" <<'EOF'
+---
+name: custom-code
+phase: code
+---
+
+Use the custom code execution path.
+EOF
+
+  export ADAPTER="codex"
+  export MONOZUKURI_SKILL_INJECTION="1"
+  export MONOZUKURI_WORKTREE="$wt"
+  run render_phase_prompt code custom-code
+  rm -rf "$wt"
+  unset ADAPTER MONOZUKURI_SKILL_INJECTION MONOZUKURI_WORKTREE
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--- BEGIN custom-code SKILL.md ---"* ]]
+  [[ "$output" == *"Use the custom code execution path."* ]]
+  [[ "$output" != *"--- BEGIN mz-execute-task SKILL.md ---"* ]]
+}
+
 @test "render_phase_prompt does not prefix SKILL.md when injection is disabled" {
   export ADAPTER="codex"
   export MONOZUKURI_SKILL_INJECTION="0"
