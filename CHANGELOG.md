@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.0-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.1.0-alpha.1...v2.2.0-alpha.1) (2026-05-28)
+
+
+### Features
+
+* **cli:** add doctor readiness fix guidance ([#289](https://github.com/Viniciuscarvalho/monozukuri/issues/289)) ([b8d3e23](https://github.com/Viniciuscarvalho/monozukuri/commit/b8d3e23ed5251300e87b487b1651178c00a15df7))
+
+
+### Documentation
+
+* **readme:** clarify v2 alpha positioning ([#288](https://github.com/Viniciuscarvalho/monozukuri/issues/288)) ([3fe43f2](https://github.com/Viniciuscarvalho/monozukuri/commit/3fe43f2da4f066f1fcc76baa486c440717eea244))
+
 ## [2.1.0-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.0.0-alpha.1...v2.1.0-alpha.1) (2026-05-27)
 
 
