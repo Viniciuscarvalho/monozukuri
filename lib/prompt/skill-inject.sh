@@ -23,7 +23,40 @@ monozukuri_skill_for_phase() {
 monozukuri_skill_path_for_phase() {
   local phase="${1:-}" skill
   skill=$(monozukuri_skill_for_phase "$phase") || return 1
-  printf '%s/skills/%s/SKILL.md\n' "${MONOZUKURI_SKILLS_ROOT:-$_SKILL_INJECT_ROOT}" "$skill"
+  monozukuri_skill_path_for_name "$skill"
+}
+
+monozukuri_skill_path_for_name() {
+  local skill_name="${1:-}"
+  [[ -n "$skill_name" ]] || return 1
+
+  local root="${MONOZUKURI_WORKTREE:-${ROOT_DIR:-$PWD}}"
+  local bundled_root="${MONOZUKURI_SKILLS_ROOT:-$_SKILL_INJECT_ROOT}"
+  local candidate
+  for candidate in \
+    "$root/.agents/skills/$skill_name/SKILL.md" \
+    "$root/.codex/skills/$skill_name/SKILL.md" \
+    "$root/.claude/skills/$skill_name/SKILL.md" \
+    "${HOME:-}/.agents/skills/$skill_name/SKILL.md" \
+    "${HOME:-}/.codex/skills/$skill_name/SKILL.md" \
+    "${HOME:-}/.claude/skills/$skill_name/SKILL.md" \
+    "$bundled_root/skills/$skill_name/SKILL.md"; do
+    [[ -f "$candidate" ]] && { printf '%s\n' "$candidate"; return 0; }
+  done
+
+  return 1
+}
+
+monozukuri_skill_prefix_for_name() {
+  local skill_name="${1:-}" skill_path
+  [[ -n "$skill_name" ]] || return 0
+  skill_path=$(monozukuri_skill_path_for_name "$skill_name") || return 0
+
+  printf -- '## Monozukuri portable skill instructions\n\n'
+  printf -- 'The active adapter does not consume Claude Code skills natively. Apply the following canonical phase skill exactly as if the `%s` skill had been invoked.\n\n' "$skill_name"
+  printf -- '--- BEGIN %s SKILL.md ---\n' "$skill_name"
+  cat "$skill_path"
+  printf -- '\n--- END %s SKILL.md ---\n\n' "$skill_name"
 }
 
 _monozukuri_skill_active_agent() {
@@ -148,14 +181,18 @@ monozukuri_should_inject_skill() {
 }
 
 monozukuri_inject_skill_prompt() {
-  local phase="${1:-}" prompt="${2:-}"
+  local phase="${1:-}" prompt="${2:-}" skill_override="${3:-}"
   if ! monozukuri_should_inject_skill "$phase"; then
     printf '%s' "$prompt"
     return 0
   fi
 
   local prefix
-  prefix=$(monozukuri_skill_prefix_for_phase "$phase")
+  if [[ -n "$skill_override" ]]; then
+    prefix=$(monozukuri_skill_prefix_for_name "$skill_override")
+  else
+    prefix=$(monozukuri_skill_prefix_for_phase "$phase")
+  fi
   if [[ -z "$prefix" ]]; then
     printf '%s' "$prompt"
     return 0

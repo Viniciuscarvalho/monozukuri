@@ -49,6 +49,47 @@ _write_manifest() {
 EOF
 }
 
+_write_features() {
+  cat > "$PROJECT/features.md" <<'EOF'
+# Feature Backlog
+
+## feat-001: Fixture feature
+
+Implement the fixture.
+EOF
+}
+
+_write_codex_stub() {
+  mkdir -p "$PROJECT/stubs" "$PROJECT/home"
+  cat > "$PROJECT/stubs/codex" <<'EOF'
+#!/bin/bash
+if [ "${1:-}" = "login" ] && [ "${2:-}" = "status" ]; then
+  exit 0
+fi
+echo "codex test"
+EOF
+  chmod +x "$PROJECT/stubs/codex"
+}
+
+_write_codex_config() {
+  local code_skill="${1:-}"
+  cat > "$PROJECT/.monozukuri/config.yaml" <<'EOCFG'
+agent: codex
+source:
+  adapter: markdown
+  markdown:
+    file: features.md
+EOCFG
+  if [ -n "$code_skill" ]; then
+    cat >> "$PROJECT/.monozukuri/config.yaml" <<EOCFG
+agents:
+  codex:
+    skills:
+      code: $code_skill
+EOCFG
+  fi
+}
+
 # ── doctor surface ────────────────────────────────────────────────────────────
 
 @test "doctor reports skills-manifest.json count when present" {
@@ -120,6 +161,92 @@ EOF
   [[ "$out" == *"skills discovered: 3"* ]]
   [[ "$out" == *"skills injectable for codex: 2"* ]]
   [[ "$out" == *"loop live validable: codex ready"* ]]
+}
+
+@test "doctor --json reports routed Codex skill as usable-injected" {
+  _write_features
+  _write_codex_stub
+  _write_codex_config "custom-code"
+  mkdir -p "$PROJECT/.agents/skills/custom-code"
+  cat > "$PROJECT/.agents/skills/custom-code/SKILL.md" <<'EOF'
+---
+name: custom-code
+phase: code
+---
+
+Use the Codex-compatible code path.
+EOF
+
+  cd "$PROJECT"
+  out=$(HOME="$PROJECT/home" PATH="$PROJECT/stubs:$PATH" bash "$ORCHESTRATE" doctor --json)
+
+  echo "$out" | jq -e '.phase_routing.code.classification == "usable-injected"'
+  echo "$out" | jq -e '.skills[] | select(.name == "custom-code" and .classification == "usable-injected")'
+}
+
+@test "doctor --json reports discovered unrouted skill with fixes" {
+  _write_features
+  _write_codex_stub
+  _write_codex_config
+  mkdir -p "$PROJECT/.agents/skills/manual-review"
+  cat > "$PROJECT/.agents/skills/manual-review/SKILL.md" <<'EOF'
+---
+name: manual-review
+---
+
+Review the implementation.
+EOF
+
+  cd "$PROJECT"
+  out=$(HOME="$PROJECT/home" PATH="$PROJECT/stubs:$PATH" bash "$ORCHESTRATE" doctor --json)
+
+  echo "$out" | jq -e '.skills[] | select(.name == "manual-review" and .classification == "discovered-not-routed" and (.fixes | length > 0))'
+}
+
+@test "doctor --json reports incompatible skill with migration fix" {
+  _write_features
+  _write_codex_stub
+  _write_codex_config
+  mkdir -p "$PROJECT/.agents/skills/legacy-code"
+  cat > "$PROJECT/.agents/skills/legacy-code/SKILL.md" <<'EOF'
+---
+name: legacy-code
+phase: code
+---
+
+Use TodoWrite before editing.
+EOF
+
+  cd "$PROJECT"
+  out=$(HOME="$PROJECT/home" PATH="$PROJECT/stubs:$PATH" bash "$ORCHESTRATE" doctor --json)
+
+  echo "$out" | jq -e '.phase_routing.code.classification == "incompatible"'
+  echo "$out" | jq -e '.skills[] | select(.name == "legacy-code" and .classification == "incompatible" and (.fixes[] | contains("Remove Claude-only tool references")))'
+}
+
+@test "doctor --json reports configured missing skill with fix" {
+  _write_features
+  _write_codex_stub
+  _write_codex_config "missing-code"
+
+  cd "$PROJECT"
+  out=$(HOME="$PROJECT/home" PATH="$PROJECT/stubs:$PATH" bash "$ORCHESTRATE" doctor --json)
+
+  echo "$out" | jq -e '.phase_routing.code.classification == "missing"'
+  echo "$out" | jq -e '.phase_routing.code.fixes | length > 0'
+}
+
+@test "doctor --json gives every non-usable skill at least one fix" {
+  _write_features
+  _write_codex_stub
+  _write_codex_config
+  mkdir -p "$PROJECT/.agents/skills/manual-review"
+  printf -- '---\nname: manual-review\n---\nReview.\n' > "$PROJECT/.agents/skills/manual-review/SKILL.md"
+
+  cd "$PROJECT"
+  out=$(HOME="$PROJECT/home" PATH="$PROJECT/stubs:$PATH" bash "$ORCHESTRATE" doctor --json)
+
+  echo "$out" | jq -e '[.skills[] | select((.classification | startswith("usable-") | not) and ((.fixes | length) == 0))] | length == 0'
 }
 
 # ── status surface ────────────────────────────────────────────────────────────
