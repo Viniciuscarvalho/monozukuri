@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.1-alpha.1...v2.2.2-alpha.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* **init:** ignore generated runtime footprint ([#293](https://github.com/Viniciuscarvalho/monozukuri/issues/293)) ([e38ce4b](https://github.com/Viniciuscarvalho/monozukuri/commit/e38ce4b31eb85e41b2784b699e30e77c0da9ad06))
+
 ## [2.2.1-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.0-alpha.1...v2.2.1-alpha.1) (2026-05-29)
 
 
