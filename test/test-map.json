@@ -260,6 +260,9 @@
       "test/integration/vrf_verification.bats"
     ],
     "Makefile": [],
+    "templates/gitignore-entries.txt": [
+      "test/integration/footprint_hygiene.bats"
+    ],
     "scripts/select-tests.sh": [
       "test/unit/select_tests.bats"
     ],
@@ -301,6 +304,9 @@
     ],
     "test/integration/vrf_verification.bats": [
       "test/integration/vrf_verification.bats"
+    ],
+    "test/integration/footprint_hygiene.bats": [
+      "test/integration/footprint_hygiene.bats"
     ],
     ".ci-guard/config.yml": [],
     ".ci-guard/scripts/classify_failure.py": [],
