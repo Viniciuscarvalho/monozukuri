@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.0-alpha.1...v2.2.1-alpha.1) (2026-05-29)
+
+
+### Documentation
+
+* **agent:** add monozukuri development agents ([#291](https://github.com/Viniciuscarvalho/monozukuri/issues/291)) ([b45f7fa](https://github.com/Viniciuscarvalho/monozukuri/commit/b45f7fa0204d38a55807208618cb050f8f955bf8))
+
 ## [2.2.0-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.1.0-alpha.1...v2.2.0-alpha.1) (2026-05-28)
 
 

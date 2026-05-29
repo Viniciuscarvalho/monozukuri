@@ -1,6 +1,6 @@
 {
   "name": "@viniciuscarvalho/monozukuri",
-  "version": "2.2.0-alpha.1",
+  "version": "2.2.1-alpha.1",
   "description": "Monozukuri (ものづくり) — autonomous feature delivery, the art of making things",
   "keywords": [
     "claude-code",
