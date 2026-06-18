@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.3",
     "@types/react": "^18.3.1",
     "ink": "^5.0.0",
     "ink-spinner": "^5.0.0",
