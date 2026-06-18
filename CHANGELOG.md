@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.2-alpha.1...v2.2.3-alpha.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **ui:** declare TUI runtime deps for alpha npm installs ([#301](https://github.com/Viniciuscarvalho/monozukuri/issues/301)) ([006de00](https://github.com/Viniciuscarvalho/monozukuri/commit/006de00ac0b00e3a692beda27e7520da2dfd94bd))
+
 ## [2.2.2-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.1-alpha.1...v2.2.2-alpha.1) (2026-05-29)
 
 
