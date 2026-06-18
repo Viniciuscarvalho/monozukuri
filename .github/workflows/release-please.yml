@@ -46,7 +46,7 @@ jobs:
         id: dist_tag
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          if [[ "$VERSION" == *"-rc."* ]]; then
+          if [[ "$VERSION" == *"-"* ]]; then
             echo "tag=next" >> "$GITHUB_OUTPUT"
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
@@ -66,7 +66,7 @@ jobs:
         id: target
         run: |
           TAG="${{ needs.release-please.outputs.tag_name }}"
-          if [[ "$TAG" == *"-rc."* ]]; then
+          if [[ "$TAG" == *"-"* ]]; then
             echo "formula=Formula/monozukuri-next.rb" >> "$GITHUB_OUTPUT"
             echo "name=monozukuri-next" >> "$GITHUB_OUTPUT"
           else
