@@ -45,6 +45,8 @@
     "access": "public"
   },
   "dependencies": {
+    "ink": "^5.0.0",
+    "react": "^18.3.1",
     "js-tiktoken": "^1.0.21"
   }
 }
