@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.2-alpha.1...v2.2.3-alpha.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **ui:** declare published TUI runtime dependencies ([#301](https://github.com/Viniciuscarvalho/monozukuri/issues/301)) ([ac7f577](https://github.com/Viniciuscarvalho/monozukuri/commit/ac7f57700e33d6e33260873e664f3ccf6105e283))
+
 ## [2.2.2-alpha.1](https://github.com/Viniciuscarvalho/monozukuri/compare/v2.2.1-alpha.1...v2.2.2-alpha.1) (2026-05-29)
 
 
