@@ -53,3 +53,8 @@ This file records the results of weekly canary benchmark runs. Each row represen
   "data": 100,
   "frontend": 100
 }
+2026-07-05 | run-20260705-040025 | 100 | 44824 | 100 | {
+  "backend": 100,
+  "data": 100,
+  "frontend": 100
+}
