@@ -19,7 +19,7 @@ jobs:
     name: Lint + UI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -51,7 +51,7 @@ jobs:
       integration_tests: ${{ steps.select.outputs.integration_tests }}
       run_all: ${{ steps.select.outputs.run_all }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: select-tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -135,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: select-tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -196,7 +196,7 @@ jobs:
     needs: select-tests
     if: needs.select-tests.outputs.run_all == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -242,7 +242,7 @@ jobs:
     needs: select-tests
     if: needs.select-tests.outputs.run_all == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache bats
         id: bats-cache
@@ -292,7 +292,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -313,7 +313,7 @@ jobs:
     needs: [lint-ui, unit, integration, conformance, properties]
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Warn on quarantine candidates
         run: |
