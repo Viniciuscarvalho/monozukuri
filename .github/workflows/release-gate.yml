@@ -29,7 +29,7 @@ jobs:
             echo "is_release=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.check.outputs.is_release == 'true'
 
       - name: Extract version from PR title
